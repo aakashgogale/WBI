@@ -125,27 +125,32 @@ const Onboarding = ({ onComplete }) => {
         </button>
       </div>
 
-      {/* Bottom Cover / Action Area */}
-      {/* Solid white background spanning the bottom to OVERLAY and hide the baked-in dots & button */}
+      {/* Bottom Cover Overlay */}
+      {/* This solid white gradient completely covers the baked-in dots and buttons in the images */}
+      <div 
+        className="absolute bottom-0 left-0 w-full z-20 pointer-events-none"
+        style={{ 
+          height: '240px',
+          background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.9) 20%, white 35%, white 100%)' 
+        }}
+      />
+
+      {/* Real Action Area */}
       <div 
         className="absolute bottom-0 w-full px-6 z-30 flex flex-col items-center justify-end"
-        style={{ 
-          paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-          paddingTop: '32px',
-          background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.9) 30%, white 50%, white 100%)' 
-        }}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 32px)' }}
       >
         {/* Hidden clickable area for DEV reset */}
         <div onClick={handleDevReset} className="w-full h-10 absolute bottom-0 left-0 opacity-0 z-50" />
 
-        {/* Real Pagination Dots */}
+        {/* Single Set of Pagination Dots */}
         <div className="flex justify-center gap-2 mb-6">
           {onboardingData.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentStep(index)}
-              className={`h-2.5 rounded-full transition-all duration-300 ease-in-out ${
-                currentStep === index ? 'w-8' : 'w-2.5 bg-gray-200 hover:bg-gray-300'
+              className={`h-2 rounded-full transition-all duration-300 ease-in-out ${
+                currentStep === index ? 'w-6' : 'w-2 bg-gray-200 hover:bg-gray-300'
               }`}
               style={{ backgroundColor: currentStep === index ? brandColor : undefined }}
               aria-label={`Go to slide ${index + 1}`}
@@ -153,10 +158,10 @@ const Onboarding = ({ onComplete }) => {
           ))}
         </div>
 
-        {/* Real Primary Action Button */}
+        {/* Slightly Smaller Action Button */}
         <button
           onClick={handleNext}
-          className="w-full py-[16px] px-6 rounded-2xl text-white font-bold text-lg active:scale-[0.98] transition-transform flex items-center justify-center shadow-md hover:shadow-lg"
+          className="w-full sm:max-w-md py-[14px] px-6 rounded-xl text-white font-bold text-[16px] active:scale-[0.98] transition-transform flex items-center justify-center shadow-md hover:shadow-lg"
           style={{ backgroundColor: brandColor }}
         >
           {currentStep === onboardingData.length - 1 ? 'Get Started' : 'Next'}
