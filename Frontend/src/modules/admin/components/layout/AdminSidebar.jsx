@@ -17,6 +17,7 @@ import {
   FiPackage,
   FiTrash2,
   FiStar,
+  FiVideo
 } from "react-icons/fi";
 import adminMenu from "../../config/adminMenu.json";
 import dashboardService from "../../services/dashboardService";
@@ -35,10 +36,10 @@ const iconMap = {
   Reports: FiFileText,
   Notifications: FiBell,
   "Scrap Items": FiTrash2,
-  Reviews: FiStar,
   Settlements: FiDollarSign,
   Settings: FiSettings,
   Plans: FiPackage,
+  "Trust Videos": FiVideo,
 };
 
 // Helper function to convert child name to route path

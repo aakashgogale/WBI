@@ -165,5 +165,14 @@
       "admin"
     ],
     "children": []
+  },
+  {
+    "title": "Trust Videos",
+    "route": "/admin/trust-videos",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
   }
 ]

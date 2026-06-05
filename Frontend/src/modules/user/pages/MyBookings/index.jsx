@@ -92,7 +92,7 @@ const MyBookings = () => {
       case 'in-progress':
       case 'journey_started':
       case 'visited':
-        return 'bg-blue-500 text-white border-blue-600 ring-blue-500';
+        return 'bg-orange-500 text-white border-orange-600 ring-orange-500';
       case 'completed':
         return 'bg-violet-500 text-white border-violet-600 ring-violet-500';
       case 'cancelled':
@@ -152,41 +152,12 @@ const MyBookings = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 relative bg-white">
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-      </div>
-
+    <div className="min-h-screen pb-[env(safe-area-inset-bottom)] mb-20 bg-[#F7F7FB] relative">
       <div className="relative z-10">
-        {/* Modern Glassmorphism Header */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-4 py-4 flex items-center justify-between">
+        {/* Header */}
+        <header className="pt-6 pb-4 px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
-            >
-              <FiArrowLeft className="w-5 h-5 text-gray-800" />
-            </button>
-            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">My Bookings</h1>
+            <h1 className="text-2xl font-extrabold text-gray-900 font-poppins tracking-tight">My Bookings</h1>
           </div>
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02] relative">
             <NotificationBell />
@@ -207,10 +178,9 @@ const MyBookings = () => {
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 border ${filter === tab.id
-                  ? 'border-transparent text-white shadow-lg shadow-blue-500/25 active:scale-95'
-                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
+                  ? 'border-transparent bg-brand text-white shadow-[0_4px_12px_rgba(108,47,242,0.3)] active:scale-95'
+                  : 'bg-white border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }`}
-                style={filter === tab.id ? { backgroundColor: themeColors.button } : {}}
               >
                 {tab.label}
               </button>
@@ -294,7 +264,7 @@ const MyBookings = () => {
                     }
                   }}
                   onClick={() => handleBookingClick(booking)}
-                  className={`group relative bg-white rounded-2xl p-5 border border-slate-200 border-l-4 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] hover:border-blue-300 active:scale-[0.99] transition-all duration-300 cursor-pointer overflow-hidden ${getStatusBorderColor(booking.status)}`}
+                  className={`group relative bg-white rounded-2xl p-5 border border-slate-200 border-l-4 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] hover:border-orange-300 active:scale-[0.99] transition-all duration-300 cursor-pointer overflow-hidden ${getStatusBorderColor(booking.status)}`}
                 >
                   {/* Decorative Elements */}
                   <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 via-transparent to-transparent -z-0 opacity-50" />
@@ -311,7 +281,7 @@ const MyBookings = () => {
                       <div className="space-y-1">
                         {/* 1. Category */}
                         {booking.serviceCategory && (
-                          <div className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 w-fit rounded-md uppercase tracking-wider mb-1">
+                          <div className="text-xs font-bold text-brand bg-brand-bg px-2 py-0.5 w-fit rounded-md uppercase tracking-wider mb-1">
                             {booking.serviceCategory}
                           </div>
                         )}
@@ -324,7 +294,7 @@ const MyBookings = () => {
                         )}
 
                         {/* 3. Service Name */}
-                        <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-2 group-hover:text-brand transition-colors">
                           {booking.serviceName || 'Service Request'}
                         </h3>
 
@@ -350,7 +320,7 @@ const MyBookings = () => {
                   <div className="relative z-10 grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50/50 border border-slate-200">
                     {/* Schedule */}
                     <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                      <FiCalendar className="w-4 h-4 text-blue-500" />
+                      <FiCalendar className="w-4 h-4 text-brand" />
                     </div>
                     <div className="flex flex-col justify-center">
                       <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Slot</p>
@@ -384,7 +354,7 @@ const MyBookings = () => {
                     </div>
 
                     <button
-                      className="flex items-center gap-1.5 pl-4 pr-3 py-2 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 font-bold text-sm hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
+                      className="flex items-center gap-1.5 pl-4 pr-3 py-2 rounded-lg bg-brand-bg text-brand font-bold text-sm hover:bg-brand hover:border-brand hover:text-white transition-all shadow-sm active:scale-95"
                     >
                       View Details
                       <FiChevronRight className="w-4 h-4" />

@@ -1,39 +1,63 @@
 /**
  * Centralized Theme Colors Configuration
- * Separate themes for User and Vendor modules
- * Update colors here to change theme across entire app
- * 
- * Usage:
- * - User module: import { userTheme } from '../../../../theme'
- * - Vendor module: import { vendorTheme } from '../../../../theme'
- * - Worker module: import { workerTheme } from '../../../../theme'
  */
 
-// Homestr LOGO Core Brand Colors
 const brand = {
-  teal: '#347989',
-  yellow: '#D68F35',
-  orange: '#BB5F36',
-  gradient: 'linear-gradient(135deg, #347989 0%, #D68F35 50%, #BB5F36 100%)',
-  conic: 'conic-gradient(from 0deg, #347989, #D68F35, #BB5F36, #347989)'
+  teal: '#10AFA5',
+  orange: '#F59E0B',
+  bg: '#F8FCFC',
+  card: '#FFFFFF',
+  textDark: '#0F172A',
+  textMuted: '#64748B',
+  border: '#E5F3F2',
+  
+  // Backward compatibility aliases
+  purple: '#10AFA5',
+  gold: '#F59E0B',
+  green: '#10AFA5',
+  orangeLight: '#FEF3C7',
+  creamBg: '#F8FCFC',
+  gradient: 'linear-gradient(135deg, #10AFA5 0%, #0D9488 100%)',
+  conic: 'conic-gradient(from 0deg, #10AFA5, #0D9488, #10AFA5)'
+};
+
+export const themeColors = {
+  primary: {
+    DEFAULT: '#10AFA5',
+    50: '#F0FDFA',
+    100: '#CCFBF1',
+    200: '#99F6E4',
+    300: '#5EEAD4',
+    400: '#2DD4BF',
+    500: '#10AFA5',
+    600: '#0D9488',
+    700: '#0F766E',
+    800: '#115E59',
+    900: '#134E4A',
+  },
+  brand: brand,
+  button: '#10AFA5',
+  background: '#F8FCFC',
+  text: '#0F172A',
+  border: '#E5F3F2',
 };
 
 // User Theme Colors
 const userTheme = {
-  backgroundGradient: 'linear-gradient(180deg, #F0FDFA 0%, #F5FAFF 15%, #FFFFFF 30%)',
+  backgroundGradient: 'linear-gradient(180deg, #F0FDFA 0%, #F8FCFC 25%, #FFFFFF 100%)',
   gradient: brand.gradient,
-  headerGradient: 'linear-gradient(135deg, #00a6a6 0%, #008a8a 50%, #006b6b 100%)',
-  headerBg: '#EBF8FF',
+  headerGradient: 'transparent',
+  headerBg: 'transparent',
   button: brand.teal,
   icon: brand.teal,
-  cardShadow: '0 8px 16px -2px rgba(0, 166, 166, 0.15), 0 4px 8px -1px rgba(0, 166, 166, 0.1)',
-  cardBorder: '1px solid rgba(0, 166, 166, 0.15)',
+  cardShadow: '0 4px 20px rgba(16, 175, 165, 0.08)',
+  cardBorder: '1px solid #E5F3F2',
   brand: brand
 };
 
 // Vendor Theme Colors
 const vendorTheme = {
-  backgroundGradient: 'linear-gradient(to bottom, rgba(52, 121, 137, 0.03) 0%, rgba(187, 95, 54, 0.02) 10%, #ffffff 20%)',
+  backgroundGradient: userTheme.backgroundGradient,
   gradient: brand.gradient,
   headerGradient: brand.teal,
   button: brand.teal,
@@ -43,7 +67,7 @@ const vendorTheme = {
 
 // Worker Theme Colors
 const workerTheme = {
-  backgroundGradient: 'linear-gradient(to bottom, rgba(52, 121, 137, 0.03) 0%, rgba(187, 95, 54, 0.02) 10%, #ffffff 20%)',
+  backgroundGradient: userTheme.backgroundGradient,
   gradient: brand.gradient,
   headerGradient: brand.teal,
   button: brand.teal,
@@ -51,11 +75,5 @@ const workerTheme = {
   brand: brand
 };
 
-// Default theme (for backward compatibility)
-const themeColors = userTheme;
-
-// Export all themes
 export { userTheme, vendorTheme, workerTheme, brand };
 export default themeColors;
-
-

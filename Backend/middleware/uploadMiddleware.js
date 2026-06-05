@@ -20,6 +20,20 @@ const cloudinaryStorage = new CloudinaryStorage({
   }
 });
 
+// Configure Cloudinary Storage for Videos & Images
+const cloudinaryMediaStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'appzeto/media',
+    resource_type: 'auto',
+    // Let cloudinary handle formatting
+    public_id: (req, file) => {
+      const name = file.originalname.split('.')[0];
+      return `media-${name}-${Date.now()}`;
+    }
+  }
+});
+
 // Configure memory storage (backup/legacy)
 const memoryStorage = multer.memoryStorage();
 
@@ -29,6 +43,15 @@ const imageFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+// File filter - images and videos
+const mediaFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image and video files are allowed!'), false);
   }
 };
 
@@ -56,6 +79,15 @@ const uploadImage = multer({
   fileFilter: imageFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+}).single('file');
+
+// Generic Media Upload (Cloudinary) - Expecting 'file' field
+const uploadMedia = multer({
+  storage: cloudinaryMediaStorage,
+  fileFilter: mediaFilter,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit for videos
   }
 }).single('file');
 
@@ -111,6 +143,7 @@ const handleMulterError = (err, req, res, next) => {
 
 module.exports = {
   uploadImage,
+  uploadMedia,
   uploadProfilePhoto,
   uploadDocuments,
   handleMulterError

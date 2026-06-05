@@ -137,22 +137,10 @@ const Account = () => {
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group mb-3"
-      style={{ '--hover-border': `${themeColors.brand.teal}30` }}
     >
       <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors`}
-          style={{
-            backgroundColor: color === 'text-red-500' ? '#FEF2F2' : '#F8FAFC',
-            color: color === 'text-red-500' ? '#EF4444' : 'inherit'
-          }}
-          onMouseEnter={(e) => {
-            if (color !== 'text-red-500') e.currentTarget.style.backgroundColor = `${themeColors.brand.teal}15`;
-          }}
-          onMouseLeave={(e) => {
-            if (color !== 'text-red-500') e.currentTarget.style.backgroundColor = '#F8FAFC';
-          }}
-        >
-          <Icon className={`w-5 h-5 ${color}`} />
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${color === 'text-red-500' ? 'bg-red-50 text-red-500' : 'bg-gray-50 text-brand group-hover:bg-brand-light'}`}>
+          <Icon className={`w-5 h-5 ${color === 'text-red-500' ? '' : 'text-brand'}`} />
         </div>
         <span className={`font-semibold ${color}`}>{label}</span>
       </div>
@@ -162,7 +150,7 @@ const Account = () => {
             {badge}
           </span>
         )}
-        <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-teal-500 transition-colors" />
+        <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-brand transition-colors" />
       </div>
     </motion.button>
   );
@@ -189,43 +177,10 @@ const Account = () => {
   }
 
   return (
-    <div className="min-h-screen pb-32 relative bg-white">
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-      </div>
-
+    <div className="min-h-screen pb-[env(safe-area-inset-bottom)] mb-20 bg-[#F7F7FB] relative">
       <div className="relative z-10">
-        {/* Premium Transparent Header */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-5 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
-            >
-              <FiArrowLeft className="w-5 h-5 text-gray-800" />
-            </motion.button>
-            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Account</h1>
-          </div>
+        <header className="pt-6 pb-4 px-5 flex items-center justify-between">
+          <h1 className="text-2xl font-extrabold text-gray-900 font-poppins tracking-tight">Profile</h1>
           <NotificationBell />
         </header>
 
@@ -233,223 +188,59 @@ const Account = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="px-4 pt-6 max-w-lg mx-auto"
+          className="px-4 pt-2 max-w-lg mx-auto"
         >
-          {/* Elevated Profile Card */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-white rounded-[28px] p-5 shadow-[0_32px_64px_-16px_rgba(52,121,137,0.15)] mb-8 relative overflow-hidden border border-white"
-          >
-            {/* Vivid Brand Accents */}
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full -mr-20 -mt-20 blur-3xl opacity-[0.2]"
-              style={{ backgroundColor: themeColors.brand.yellow }}
-            ></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full -ml-24 -mb-24 blur-3xl opacity-[0.2]"
-              style={{ backgroundColor: themeColors.brand.teal }}
-            ></div>
-
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl p-1 bg-white shadow-xl rotate-2">
-                  {userProfile.profilePhoto ? (
-                    <img
-                      src={userProfile.profilePhoto}
-                      alt={userProfile.name}
-                      className="w-full h-full rounded-[14px] object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-[14px] flex items-center justify-center text-white font-black text-2xl"
-                      style={{ background: themeColors.gradient }}>
-                      {getInitials()}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => navigate('/user/update-profile')}
-                  className="absolute -bottom-1 -right-1 p-1.5 bg-gray-900 text-white rounded-[8px] border-2 border-white shadow-lg active:scale-95 transition-transform"
-                >
-                  <FiEdit3 className="w-3.5 h-3.5" />
-                </button>
+          {/* Avatar & Info */}
+          <motion.div variants={itemVariants} className="flex flex-col items-center justify-center mb-8">
+            <div className="relative mb-4">
+              <div className="w-24 h-24 rounded-full p-1 bg-white shadow-purple-soft">
+                {userProfile.profilePhoto ? (
+                  <img
+                    src={userProfile.profilePhoto}
+                    alt={userProfile.name}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full flex items-center justify-center text-white font-black text-3xl bg-brand">
+                    {getInitials()}
+                  </div>
+                )}
               </div>
+              <button
+                onClick={() => navigate('/user/update-profile')}
+                className="absolute bottom-0 right-0 p-2 bg-brand text-white rounded-full border-2 border-white shadow-md active:scale-95 transition-transform"
+              >
+                <FiEdit3 className="w-4 h-4" />
+              </button>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">{userProfile.name}</h2>
+            <p className="text-sm text-gray-500">{userProfile.email || userProfile.phone || 'No email linked'}</p>
+          </motion.div>
 
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-black text-gray-900 truncate mb-1">
-                  {userProfile.name}
-                </h2>
-                <div className="flex items-center gap-2 mb-3">
-                  <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">
-                    {userProfile.phone ? formatPhoneNumber(userProfile.phone) : 'No phone linked'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate('/user/update-profile')}
-                  className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors"
-                >
-                  Edit Profile
-                </button>
-              </div>
+          {/* Stats Row */}
+          <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3 mb-8">
+            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+              <span className="text-2xl font-bold text-gray-900 block mb-1">12</span>
+              <span className="text-[11px] text-gray-500 font-bold uppercase">Bookings</span>
+            </div>
+            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+              <span className="text-2xl font-bold text-gray-900 block mb-1">4</span>
+              <span className="text-[11px] text-gray-500 font-bold uppercase">Reviews</span>
+            </div>
+            <div className="bg-white p-4 rounded-2xl shadow-sm text-center">
+              <span className="text-2xl font-bold text-gray-900 block mb-1">8</span>
+              <span className="text-[11px] text-gray-500 font-bold uppercase">Saved</span>
             </div>
           </motion.div>
 
-          {/* Designer Active Plan Card */}
-          {userProfile.plans && userProfile.plans.isActive && (
-            <motion.div
-              variants={itemVariants}
-              onClick={() => navigate('/user/my-plan')}
-              className="relative overflow-hidden mb-6 rounded-[28px] p-6 text-white cursor-pointer group transition-all"
-              style={{
-                background: `linear-gradient(135deg, ${themeColors.brand.teal} -10%, ${themeColors.brand.orange} 120%)`,
-                boxShadow: `0 20px 40px -12px ${themeColors.brand.teal}40`
-              }}
-            >
-              {/* Decorative elements */}
-              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-              <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-black/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-500"></div>
-
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <FiShield className="w-4 h-4 text-white/80" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Membership Status</span>
-                  </div>
-                  <h3 className="text-2xl font-black mb-1">{userProfile.plans.name}</h3>
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full w-fit mt-3 border border-white/10">
-                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Expires: {new Date(userProfile.plans.expiry).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                  <FiZap className="w-8 h-8 fill-white text-white drop-shadow-lg" />
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center relative z-10">
-                <span className="text-xs font-bold text-white/80">Manage Benefits</span>
-                <FiChevronRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </motion.div>
-          )}
-
-          {/* Quick Actions Grid */}
-          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              onClick={() => navigate('/user/wallet')}
-              className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all text-left group"
-            >
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
-                style={{ backgroundColor: `${themeColors.brand.teal}15`, color: themeColors.brand.teal }}
-              >
-                <MdAccountBalanceWallet className="w-5 h-5" />
-              </div>
-              <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Balance</span>
-              <p className={`text-lg font-black mt-0.5 ${userProfile.walletBalance < 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                ₹{Math.abs(userProfile.walletBalance || 0).toLocaleString('en-IN')}
-                {userProfile.walletBalance < 0 && <span className="text-xs font-normal ml-1">(Penalty)</span>}
-              </p>
-            </button>
-            <button
-              onClick={() => navigate('/user/rewards')}
-              className="bg-gray-900 p-4 rounded-3xl shadow-lg shadow-gray-200 hover:shadow-xl transition-all text-left relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-black opacity-50"></div>
-              <div className="relative z-10 h-full flex flex-col justify-between">
-                <div className="w-10 h-10 bg-white/10 text-yellow-400 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-sm group-hover:scale-110 transition-transform">
-                  <FiGift className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs text-white/60 font-bold uppercase tracking-wider">Rewards</span>
-                  <p className="text-lg font-black text-white mt-0.5">Refer & Earn</p>
-                </div>
-              </div>
-            </button>
-          </motion.div>
-
-          {/* Menu Groups */}
-
-          {/* Shopping */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Shopping</h3>
-            <MenuItem
-              icon={FiShoppingBag}
-              label="Scrap Deals"
-              onClick={() => navigate('/user/scrap')}
-            />
-            <MenuItem
-              icon={FiFileText}
-              label="My Plans"
-              onClick={() => navigate('/user/my-plan')}
-            />
-          </motion.div>
-
-          {/* Activity */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Activity</h3>
-            <MenuItem
-              icon={FiClipboard}
-              label="My Bookings"
-              onClick={() => navigate('/user/my-bookings')}
-            />
-            <MenuItem
-              icon={FiStar}
-              label="My Ratings"
-              onClick={() => navigate('/user/my-rating')}
-            />
-          </motion.div>
-
-          {/* Preferences */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Preferences</h3>
-            <MenuItem
-              icon={FiMapPin}
-              label="Manage Addresses"
-              onClick={() => navigate('/user/manage-addresses')}
-            />
-
-            <MenuItem
-              icon={FiSettings}
-              label="Settings"
-              onClick={() => navigate('/user/settings')}
-            />
-          </motion.div>
-
-          {/* Support & Legal */}
+          {/* Menu Items */}
           <motion.div variants={itemVariants} className="mb-8">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Support & More</h3>
-            <MenuItem
-              icon={FiHeadphones}
-              label="Help & Support"
-              onClick={() => navigate('/user/help-support')}
-            />
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/user/about-homestr')}
-              className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group mb-3"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50 transition-colors group-hover:bg-opacity-80"
-                  style={{ color: themeColors.brand.teal }}>
-                  <span className="font-bold">H</span>
-                </div>
-                <span className="font-semibold text-gray-900">About Homestr</span>
-              </div>
-              <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-teal-500 transition-colors" />
-            </motion.button>
-            <div className="h-4"></div>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 p-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-red-200 transition-all mb-3"
-            >
-              <FiLogOut className="w-5 h-5" />
-              <span>Log out</span>
-            </motion.button>
+            <MenuItem icon={FiMapPin} label="My Addresses" onClick={() => navigate('/user/manage-addresses')} />
+            <MenuItem icon={FiCreditCard} label="Payment Methods" onClick={() => navigate('/user/manage-payment-methods')} />
+            <MenuItem icon={FiBell} label="Notifications" onClick={() => navigate('/user/notifications')} />
+            <MenuItem icon={FiHeadphones} label="Help & Support" onClick={() => navigate('/user/help-support')} />
+            <MenuItem icon={FiLogOut} label="Logout" onClick={handleLogout} color="text-red-500" />
           </motion.div>
-
-          <motion.div variants={itemVariants} className="text-center pb-8">
-            <p className="text-xs font-medium text-gray-400">Version 7.6.27 R547</p>
-          </motion.div>
-
         </motion.main>
       </div>
     </div>

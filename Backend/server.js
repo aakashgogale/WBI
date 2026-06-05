@@ -1,3 +1,7 @@
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+dns.setDefaultResultOrder("ipv4first"); 
+
 // Server Entry Point
 const express = require('express');
 const cors = require('cors');
@@ -214,6 +218,7 @@ app.use('/api/admin', require('./routes/admin-routes/upload.routes'));
 app.use('/api/admin', require('./routes/admin-routes/planManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/settings.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reviewManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/trustVideoManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reportManagement.routes'));
 app.use('/api/admin/settlements', require('./routes/admin-routes/settlementManagement.routes'));
 app.use('/api/admin/admins', require('./routes/admin-routes/adminManagement.routes'));
@@ -240,6 +245,7 @@ app.use('/api/notifications', require('./routes/notification.routes'));
 app.use('/api/public', require('./routes/public-routes/catalog.routes'));
 app.use('/api/public', require('./routes/public-routes/plan.routes'));
 app.use('/api/public', require('./routes/public-routes/config.routes'));
+app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 
 // 404 handler
 app.use((req, res) => {

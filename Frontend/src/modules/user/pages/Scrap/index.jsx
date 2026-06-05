@@ -71,11 +71,11 @@ const UserScrapPage = () => {
         <div className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.orange || '#FF8A00'}15 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.creamBg || '#FFF3E0'}40 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#FF8A00'}10 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.orange || '#FF8A00'}05 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.creamBg || '#FFF3E0'}20 0%, transparent 100%),
               #FFFFFF
             `
           }}
@@ -83,7 +83,7 @@ const UserScrapPage = () => {
         {/* Elegant Dot Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundImage: `radial-gradient(${themeColors?.brand?.orange || '#FF8A00'} 0.8px, transparent 0.8px)`,
             backgroundSize: '32px 32px'
           }}
         />
@@ -288,7 +288,7 @@ const UserScrapPage = () => {
 
                   {/* Description */}
                   {selectedScrap.description && (
-                    <div className="bg-blue-50/30 p-5 rounded-3xl border border-blue-100/30 italic">
+                    <div className="bg-orange-50/30 p-5 rounded-3xl border border-orange-100/30 italic">
                       <p className="text-gray-600 font-medium leading-relaxed">"{selectedScrap.description}"</p>
                     </div>
                   )}

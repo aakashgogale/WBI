@@ -1,21 +1,20 @@
 import React, { useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { HiLocationMarker } from 'react-icons/hi';
+import { Link, useNavigate } from 'react-router-dom';
+import { HiLocationMarker, HiChevronDown } from 'react-icons/hi';
+import { FiBell, FiShoppingCart, FiBookmark } from 'react-icons/fi';
 import { gsap } from 'gsap';
 import LocationSelector from '../common/LocationSelector';
 import { animateLogo } from '../../../../utils/gsapAnimations';
-import Logo from '../../../../components/common/Logo';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { themeColors } from '../../../../theme';
-
-import CitySelectorModal from '../common/CitySelectorModal';
 import { useCity } from '../../../../context/CityContext';
-import { HiChevronDown } from 'react-icons/hi';
+import { useCart } from '../../../../context/CartContext';
+import CitySelectorModal from '../common/CitySelectorModal';
 
 const Header = ({ location, onLocationClick }) => {
   const logoRef = useRef(null);
   const { currentCity } = useCity();
+  const { cartCount } = useCart();
   const [isCityModalOpen, setIsCityModalOpen] = React.useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (logoRef.current) {
@@ -24,88 +23,35 @@ const Header = ({ location, onLocationClick }) => {
   }, []);
 
   return (
-    <header className="relative overflow-hidden">
-      {/* Content wrapper with relative positioning */}
-      <div className="relative z-10">
-        <div className="w-full">
-          {/* Top Row: Logo (Left) and Location (Right) */}
-          <div className="px-4 py-3 flex items-center justify-between">
-            {/* Left: Logo */}
-            <Link
-              to="/user"
-              className="cursor-pointer shrink-0"
-              onMouseEnter={() => {
-                if (logoRef.current) {
-                  gsap.to(logoRef.current, {
-                    scale: 1.1,
-                    filter: `drop-shadow(0 0 16px ${themeColors.brand.teal}40)`,
-                    duration: 0.3,
-                    ease: 'power2.out',
-                  });
-                }
-              }}
-              onMouseLeave={() => {
-                if (logoRef.current) {
-                  gsap.to(logoRef.current, {
-                    scale: 1,
-                    filter: '',
-                    duration: 0.3,
-                    ease: 'power2.out',
-                  });
-                }
-              }}
-            >
-              <Logo
-                ref={logoRef}
-                className="h-9 sm:h-12 w-auto"
-              />
-            </Link>
-
-            {/* Desktop Navigation - Hidden on Mobile */}
-            <nav className="hidden lg:flex items-center gap-8 ml-10">
-              <Link to="/user" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Home</Link>
-              <Link to="/user/my-bookings" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Bookings</Link>
-              <Link to="/user/scrap" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Scrap</Link>
-              <Link to="/user/cart" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Cart</Link>
-              <Link to="/user/account" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Account</Link>
-            </nav>
-
-            {/* Right: City & Location */}
-            <div className="flex flex-col items-end gap-1 flex-1 min-w-0 ml-4">
-
-
-
-              {/* Location Selector */}
-              <div className="flex flex-col items-end cursor-pointer" onClick={onLocationClick}>
-                <div className="flex items-center gap-1 mb-0.5">
-                  {/* Gradient Definition for Icons */}
-                  <svg width="0" height="0" className="absolute">
-                    <linearGradient id="homestr-location-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={themeColors.brand.teal} />
-                      <stop offset="50%" stopColor={themeColors.brand.yellow} />
-                      <stop offset="100%" stopColor={themeColors.brand.orange} />
-                    </linearGradient>
-                  </svg>
-                  <HiLocationMarker
-                    className="w-4 h-4 shrink-0"
-                    style={{ fill: 'url(#homestr-location-gradient)' }}
-                  />
-                  <span className="text-sm font-bold truncate max-w-[160px]" style={{
-                    background: themeColors.gradient,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}>
-                    {location && location !== '...' ? location.split('-')[0].trim() : 'Select Location'}
-                  </span>
-                </div>
-                <LocationSelector
-                  location={location}
-                  onLocationClick={onLocationClick}
-                />
-              </div>
-            </div>
-          </div>
+    <header className="relative bg-transparent pt-3 pb-2">
+      <div className="px-4 flex items-center justify-between mt-2 mb-2">
+        {/* Left: Logo */}
+        <Link to="/user/account" className="cursor-pointer shrink-0 flex items-center">
+          <img src="/logo/logo.webp" alt="Homestr Logo" className="h-[46px] w-auto object-contain" />
+        </Link>
+        
+        {/* Center/Right: Location Pill */}
+        <div 
+          className="flex-1 ml-auto mr-3 max-w-[190px] flex items-center bg-white border border-[#E5F3F2] rounded-full px-3 py-1.5 shadow-[0_2px_8px_rgba(16,175,165,0.04)] cursor-pointer group" 
+          onClick={onLocationClick}
+        >
+          <HiLocationMarker className="text-[#10AFA5] w-4 h-4 mr-1.5 shrink-0" />
+          <span className="text-[12px] font-bold text-[#0F172A] truncate flex-1 leading-tight">
+            {location && location !== '...' 
+              ? location.split(',').slice(0, 2).join(', ').trim() 
+              : 'Select Location'}
+          </span>
+          <HiChevronDown className="w-4 h-4 text-[#64748B] shrink-0 ml-1 group-hover:translate-y-0.5 transition-transform" />
         </div>
+
+        {/* Right: Notifications */}
+        <button 
+          onClick={() => navigate('/user/notifications')}
+          className="relative w-9 h-9 flex items-center justify-center shrink-0"
+        >
+          <FiBell className="w-[22px] h-[22px] text-[#0F172A]" strokeWidth={1.5} />
+          <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#F59E0B] rounded-full border-[1.5px] border-[#F8FCFC]"></span>
+        </button>
       </div>
 
       <CitySelectorModal

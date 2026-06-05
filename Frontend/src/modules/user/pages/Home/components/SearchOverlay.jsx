@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiArrowLeft, FiClock, FiTrendingUp, FiX, FiLayers, FiChevronRight } from 'react-icons/fi';
 import { publicCatalogService } from '../../../../../services/catalogService';
 import { themeColors } from '../../../../../theme';
+import ServiceIconRenderer from '../../../components/common/ServiceIconRenderer';
 
 const toAssetUrl = (url) => {
   if (!url) return '';
+  if (url.startsWith('/assets/') || url.startsWith('/img/')) return url;
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
   const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
@@ -47,11 +49,11 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
           // Fallback to project-specific trending services if API returns empty
           console.log('Using fallback trending services');
           setTrendingServices([
-            { id: 'trend-1', title: 'AC Repair & Service', category: 'AC & Appliance', imageUrl: '/assets/icons/services/ac.png' },
-            { id: 'trend-2', title: 'Washing Machine Repair', category: 'AC & Appliance', imageUrl: '/assets/icons/services/washing-machine.png' },
-            { id: 'trend-3', title: 'Microwave Repair', category: 'AC & Appliance', imageUrl: '/assets/icons/services/microwave.png' },
-            { id: 'trend-4', title: 'Refrigerator Repair', category: 'AC & Appliance', imageUrl: '/assets/icons/services/refrigerator.png' },
-            { id: 'trend-5', title: 'RO Water Purifier Service', category: 'AC & Appliance', imageUrl: '/assets/icons/services/ro.png' }
+            { id: 'trend-1', title: 'AC Repair & Service', category: 'AC & Appliance' },
+            { id: 'trend-2', title: 'Geyser Repair', category: 'Geyser' },
+            { id: 'trend-3', title: 'Microwave Repair', category: 'Microwave' },
+            { id: 'trend-4', title: 'LED TV Repair', category: 'LED' },
+            { id: 'trend-5', title: 'RO Water Purifier Service', category: 'RO' }
           ]);
         }
       } catch (error) {
@@ -59,10 +61,10 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
         // Fallback on error too
         setTrendingServices([
           { id: 'trend-1', title: 'AC Repair & Service', category: 'AC & Appliance' },
-          { id: 'trend-2', title: 'Washing Machine Repair', category: 'AC & Appliance' },
-          { id: 'trend-3', title: 'Microwave Repair', category: 'AC & Appliance' },
-          { id: 'trend-4', title: 'Refrigerator Repair', category: 'AC & Appliance' },
-          { id: 'trend-5', title: 'RO Water Purifier Service', category: 'AC & Appliance' }
+          { id: 'trend-2', title: 'Geyser Repair', category: 'Geyser' },
+          { id: 'trend-3', title: 'Microwave Repair', category: 'Microwave' },
+          { id: 'trend-4', title: 'LED TV Repair', category: 'LED' },
+          { id: 'trend-5', title: 'RO Water Purifier Service', category: 'RO' }
         ]);
       }
     };
@@ -308,10 +310,10 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
                           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 bg-white transition-colors text-left group"
                         >
                           <div className="flex items-center gap-3">
-                            {service.imageUrl && (
-                              <img src={toAssetUrl(service.imageUrl)} alt="" className="w-8 h-8 rounded-lg object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                            )}
-                            <span className="font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{service.title}</span>
+                            <div className="w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center p-1 shadow-sm shrink-0">
+                              <ServiceIconRenderer categoryName={service.title} />
+                            </div>
+                            <span className="font-semibold text-gray-700 group-hover:text-gray-900 transition-colors text-[14px]">{service.title}</span>
                           </div>
                           <FiChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400" />
                         </button>

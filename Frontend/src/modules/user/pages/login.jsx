@@ -4,9 +4,9 @@ import { FiPhone, FiArrowRight, FiCheckCircle, FiChevronLeft } from 'react-icons
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
-import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
 import DebugConsole from '../components/common/DebugConsole';
+import Onboarding from '../components/Onboarding';
 
 import { z } from "zod";
 
@@ -17,6 +17,14 @@ const phoneSchema = z.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return !localStorage.getItem('onboardingCompleted_v4');
+    } catch {
+      return false; // Safely default to false if localStorage is unavailable
+    }
+  });
+  
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -173,22 +181,38 @@ const Login = () => {
   };
 
   // Brand Colors from theme
-  const brandColor = themeColors.brand?.teal || '#347989';
+  const brandColor = themeColors.brand?.orange || '#FF8A00';
+
+  // --- Onboarding Check ---
+  if (showOnboarding) {
+    return <Onboarding onComplete={() => setShowOnboarding(false)} />;
+  }
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
+    <div className="min-h-[100dvh] bg-transparent flex flex-col pt-[max(env(safe-area-inset-top),32px)] pb-[max(env(safe-area-inset-bottom),20px)] px-6 relative overflow-x-hidden">
+      
+      {/* Top Logo Area */}
+      <div className="w-full flex justify-center mb-10 h-16 items-center mt-2 shrink-0">
+          <img 
+            src="/logo/logo.webp" 
+            alt="Homestr Logo" 
+            className="h-full w-auto max-w-[180px] object-contain"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              if (e.target.nextElementSibling) {
+                e.target.nextElementSibling.style.display = 'block';
+              }
+            }}
+          />
+          <span className="hidden text-3xl font-extrabold text-[#FF8A00] tracking-tight">Homestr</span>
+      </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 relative z-10 animate-fade-in">
-        <div className="flex justify-center mb-6">
-          <Logo className="h-16 w-auto transform hover:scale-110 transition-transform duration-500" />
-        </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+      {/* Heading Area */}
+      <div className="w-full text-center mb-10 shrink-0">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1a2b3c] tracking-tight">
           {step === 'phone' ? 'Sign in to account' : 'Verify your phone'}
         </h2>
-        <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
+        <p className="mt-3 text-sm text-gray-500 font-medium">
           {step === 'phone'
             ? 'Enter your mobile number to get started'
             : `We've sent a code to +91 ${phoneNumber}`
@@ -196,22 +220,20 @@ const Login = () => {
         </p>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
-        <div className="bg-white py-8 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
-
+      {/* Main Content Area */}
+      <div className="w-full max-w-md mx-auto flex-1 flex flex-col">
           {step === 'phone' ? (
-            <form className="space-y-6" onSubmit={handlePhoneSubmit}>
-              <div className="animate-stagger-1 animate-fade-in">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+            <form className="flex flex-col flex-1" onSubmit={handlePhoneSubmit}>
+              <div className="mb-6">
+                <label htmlFor="phone" className="block text-sm font-semibold text-[#1a2b3c] mb-3 ml-1">
                   Mobile Number
                 </label>
-                <div className="relative rounded-xl shadow-sm group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
+                <div className="relative rounded-2xl group border border-gray-200 focus-within:border-[#FF8A00] focus-within:ring-1 focus-within:ring-[#FF8A00] transition-all bg-white shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none group-focus-within:text-[#FF8A00] transition-colors">
                     <FiPhone className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                    <span className="text-gray-500 font-medium border-r pr-2 border-gray-300 sm:text-sm">+91</span>
+                  <div className="absolute inset-y-0 left-12 flex items-center pointer-events-none">
+                    <span className="text-gray-500 font-semibold border-r pr-3 border-gray-200 sm:text-base">+91</span>
                   </div>
                   <input
                     ref={phoneInputRef}
@@ -219,59 +241,46 @@ const Login = () => {
                     inputMode="numeric"
                     autoComplete="tel"
                     id="phone"
-                    className="block w-full pl-24 pr-4 py-3.5 border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] sm:text-sm transition-all duration-300 ease-in-out hover:border-gray-400"
+                    className="block w-full pl-[100px] pr-4 py-4 bg-transparent border-transparent focus:border-transparent focus:ring-0 sm:text-lg font-bold text-[#1a2b3c] placeholder-gray-300 rounded-2xl"
                     placeholder="98765 43210"
                     value={phoneNumber}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '');
                       if (val.length <= 10) setPhoneNumber(val);
                     }}
-                    style={{ '--tw-ring-color': brandColor }}
                   />
                 </div>
               </div>
 
-              <div className="animate-stagger-2 animate-fade-in">
+              {/* Action Area pushed to bottom if space available */}
+              <div className="mt-auto pt-8 pb-4 flex flex-col gap-6">
                 <button
                   type="submit"
                   disabled={isLoading || phoneNumber.length < 10}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 transform shadow-lg shadow-[#347989]/30 hover:shadow-[#347989]/40 overflow-hidden"
+                  className="w-full flex justify-center py-4 px-4 rounded-2xl text-base font-bold text-white transition-all duration-300 ease-in-out disabled:opacity-50 disabled:bg-[#8ebac3] disabled:cursor-not-allowed active:scale-[0.98] shadow-md hover:shadow-lg"
                   style={{ backgroundColor: brandColor }}
                 >
-                  <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
                     <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
                   ) : (
-                    <span className="flex items-center gap-2 relative z-10">
-                      Get OTP <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-                    </span>
+                    <span>Get OTP</span>
                   )}
                 </button>
-              </div>
 
-              <div className="mt-6 animate-stagger-3 animate-fade-in">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">New to Homestr?</span>
-                  </div>
-                </div>
-
-                <div className="mt-6">
+                <p className="text-sm text-gray-500 font-medium text-center">
+                  New to Homestr?{' '}
                   <Link
                     to="/user/signup"
-                    className="w-full inline-flex justify-center py-3 px-4 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:text-[#347989] hover:bg-gray-50 border border-gray-200 transition-all duration-300 hover:border-[#347989]/30"
+                    className="text-[#FF8A00] hover:text-[#e65100] font-bold transition-colors"
                   >
                     Create an account
                   </Link>
-                </div>
+                </p>
               </div>
             </form>
           ) : (
-            <form className="space-y-6" onSubmit={handleOtpSubmit}>
-              <div className="flex justify-center gap-2 sm:gap-3 py-4 animate-stagger-1 animate-fade-in">
+            <form className="flex flex-col flex-1" onSubmit={handleOtpSubmit}>
+              <div className="flex justify-center gap-2 sm:gap-3 mb-8">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -283,13 +292,13 @@ const Login = () => {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] transition-all duration-300 shadow-sm border focus:-translate-y-1 hover:border-gray-400"
-                    style={{ caretColor: brandColor }}
+                    className="w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-bold border-gray-200 rounded-2xl focus:ring-[#FF8A00] focus:border-[#FF8A00] transition-all bg-white shadow-sm"
+                    style={{ caretColor: brandColor, color: '#1a2b3c' }}
                   />
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-sm animate-stagger-2 animate-fade-in">
+              <div className="flex items-center justify-between text-sm mb-6 px-1">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -299,9 +308,9 @@ const Login = () => {
                     setStep('phone');
                     setResendTimer(0);
                   }}
-                  className="flex items-center font-medium text-gray-600 hover:text-[#347989] transition-colors"
+                  className="flex items-center font-bold text-gray-500 hover:text-[#FF8A00] transition-colors"
                 >
-                  <FiChevronLeft className="mr-1" /> Change Number
+                  <FiChevronLeft className="mr-1 h-5 w-5" /> Change Number
                 </button>
 
                 <button
@@ -323,7 +332,7 @@ const Login = () => {
                     }
                   }}
                   disabled={isLoading || resendTimer > 0}
-                  className="font-medium text-[#347989] hover:text-[#D68F35] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="font-bold text-[#FF8A00] hover:text-[#e65100] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {resendTimer > 0
                     ? `Resend in ${Math.floor(resendTimer / 60)}:${String(resendTimer % 60).padStart(2, '0')}`
@@ -331,29 +340,26 @@ const Login = () => {
                 </button>
               </div>
 
-              <div className="animate-stagger-3 animate-fade-in">
+              <div className="mt-auto pt-8 pb-4">
                 <button
                   type="submit"
                   disabled={isLoading || otp.join('').length !== 6}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#347989]/30 hover:shadow-[#347989]/40 hover:-translate-y-1 transform overflow-hidden"
+                  className="w-full flex justify-center py-4 px-4 rounded-2xl text-base font-bold text-white transition-all duration-300 ease-in-out disabled:opacity-50 disabled:bg-[#8ebac3] disabled:cursor-not-allowed active:scale-[0.98] shadow-md hover:shadow-lg"
                   style={{ backgroundColor: brandColor }}
                 >
-                  <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
                     <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
                   ) : (
-                    <span className="flex items-center gap-2 relative z-10">
-                      Verify & Continue <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-                    </span>
+                    <span>Verify & Continue</span>
                   )}
                 </button>
               </div>
             </form>
           )}
-        </div>
       </div>
 
-      <div className="mt-8 text-center text-xs text-gray-400 animate-fade-in animate-stagger-4">
+      {/* Footer */}
+      <div className="w-full text-center text-xs text-gray-400 mt-4 shrink-0 pb-2">
         &copy; {new Date().getFullYear()} Homestr. All rights reserved.
       </div>
       <DebugConsole />

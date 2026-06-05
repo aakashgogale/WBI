@@ -130,11 +130,11 @@ const Cart = () => {
         <div className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.orange || '#FF8A00'}15 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.creamBg || '#FFF3E0'}40 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#FF8A00'}10 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.orange || '#FF8A00'}05 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.creamBg || '#FFF3E0'}20 0%, transparent 100%),
               #FFFFFF
             `
           }}
@@ -142,7 +142,7 @@ const Cart = () => {
         {/* Elegant Dot Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundImage: `radial-gradient(${themeColors?.brand?.orange || '#FF8A00'} 0.8px, transparent 0.8px)`,
             backgroundSize: '32px 32px'
           }}
         />
@@ -227,8 +227,8 @@ const Cart = () => {
                         <div
                           className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
                           style={{
-                            backgroundColor: `${themeColors.brand.teal}15`,
-                            border: `2px solid ${themeColors.brand.teal}20`
+                            backgroundColor: `${themeColors.brand.orange}15`,
+                            border: `2px solid ${themeColors.brand.orange}20`
                           }}
                         >
                           <img
@@ -311,16 +311,16 @@ const Cart = () => {
                         onClick={() => handleCategoryCheckout(category)}
                         className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95 shadow-md"
                         style={{
-                          backgroundColor: themeColors.button,
-                          boxShadow: `0 2px 6px ${themeColors.brand.teal}4D`
+                          backgroundColor: themeColors.brand.orange,
+                          boxShadow: `0 2px 6px ${themeColors.brand.orange}4D`
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = themeColors.brand.teal;
-                          e.target.style.boxShadow = `0 4px 12px ${themeColors.brand.teal}66`;
+                          e.target.style.backgroundColor = '#FF9D2A';
+                          e.target.style.boxShadow = `0 4px 12px ${themeColors.brand.orange}66`;
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = themeColors.button;
-                          e.target.style.boxShadow = `0 2px 6px ${themeColors.brand.teal}4D`;
+                          e.target.style.backgroundColor = themeColors.brand.orange;
+                          e.target.style.boxShadow = `0 2px 6px ${themeColors.brand.orange}4D`;
                         }}
                       >
                         Book

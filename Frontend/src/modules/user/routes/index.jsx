@@ -62,6 +62,8 @@ const Cart = lazyLoad(() => import('../pages/Cart'));
 const Checkout = lazyLoad(() => import('../pages/Checkout'));
 const MyBookings = lazyLoad(() => import('../pages/MyBookings'));
 const BookingDetails = lazyLoad(() => import('../pages/BookingDetails'));
+const Calendar = lazyLoad(() => import('../pages/Calendar'));
+const Inbox = lazyLoad(() => import('../pages/Inbox'));
 const BookingTrack = lazyLoad(() => import('../pages/BookingTrack'));
 const BookingConfirmation = lazyLoad(() => import('../pages/BookingConfirmation'));
 const Settings = lazyLoad(() => import('../pages/Settings'));
@@ -99,7 +101,7 @@ const UserRoutes = () => {
   // useAppNotifications('user');
 
   // Pages where BottomNav should be shown
-  const bottomNavPages = ['/user', '/user/', '/user/my-bookings', '/user/scrap', '/user/cart', '/user/account'];
+  const bottomNavPages = ['/user', '/user/', '/user/my-bookings', '/user/scrap', '/user/cart', '/user/account', '/user/calendar', '/user/inbox'];
   const shouldShowBottomNav = bottomNavPages.includes(location.pathname);
 
   // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
@@ -130,6 +132,8 @@ const UserRoutes = () => {
               <Route path="/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />
               <Route path="/my-bookings" element={<ProtectedRoute userType="user"><MyBookings /></ProtectedRoute>} />
+              <Route path="/calendar" element={<ProtectedRoute userType="user"><Calendar /></ProtectedRoute>} />
+              <Route path="/inbox" element={<ProtectedRoute userType="user"><Inbox /></ProtectedRoute>} />
               <Route path="/booking/:id" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
               <Route path="/booking/:id/track" element={<ProtectedRoute userType="user"><BookingTrack /></ProtectedRoute>} />
               <Route path="/booking-confirmation/:id" element={<ProtectedRoute userType="user"><BookingConfirmation /></ProtectedRoute>} />

@@ -11,11 +11,10 @@ const PromoCard = memo(({ title, subtitle, buttonText, image, onClick, className
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden min-w-[320px] md:min-w-[400px] h-48 md:h-56 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-95"
+      className="relative rounded-2xl overflow-hidden min-w-[320px] md:min-w-[400px] h-48 md:h-56 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-95 bg-gray-50"
       style={{
-        boxShadow: themeColors.cardShadow,
-        border: themeColors.cardBorder,
-        backdropFilter: 'blur(10px)'
+        boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(0,0,0,0.03)',
       }}
       onClick={onClick}
     >

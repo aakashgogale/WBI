@@ -151,7 +151,7 @@ const Notifications = () => {
     const type = (originalType || '').toLowerCase();
 
     if (['payment', 'refund', 'wallet'].some(t => type.includes(t))) return '#10B981'; // Green
-    if (['booking', 'job', 'work', 'visit', 'journey', 'vendor', 'scrap'].some(t => type.includes(t))) return '#3B82F6'; // Blue
+    if (['booking', 'job', 'work', 'visit', 'journey', 'vendor', 'scrap'].some(t => type.includes(t))) return '#FF8A00'; // Orange
     if (['alert', 'general'].some(t => type.includes(t))) return themeColors.button;
 
     return '#6B7280'; // Gray

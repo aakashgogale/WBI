@@ -235,7 +235,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                       </h1>
                       {view === 'services' && <p className="text-xs text-gray-500">Select a service to add</p>}
                     </div>
-                    {loading && <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin ml-auto"></div>}
+                    {loading && <div className="w-5 h-5 border-2 border-[#FF8A00] border-t-transparent rounded-full animate-spin ml-auto"></div>}
                   </div>
 
                   {/* Content */}
@@ -260,7 +260,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                 onClick={() => handleBrandClick(brand)}
                                 className="flex flex-col items-center cursor-pointer group active:scale-95 transition-all"
                               >
-                                <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 transition-colors shadow-sm overflow-hidden border border-gray-100 relative">
+                                <div className="w-20 h-20 bg-gray-50 rounded-[24px] flex items-center justify-center mb-2 group-hover:bg-[#fff3e0] group-hover:border-orange-200 transition-colors shadow-sm overflow-hidden border border-gray-100 relative">
                                   {brand.icon ? (
                                     <img
                                       src={toAssetUrl(brand.icon)}
@@ -272,7 +272,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                     <FiLayers className="w-8 h-8 text-gray-300" />
                                   )}
                                   {brand.badge && (
-                                    <span className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg">
+                                    <span className="absolute top-0 right-0 bg-[#FF8A00]/10 text-[#FF8A00] text-[9px] font-bold px-1.5 py-0.5 rounded-bl-[10px]">
                                       {brand.badge}
                                     </span>
                                   )}
@@ -305,7 +305,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                 </div>
                                 <button
                                   onClick={() => handleServiceClick(svc)}
-                                  className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-green-100"
+                                  className="px-4 py-2 bg-[#fff3e0] text-[#FF8A00] rounded-xl text-sm font-bold flex items-center gap-1 hover:bg-[#FF8A00] hover:text-white transition-colors"
                                 >
                                   <FiPlus /> Add
                                 </button>

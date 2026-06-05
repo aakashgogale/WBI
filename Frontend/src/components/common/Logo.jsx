@@ -12,6 +12,10 @@ const Logo = forwardRef(({ className = "h-8 w-auto", ...props }, ref) => {
       src="/Homster-logo.png"
       alt="Homestr"
       className={`${className} object-contain`}
+      onError={(e) => {
+        // Fallback just in case
+        e.target.src = '/Homster xpert .png';
+      }}
       {...props}
     />
   );

@@ -1,7 +1,6 @@
 import React, { useState, useRef, memo, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { createRipple } from '../../../../utils/gsapAnimations';
-
+import { FiCheck } from 'react-icons/fi';
 import { themeColors } from '../../../../theme';
 
 const CategoryCard = memo(({ icon, title, onClick, hasSaleBadge = false, index = 0 }) => {
@@ -27,58 +26,25 @@ const CategoryCard = memo(({ icon, title, onClick, hasSaleBadge = false, index =
   return (
     <div
       ref={cardRef}
-      className="flex flex-col items-center justify-center p-1 cursor-pointer relative category-card-container group transition-transform duration-300 ease-out active:scale-95 w-full"
+      className="flex flex-col items-center justify-start p-1 cursor-pointer group w-full transition-transform duration-200 ease-out active:scale-95"
       onClick={onClick}
-      style={{
-        opacity: 0, // Start hidden for GSAP
-      }}
+      style={{ opacity: 0 }}
     >
-      <div
-        className="w-[64px] h-[64px] rounded-2xl flex items-center justify-center mb-2 relative border border-gray-100 flex-shrink-0 transition-all duration-500 group-hover:shadow-lg group-hover:shadow-primary-100 group-hover:-translate-y-1 bg-white"
-        style={{
-          boxShadow: '0 8px 20px -6px rgba(0,0,0,0.05)',
-        }}
-      >
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        {icon || (
-          <svg
-            className="w-7 h-7 text-gray-400 transition-colors duration-300"
-            style={{ color: 'inherit' }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            onMouseEnter={(e) => e.currentTarget.style.color = themeColors.button}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        )}
+      <div className="relative mb-2.5 flex items-center justify-center w-[72px] h-[72px] rounded-[24px] bg-[#f8f9fa] border border-transparent group-hover:bg-[#fff3e0] group-hover:border-orange-100 transition-colors duration-300 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+        {icon}
+        
+        {/* Verification Checkmark Badge */}
+        <div className="absolute top-1 right-1 bg-[#FF8A00] text-white rounded-full w-4 h-4 flex items-center justify-center border-2 border-white shadow-sm z-10">
+          <FiCheck className="w-2.5 h-2.5" strokeWidth={3} />
+        </div>
+
         {hasSaleBadge && (
-          <div
-            className="absolute -top-1.5 -right-1.5 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10 border border-white"
-            style={{
-              background: themeColors.gradient,
-              boxShadow: `0 4px 12px ${themeColors.brand.teal}4D`
-            }}
-          >
+          <div className="absolute -top-1.5 -left-1.5 bg-[#EF4444] text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md border-2 border-white z-20">
             SALE
           </div>
         )}
       </div>
-      <span
-        className="text-[11px] text-center text-gray-700 font-medium leading-tight tracking-tight mt-1 transition-colors duration-300 w-full line-clamp-2 px-1"
-        style={{
-          wordWrap: 'break-word',
-          color: 'inherit'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.color = themeColors.button}
-        onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
-      >
+      <span className="text-[10px] text-center text-[#1a2b3c] font-bold leading-tight w-[110%] line-clamp-2 px-0 tracking-tight">
         {title}
       </span>
     </div>

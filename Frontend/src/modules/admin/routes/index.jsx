@@ -26,6 +26,7 @@ const Plans = lazy(() => import('../pages/Plans/Plans'));
 const Scrap = lazy(() => import('../pages/Scrap'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
+const TrustVideos = lazy(() => import('../pages/TrustVideos'));
 
 
 
@@ -68,6 +69,7 @@ const AdminRoutes = () => {
           <Route path="scrap" element={<Scrap />} />
           <Route path="plans" element={<Plans />} />
           <Route path="reviews" element={<Reviews />} />
+          <Route path="trust-videos" element={<TrustVideos />} />
           <Route path="settlements/*" element={<Settlements />} />
           <Route path="settings/*" element={<Settings />} />
         </Route>

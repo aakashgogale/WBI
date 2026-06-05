@@ -21,8 +21,11 @@ const CuratedServices = lazy(() => import('./components/CuratedServices'));
 const ServiceSectionWithRating = lazy(() => import('./components/ServiceSectionWithRating'));
 const Banner = lazy(() => import('./components/Banner'));
 const ReferEarnSection = lazy(() => import('./components/ReferEarnSection'));
+const TrustVideosSection = lazy(() => import('./components/TrustVideosSection'));
+import TrustStrip from './components/TrustStrip';
 import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
+import InstantBookingBanner from './components/InstantBookingBanner';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
 import ScrapPromotionCard from './components/ScrapPromotionCard';
@@ -102,13 +105,16 @@ const Home = () => {
       if (!cityLoading && currentId && matchedId !== currentId) {
         selectCity(matchedCity);
         toast.success(`Location updated to ${matchedCity.name}`);
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
       }
     } else {
-      setIsLocationSupported(false);
-      if (currentCity) selectCity(null);
+      // Instead of completely blocking the user, default to the first available city so they can still browse
+      setIsLocationSupported(true);
+      if (cities && cities.length > 0 && (!currentCity || currentCity.name !== cities[0].name)) {
+        selectCity(cities[0]);
+        // toast("Showing services for " + cities[0].name, { icon: 'ℹ️' });
+      } else if (!cities || cities.length === 0) {
+        if (currentCity) selectCity(null);
+      }
     }
   }, [detectedCityName, cities, currentCity, cityLoading]);
 
@@ -152,9 +158,6 @@ const Home = () => {
         }
 
         toast.success(`Location set to ${city}`);
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
       }
     }
     setHouseNumber(savedHouseNumber);
@@ -430,29 +433,10 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen pb-20 relative bg-white">
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-      </div>
+    <div className="min-h-screen pb-20 relative bg-[#F8FCFC]">
+      
+      {/* Absolute clear background mapping the new scheme */}
+      <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-[#ebfae6]/20 to-transparent pointer-events-none z-0"></div>
 
       <motion.div
         className="relative z-10"
@@ -462,19 +446,22 @@ const Home = () => {
       >
         <motion.div
           variants={itemVariants}
-          className="backdrop-blur-xl sticky top-0 z-50 border-b border-black/[0.03] rounded-b-[24px] shadow-[0_4px_30px_rgba(0,0,0,0.03)] transition-all duration-300"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.4)' }}
+          className="sticky top-0 z-50 transition-all duration-300"
         >
-          <Header
-            location={address}
-            onLocationClick={handleLocationClick}
-          />
-          <div className="px-5 pb-5 pt-1 max-w-lg lg:max-w-2xl mx-auto w-full">
-            <SearchBar onInputClick={() => setIsSearchOpen(true)} />
+          <div className="absolute inset-0 bg-[#F8FCFC] bg-opacity-95 backdrop-blur-md border-b flex-none border-transparent z-0 pointer-events-none"></div>
+          
+          <div className="relative max-w-lg lg:max-w-2xl mx-auto w-full z-10">
+            <Header
+              location={address}
+              onLocationClick={handleLocationClick}
+            />
+            <div className="pb-0 pt-0">
+              <SearchBar onInputClick={() => setIsSearchOpen(true)} />
+            </div>
           </div>
         </motion.div>
 
-        <main className="pt-6 space-y-8 pb-24 max-w-screen-xl mx-auto w-full">
+        <main className="pt-2 space-y-6 pb-24 max-w-screen-xl mx-auto w-full">
           {!isLocationSupported ? (
             <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center min-h-[60vh]">
               <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
@@ -485,10 +472,10 @@ const Home = () => {
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Not service available in your city
+                Service not available in your city
               </h2>
               <p className="text-gray-500 max-w-xs mx-auto mb-8 font-medium">
-                Please fast! We are coming soon.
+                Hold on tight! We are expanding quickly and will be there soon.
               </p>
               <button
                 onClick={() => setIsAddressModalOpen(true)}
@@ -500,86 +487,35 @@ const Home = () => {
             </div>
           ) : (
             <>
-              {/* Hero Section - Promo Carousel */}
+              {/* 1. Quick Services Category Row (Moved above Banner) */}
+              {homeContent?.isCategoriesVisible !== false && (
+                <motion.section variants={itemVariants} className="relative z-10 pt-2">
+                  <ServiceCategories
+                    categories={categories}
+                    onCategoryClick={handleCategoryClick}
+                    onSeeAllClick={() => setIsSearchOpen(true)}
+                  />
+                </motion.section>
+              )}
+
+              {/* 2. Offer Banner */}
               {homeContent?.isPromosVisible !== false && (
-                <motion.section variants={itemVariants} className="relative z-0">
-                  <PromoCarousel
-                    promos={(homeContent?.promos || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(promo => ({
-                      id: promo.id || promo._id,
-                      title: promo.title || '',
-                      subtitle: promo.subtitle || promo.description || '',
-                      buttonText: promo.buttonText || 'Book now',
-                      className: promo.gradientClass || 'from-[#00A6A6] to-[#008a8a]',
-                      image: toAssetUrl(promo.imageUrl),
-                      targetCategoryId: promo.targetCategoryId,
-                      slug: promo.slug,
-                      scrollToSection: promo.scrollToSection,
-                      route: '/'
+                <motion.section variants={itemVariants} className="relative z-10">
+                  <InstantBookingBanner 
+                    promos={(homeContent?.promos || []).sort((a,b) => (a.order||0) - (b.order||0)).map(p => ({
+                      ...p,
+                      imageUrl: p.imageUrl ? toAssetUrl(p.imageUrl) : null
                     }))}
                     onPromoClick={handlePromoClick}
                   />
                 </motion.section>
               )}
 
-              {/* Categories Section */}
-              {homeContent?.isCategoriesVisible !== false && (
-                <motion.section variants={itemVariants} className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
-                  <ServiceCategories
-                    categories={categories}
-                    onCategoryClick={handleCategoryClick}
-                    onSeeAllClick={() => { }}
-                  />
-                </motion.section>
-              )}
-
-              {/* Scrap Promotion Section */}
-              <motion.section variants={itemVariants}>
-                <ScrapPromotionCard onClick={() => navigate('/user/scrap')} />
-              </motion.section>
-
-
-              {/* Curated Services */}
-              {homeContent?.isCuratedVisible !== false && (
-                <motion.div variants={itemVariants}>
-                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <CuratedServices
-                      services={(homeContent?.curated || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
-                        id: item.id || item._id,
-                        title: item.title,
-                        gif: toAssetUrl(item.gifUrl),
-                        slug: item.slug,
-                        targetCategoryId: item.targetCategoryId
-                      }))}
-                      onServiceClick={handleServiceClick}
-                    />
-                  </Suspense>
-                </motion.div>
-              )}
-
-              {/* New & Noteworthy */}
-              {homeContent?.isNoteworthyVisible !== false && (
-                <motion.div variants={itemVariants}>
-                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <NewAndNoteworthy
-                      services={(homeContent?.noteworthy || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
-                        id: item.id || item._id,
-                        title: item.title,
-                        image: toAssetUrl(item.imageUrl),
-                        slug: item.slug,
-                        targetCategoryId: item.targetCategoryId
-                      }))}
-                      onServiceClick={handleServiceClick}
-                    />
-                  </Suspense>
-                </motion.div>
-              )}
-
-              {/* Most Booked */}
+              {/* 3. Most Booked Services */}
               {homeContent?.isBookedVisible !== false && (
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} className="relative z-10">
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <MostBookedServices
+                      <MostBookedServices
                       services={(homeContent?.booked || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
                         id: item.id || item._id,
                         title: item.title,
@@ -594,92 +530,25 @@ const Home = () => {
                       }))}
                       onServiceClick={handleServiceClick}
                       onAddClick={handleAddClick}
+                      onSeeAllClick={() => setIsSearchOpen(true)}
                     />
                   </Suspense>
                 </motion.div>
               )}
 
-              {/* Dynamic Banner 1 */}
-              {homeContent?.isBannersVisible !== false && (
-                <motion.div variants={itemVariants}>
-                  <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <Banner
-                      imageUrl={homeContent?.banners?.[0] ? toAssetUrl(homeContent.banners[0].imageUrl) : null}
-                      onClick={() => {
-                        const b = homeContent?.banners?.[0];
-                        if (b?.slug) {
-                          navigate(`/user/${b.slug}`);
-                          return;
-                        }
-                        if (b?.targetCategoryId) {
-                          const cat = categories.find(c => c.id === b.targetCategoryId);
-                          if (cat) handleCategoryClick(cat);
-                        }
-                      }}
-                    />
-                  </Suspense>
-                </motion.div>
-              )}
-
-              {/* Dynamic Sections */}
-              {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map((section, sIdx) => (
-                <motion.div key={section._id || sIdx} variants={itemVariants}>
-                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <ServiceSectionWithRating
-                      title={section.title}
-                      subtitle={section.subtitle}
-                      services={section.cards?.map((card, cIdx) => {
-                        const processedImage = toAssetUrl(card.imageUrl);
-                        return {
-                          id: card._id || cIdx,
-                          title: card.title,
-                          rating: card.rating || "4.8",
-                          reviews: card.reviews || "10k+",
-                          price: card.price,
-                          originalPrice: card.originalPrice,
-                          discount: card.discount,
-                          image: processedImage,
-                          targetCategoryId: card.targetCategoryId,
-                          slug: card.slug
-                        };
-                      }) || []}
-                      onSeeAllClick={() => {
-                        if (section.seeAllTargetCategoryId) {
-                          const cat = categories.find(c => (c.id === section.seeAllTargetCategoryId || c._id === section.seeAllTargetCategoryId));
-                          if (cat) handleCategoryClick(cat);
-                        }
-                      }}
-                      onServiceClick={(service) => handleServiceClick(service)}
-                      onAddClick={handleAddClick}
-                    />
-                  </Suspense>
-                </motion.div>
-              ))}
-
-              {/* Dynamic Banner 2 */}
-              {homeContent?.isBannersVisible !== false && (
-                <motion.div variants={itemVariants}>
-                  <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                    <Banner
-                      imageUrl={homeContent?.banners?.[1] ? toAssetUrl(homeContent.banners[1].imageUrl) : null}
-                      onClick={() => {
-                        const b = homeContent?.banners?.[1];
-                        if (b?.targetCategoryId) {
-                          const cat = categories.find(c => (c.id === b.targetCategoryId || c._id === b.targetCategoryId));
-                          if (cat) handleCategoryClick(cat);
-                        }
-                      }}
-                    />
-                  </Suspense>
-                </motion.div>
-              )}
-
-              {/* Refer & Earn Section */}
-              <motion.div variants={itemVariants}>
-                <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                  <ReferEarnSection onReferClick={handleReferClick} />
+              {/* 4. Real Service Experiences (Trust Videos) */}
+              <motion.div variants={itemVariants} className="relative z-10">
+                <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                  <TrustVideosSection />
                 </Suspense>
               </motion.div>
+              
+              {/* 5. Trust Strip Highlights */}
+              <motion.div variants={itemVariants} className="relative z-10">
+                <TrustStrip />
+              </motion.div>
+
+
             </>
           )}
         </main>
