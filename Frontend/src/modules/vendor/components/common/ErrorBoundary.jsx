@@ -12,6 +12,19 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('Vendor App Error:', error, errorInfo);
+    const isChunkLoadError = error?.name === 'ChunkLoadError' || 
+                             error?.message?.includes('Failed to fetch dynamically imported module') ||
+                             error?.message?.includes('Importing a module script failed');
+                             
+    if (isChunkLoadError) {
+      const hasReloaded = sessionStorage.getItem('chunk_load_reloaded');
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_load_reloaded', 'true');
+        window.location.reload();
+        return;
+      }
+    }
+
     this.setState({
       error,
       errorInfo,

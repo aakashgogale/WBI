@@ -171,9 +171,14 @@ const TrustVideosSection = () => {
 
             {/* Content info below image */}
             <div className="pr-2">
-              <h3 className="text-[#0F172A] font-bold text-[13px] leading-[1.3] mb-1.5 min-h-[34px] line-clamp-2">
+              <h3 className="text-[#0F172A] font-bold text-[13px] leading-[1.3] mb-1 line-clamp-2">
                 {video.title}
               </h3>
+              {video.description && (
+                <p className="text-[#475569] text-[11px] leading-[1.4] mb-1.5 line-clamp-2 italic">
+                  "{video.description}"
+                </p>
+              )}
               <div className="flex items-center gap-1 text-[11px] font-bold text-[#64748B]">
                 <MdStar className="text-[#F59E0B] w-3.5 h-3.5" /> 
                 <span className="mt-[1px]">{video.rating || '4.8'}</span>
@@ -246,7 +251,7 @@ const TrustVideosSection = () => {
                   </h3>
                   <div className="flex flex-col items-end flex-shrink-0">
                     <span className="flex items-center gap-1 text-sm font-bold text-white mb-1">
-                      <FiStar className="text-yellow-400 fill-yellow-400" /> {activeVideo.rating}
+                      <MdStar className="text-yellow-400" size={16} /> {activeVideo.rating}
                     </span>
                     <span className="text-[10px] text-gray-400 uppercase font-semibold">Customer Rating</span>
                   </div>

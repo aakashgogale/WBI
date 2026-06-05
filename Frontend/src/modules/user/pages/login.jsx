@@ -104,13 +104,19 @@ const Login = () => {
     if (value && !/^\d+$/.test(value)) return;
 
     if (value.length > 1) {
-      // Handle paste of full OTP
-      if (index === 0 && value.length === 6) {
-        const chars = value.split('');
-        setOtp(chars);
-        // Focus the last input or verify button
+      // Handle paste of full OTP or partial
+      const cleaned = value.replace(/\D/g, '').slice(0, 6);
+      if (cleaned.length === 6) {
+        setOtp(cleaned.split(''));
         otpInputRefs.current[5]?.focus();
-        return;
+      } else if (cleaned.length > 0) {
+        const newOtp = [...otp];
+        for (let i = 0; i < cleaned.length && index + i < 6; i++) {
+          newOtp[index + i] = cleaned[i];
+        }
+        setOtp(newOtp);
+        const nextIndex = Math.min(index + cleaned.length, 5);
+        otpInputRefs.current[nextIndex]?.focus();
       }
       return;
     }

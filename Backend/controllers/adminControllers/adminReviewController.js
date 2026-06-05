@@ -84,14 +84,14 @@ exports.getAllReviews = async (req, res) => {
 };
 
 /**
- * Update review status (active, hidden, deleted)
+ * Update review status (pending, approved, rejected, active, hidden, deleted)
  */
 exports.updateReviewStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['active', 'hidden', 'deleted'].includes(status)) {
+    if (!['pending', 'approved', 'rejected', 'active', 'hidden', 'deleted'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid status'

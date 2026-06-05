@@ -173,6 +173,7 @@ app.use('/api/user/wallet', require('./routes/user-routes/userWallet.routes'));
 app.use('/api/users/bookings', require('./routes/user-routes/booking.routes'));
 app.use('/api/users', require('./routes/user-routes/cart.routes'));
 app.use('/api/users/fcm-tokens', require('./routes/user-routes/fcmToken.routes'));
+app.use('/api/users/reviews', require('./routes/user-routes/review.routes'));
 
 // Scrap routes
 const scrapRoutes = require('./routes/scrap.routes');
@@ -246,6 +247,7 @@ app.use('/api/public', require('./routes/public-routes/catalog.routes'));
 app.use('/api/public', require('./routes/public-routes/plan.routes'));
 app.use('/api/public', require('./routes/public-routes/config.routes'));
 app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
+app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
 
 // 404 handler
 app.use((req, res) => {

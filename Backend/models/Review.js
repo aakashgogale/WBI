@@ -53,8 +53,8 @@ const reviewSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'hidden', 'deleted'],
-    default: 'active'
+    enum: ['pending', 'approved', 'rejected', 'active', 'hidden', 'deleted'],
+    default: 'pending'
   }
 }, {
   timestamps: true

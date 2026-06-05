@@ -22,6 +22,9 @@ const ServiceSectionWithRating = lazy(() => import('./components/ServiceSectionW
 const Banner = lazy(() => import('./components/Banner'));
 const ReferEarnSection = lazy(() => import('./components/ReferEarnSection'));
 const TrustVideosSection = lazy(() => import('./components/TrustVideosSection'));
+const HowItWorks = lazy(() => import('./components/HowItWorks'));
+const CustomerReviews = lazy(() => import('../../components/reviews/CustomerReviews'));
+const ExtendedServiceCategories = lazy(() => import('./components/ExtendedServiceCategories'));
 import TrustStrip from './components/TrustStrip';
 import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
@@ -438,28 +441,20 @@ const Home = () => {
       {/* Absolute clear background mapping the new scheme */}
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-[#ebfae6]/20 to-transparent pointer-events-none z-0"></div>
 
-      <motion.div
-        className="relative z-10"
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-      >
-        <motion.div
-          variants={itemVariants}
-          className="sticky top-0 z-50 transition-all duration-300"
-        >
-          <div className="absolute inset-0 bg-[#F8FCFC] bg-opacity-95 backdrop-blur-md border-b flex-none border-transparent z-0 pointer-events-none"></div>
+      <div className="relative z-10">
+        <div className="sticky top-0 z-50">
+          <div className="absolute inset-0 bg-[#F8FCFC] bg-opacity-95 backdrop-blur-md border-b flex-none border-transparent z-0 pointer-events-none shadow-sm"></div>
           
           <div className="relative max-w-lg lg:max-w-2xl mx-auto w-full z-10">
             <Header
               location={address}
               onLocationClick={handleLocationClick}
             />
-            <div className="pb-0 pt-0">
+            <div className="pb-2 pt-0">
               <SearchBar onInputClick={() => setIsSearchOpen(true)} />
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <main className="pt-2 space-y-6 pb-24 max-w-screen-xl mx-auto w-full">
           {!isLocationSupported ? (
@@ -489,18 +484,18 @@ const Home = () => {
             <>
               {/* 1. Quick Services Category Row (Moved above Banner) */}
               {homeContent?.isCategoriesVisible !== false && (
-                <motion.section variants={itemVariants} className="relative z-10 pt-2">
+                <section className="relative z-10 pt-2">
                   <ServiceCategories
                     categories={categories}
                     onCategoryClick={handleCategoryClick}
                     onSeeAllClick={() => setIsSearchOpen(true)}
                   />
-                </motion.section>
+                </section>
               )}
 
               {/* 2. Offer Banner */}
               {homeContent?.isPromosVisible !== false && (
-                <motion.section variants={itemVariants} className="relative z-10">
+                <section className="relative z-10">
                   <InstantBookingBanner 
                     promos={(homeContent?.promos || []).sort((a,b) => (a.order||0) - (b.order||0)).map(p => ({
                       ...p,
@@ -508,12 +503,12 @@ const Home = () => {
                     }))}
                     onPromoClick={handlePromoClick}
                   />
-                </motion.section>
+                </section>
               )}
 
               {/* 3. Most Booked Services */}
               {homeContent?.isBookedVisible !== false && (
-                <motion.div variants={itemVariants} className="relative z-10">
+                <div className="relative z-10">
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
                       <MostBookedServices
                       services={(homeContent?.booked || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
@@ -533,26 +528,42 @@ const Home = () => {
                       onSeeAllClick={() => setIsSearchOpen(true)}
                     />
                   </Suspense>
-                </motion.div>
+                </div>
               )}
 
               {/* 4. Real Service Experiences (Trust Videos) */}
-              <motion.div variants={itemVariants} className="relative z-10">
+              <div className="relative z-10">
                 <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
                   <TrustVideosSection />
                 </Suspense>
-              </motion.div>
-              
-              {/* 5. Trust Strip Highlights */}
-              <motion.div variants={itemVariants} className="relative z-10">
-                <TrustStrip />
-              </motion.div>
+              </div>
+
+              {/* 5. How It Works */}
+              <div className="relative z-10 mt-6">
+                <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                  <HowItWorks />
+                </Suspense>
+              </div>
+
+              {/* 6. Customer Reviews */}
+              <div className="relative z-10 mt-2">
+                <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                  <CustomerReviews serviceId="all" />
+                </Suspense>
+              </div>
+
+              {/* 7. Extended Service Categories (Digital First) */}
+              <div className="relative z-10 mt-6">
+                <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                  <ExtendedServiceCategories />
+                </Suspense>
+              </div>
 
 
             </>
           )}
         </main>
-      </motion.div>
+      </div>
 
       {/* Bottom Navigation */}
       {!isAddressModalOpen && <BottomNav />}

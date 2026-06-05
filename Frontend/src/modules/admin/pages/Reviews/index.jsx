@@ -139,7 +139,10 @@ const ReviewsPage = () => {
               className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
             >
               <option value="">All Status</option>
-              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="active">Legacy Active</option>
               <option value="hidden">Hidden</option>
             </select>
           </div>
@@ -214,16 +217,37 @@ const ReviewsPage = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${review.status === 'active'
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                        (review.status === 'approved' || review.status === 'active')
                         ? 'bg-green-100 text-green-700 border border-green-200'
-                        : 'bg-amber-100 text-amber-700 border border-amber-200'
+                        : review.status === 'pending'
+                        ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                        : review.status === 'rejected'
+                        ? 'bg-red-100 text-red-700 border border-red-200'
+                        : 'bg-gray-100 text-gray-700 border border-gray-200'
                         }`}>
-                        {review.status}
+                        {review.status === 'active' ? 'approved' : review.status}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        {review.status === 'active' ? (
+                        {review.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusUpdate(review._id, 'approved')}
+                              className="px-2 py-1 bg-green-500 text-white text-[10px] font-bold rounded-md hover:bg-green-600 transition-colors"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleStatusUpdate(review._id, 'rejected')}
+                              className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded-md hover:bg-red-600 transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {(review.status === 'approved' || review.status === 'active') && (
                           <button
                             onClick={() => handleStatusUpdate(review._id, 'hidden')}
                             className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
@@ -231,9 +255,10 @@ const ReviewsPage = () => {
                           >
                             <FiEyeOff size={16} />
                           </button>
-                        ) : (
+                        )}
+                        {review.status === 'hidden' && (
                           <button
-                            onClick={() => handleStatusUpdate(review._id, 'active')}
+                            onClick={() => handleStatusUpdate(review._id, 'approved')}
                             className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="Show Review"
                           >

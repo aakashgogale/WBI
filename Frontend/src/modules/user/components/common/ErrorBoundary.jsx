@@ -11,6 +11,20 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Check for chunk load errors (common on Vercel deployments when new code is pushed)
+    const isChunkLoadError = error?.name === 'ChunkLoadError' || 
+                             error?.message?.includes('Failed to fetch dynamically imported module') ||
+                             error?.message?.includes('Importing a module script failed');
+                             
+    if (isChunkLoadError) {
+      const hasReloaded = sessionStorage.getItem('chunk_load_reloaded');
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_load_reloaded', 'true');
+        window.location.reload();
+        return;
+      }
+    }
+
     this.setState({
       error,
       errorInfo,
