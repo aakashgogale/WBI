@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiClock, FiMapPin, FiCheckCircle, FiXCircle, FiLoader, FiCalendar, FiChevronRight } from 'react-icons/fi';
+import { FiSearch, FiCalendar, FiMapPin, FiHeadphones, FiUsers, FiTag, FiShield, FiTruck, FiClock } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { themeColors } from '../../../../theme';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import NotificationBell from '../../components/common/NotificationBell';
 import { motion } from 'framer-motion';
+import NotificationBell from '../../components/common/NotificationBell';
 import { bookingService } from '../../../../services/bookingService';
+import { getServiceImage, getFallbackImage } from '../../../../utils/serviceImages';
 
 const MyBookings = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, confirmed, in-progress, completed, cancelled
+  const [filter, setFilter] = useState('all'); // all, upcoming, completed, cancelled
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -20,7 +19,11 @@ const MyBookings = () => {
         setLoading(true);
         const params = {};
         if (filter !== 'all') {
-          params.status = filter;
+          if (filter === 'upcoming') {
+            params.status = 'searching,confirmed,in_progress,in-progress,journey_started,visited';
+          } else {
+            params.status = filter;
+          }
         }
         const response = await bookingService.getUserBookings(params);
         if (response.success) {
@@ -39,103 +42,67 @@ const MyBookings = () => {
 
     loadBookings();
 
-    // Listen for real-time updates
     window.addEventListener('userBookingsUpdated', loadBookings);
-
     return () => {
       window.removeEventListener('userBookingsUpdated', loadBookings);
     };
   }, [filter]);
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'confirmed':
-        return <FiCheckCircle className="w-3.5 h-3.5" />;
-      case 'in_progress':
-      case 'in-progress':
-        return <FiLoader className="w-3.5 h-3.5 animate-spin" />;
-      case 'journey_started':
-      case 'visited':
-        return <FiMapPin className="w-3.5 h-3.5 text-blue-500" />;
-      case 'completed':
-        return <FiCheckCircle className="w-3.5 h-3.5" />;
-      case 'cancelled':
-      case 'rejected':
-        return <FiXCircle className="w-3.5 h-3.5" />;
-      case 'awaiting_payment':
-      default:
-        return <FiClock className="w-3.5 h-3.5" />;
+  const getStatusDisplay = (status) => {
+    const s = (status || '').toLowerCase();
+    
+    if (['completed', 'work_done'].includes(s)) {
+      return {
+        topText: 'Completed',
+        topColor: 'text-[#05A660]',
+        pillBg: 'bg-[#EAF8F1]',
+        pillText: 'text-[#05A660]',
+        pillLabel: 'Completed',
+        actionLabel: 'View Details'
+      };
     }
-  };
-
-  const getStatusBorderColor = (status) => {
-    switch (status) {
-      case 'confirmed': return '!border-l-emerald-500';
-      case 'in_progress':
-      case 'in-progress':
-      case 'journey_started':
-      case 'visited':
-        return '!border-l-blue-500';
-      case 'completed': return '!border-l-violet-500';
-      case 'cancelled':
-      case 'rejected': return '!border-l-rose-500';
-      case 'awaiting_payment': return '!border-l-amber-500';
-      default: return '!border-l-gray-300';
+    
+    if (['cancelled', 'rejected'].includes(s)) {
+      return {
+        topText: 'Cancelled',
+        topColor: 'text-[#E02D3C]',
+        pillBg: 'bg-[#FCECEE]',
+        pillText: 'text-[#E02D3C]',
+        pillLabel: 'Cancelled',
+        actionLabel: 'Book Again'
+      };
     }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-emerald-500 text-white border-emerald-600 ring-emerald-500';
-      case 'in_progress':
-      case 'in-progress':
-      case 'journey_started':
-      case 'visited':
-        return 'bg-orange-500 text-white border-orange-600 ring-orange-500';
-      case 'completed':
-        return 'bg-violet-500 text-white border-violet-600 ring-violet-500';
-      case 'cancelled':
-      case 'rejected':
-        return 'bg-rose-500 text-white border-rose-600 ring-rose-500';
-      case 'awaiting_payment':
-        return 'bg-amber-500 text-white border-amber-600 ring-amber-500';
-      default:
-        return 'bg-gray-500 text-white border-gray-600 ring-gray-500';
+    
+    if (['in_progress', 'in-progress', 'journey_started', 'visited'].includes(s)) {
+      return {
+        topText: 'In Progress',
+        topColor: 'text-[#E57A00]',
+        pillBg: 'bg-[#FDF3E6]',
+        pillText: 'text-[#E57A00]',
+        pillLabel: 'In Progress',
+        actionLabel: 'Track Status'
+      };
     }
+    
+    // Default to Upcoming/Scheduled
+    return {
+      topText: 'Scheduled',
+      topColor: 'text-[#E57A00]',
+      pillBg: 'bg-[#E5F7F5]',
+      pillText: 'text-[#10AFA5]',
+      pillLabel: 'Upcoming',
+      actionLabel: 'Track Status'
+    };
   };
 
-  const getStatusLabel = (status) => {
-    if (!status) return 'Unknown';
-    switch (status) {
-      case 'in_progress':
-      case 'in-progress':
-        return 'In Progress';
-      case 'journey_started': return 'On The Way';
-      case 'visited': return 'Arrived';
-      case 'awaiting_payment': return 'Request Accepted';
-      case 'work_done': return 'Work Completed';
-      default: return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-    }
-  };
-
-  const handleBookingClick = (booking) => {
-    navigate(`/user/booking/${booking._id || booking.id}`);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (timeString) => {
-    if (!timeString) return 'N/A';
-    return timeString;
+  const formatDateTime = (dateStr, timeStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    const time = timeStr || 'N/A';
+    return `${day} ${month} ${year} • ${time}`;
   };
 
   const getAddressString = (address) => {
@@ -151,36 +118,54 @@ const MyBookings = () => {
     return 'Detailed Address';
   };
 
+  const getImageUrl = (booking) => {
+    // 1. Production Rule: Always use the actual uploaded service image if it exists
+    if (booking.serviceImages && booking.serviceImages.length > 0) {
+      const img = booking.serviceImages[0];
+      if (typeof img === 'string' && img.startsWith('http')) return img;
+    }
+    
+    // 2. Production Fallback: Unsplash Image Mapping
+    return getServiceImage(booking.serviceName, booking.serviceCategory);
+  };
+
+  const handleBookingClick = (booking) => {
+    navigate(`/user/booking/${booking._id || booking.id}`);
+  };
+
   return (
-    <div className="min-h-screen pb-[env(safe-area-inset-bottom)] mb-20 bg-[#F7F7FB] relative">
-      <div className="relative z-10">
+    <div className="min-h-screen pb-[env(safe-area-inset-bottom)] bg-white relative">
+      <div className="relative z-10 pb-20">
         {/* Header */}
-        <header className="pt-6 pb-4 px-4 flex items-center justify-between">
+        <header className="pt-6 pb-2 px-4 flex items-center justify-between">
+          <h1 className="text-[22px] font-extrabold text-slate-900 tracking-tight">My Bookings</h1>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-extrabold text-gray-900 font-poppins tracking-tight">My Bookings</h1>
-          </div>
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02] relative">
-            <NotificationBell />
+            <button className="text-slate-600 p-1">
+              <FiSearch className="w-5 h-5" />
+            </button>
+            <div className="relative flex items-center justify-center p-1">
+              <NotificationBell />
+            </div>
           </div>
         </header>
 
         {/* Filter Tabs */}
-        <div className="bg-white border-b border-slate-100 sticky top-[61px] z-20 shadow-[0_4px_20px_-16px_rgba(0,0,0,0.1)]">
-          <div className="flex overflow-x-auto px-4 py-3 gap-2.5 no-scrollbar scroll-smooth">
+        <div className="bg-white sticky top-0 z-20 px-4 py-3 pb-4">
+          <div className="flex w-full bg-slate-50 p-1 rounded-full border border-slate-100">
             {[
               { id: 'all', label: 'All Bookings' },
-              { id: 'confirmed', label: 'Confirmed' },
-              { id: 'in-progress', label: 'In Progress' },
+              { id: 'upcoming', label: 'Upcoming' },
               { id: 'completed', label: 'Completed' },
               { id: 'cancelled', label: 'Cancelled' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 border ${filter === tab.id
-                  ? 'border-transparent bg-brand text-white shadow-[0_4px_12px_rgba(108,47,242,0.3)] active:scale-95'
-                  : 'bg-white border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                className={`flex-1 py-2 rounded-full text-[12px] font-bold whitespace-nowrap transition-all duration-200 ${
+                  filter === tab.id
+                    ? 'bg-brand text-white shadow-sm'
+                    : 'bg-transparent text-slate-500'
+                }`}
               >
                 {tab.label}
               </button>
@@ -189,186 +174,171 @@ const MyBookings = () => {
         </div>
 
         {/* Bookings List */}
-        <main className="px-4 py-5 max-w-lg mx-auto w-full">
+        <main className="px-4 w-full">
           {loading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm animate-pulse">
-                  <div className="flex justify-between mb-4 border-b border-slate-100 pb-4">
-                    <div className="space-y-2">
-                      <div className="h-3 w-20 bg-slate-200 rounded"></div>
-                      <div className="h-5 w-48 bg-slate-200 rounded"></div>
+                <div key={i} className="bg-white rounded-[20px] p-4 border border-slate-100 shadow-sm animate-pulse flex gap-4">
+                  <div className="w-24 h-24 shrink-0 bg-slate-100 rounded-2xl"></div>
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-4 bg-slate-100 rounded w-full"></div>
+                    <div className="h-4 bg-slate-100 rounded w-2/3"></div>
+                    <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+                    <div className="flex justify-between items-center pt-2">
+                      <div className="h-6 bg-slate-100 rounded-full w-16"></div>
+                      <div className="h-8 bg-slate-100 rounded-lg w-24"></div>
                     </div>
-                    <div className="h-6 w-24 bg-slate-200 rounded-full"></div>
-                  </div>
-                  <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="w-8 h-8 rounded-full bg-slate-200"></div>
-                    <div className="space-y-1.5 py-1">
-                      <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
-                      <div className="h-3.5 w-32 bg-slate-200 rounded"></div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-200"></div>
-                    <div className="space-y-1.5 py-1">
-                      <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
-                      <div className="h-3.5 w-40 bg-slate-200 rounded"></div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between pt-4 border-t border-slate-200">
-                    <div className="space-y-1">
-                      <div className="h-2.5 w-16 bg-slate-200 rounded"></div>
-                      <div className="h-6 w-24 bg-slate-200 rounded"></div>
-                    </div>
-                    <div className="h-9 w-28 bg-slate-200 rounded-lg"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : bookings.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-24 text-center px-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-20 text-center px-6"
             >
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                 <FiClock className="w-8 h-8 text-slate-300" />
               </div>
-              <h3 className="text-slate-900 text-lg font-bold mb-2">No Bookings Found</h3>
-              <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
+              <h3 className="text-slate-900 text-lg font-bold mb-1">No Bookings Found</h3>
+              <p className="text-slate-500 text-sm max-w-xs">
                 {filter === 'all'
-                  ? "Looks like you haven't booked any services yet. Explore our services to get started!"
-                  : `You don't have any ${filter.replace('-', ' ')} bookings at the moment.`}
+                  ? "You haven't booked any services yet."
+                  : `You don't have any ${filter} bookings at the moment.`}
               </p>
             </motion.div>
           ) : (
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.1 }
-                }
-              }}
-              className="space-y-4"
-            >
-              {bookings.map((booking) => (
+            <div className="space-y-4">
+              {bookings.map((booking) => {
+                const display = getStatusDisplay(booking.status);
+                const imageUrl = getImageUrl(booking);
+                
+                return (
                 <motion.div
                   key={booking._id || booking.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { type: "spring", stiffness: 100, damping: 15 }
-                    }
-                  }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   onClick={() => handleBookingClick(booking)}
-                  className={`group relative bg-white rounded-2xl p-5 border border-slate-200 border-l-4 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] hover:border-orange-300 active:scale-[0.99] transition-all duration-300 cursor-pointer overflow-hidden ${getStatusBorderColor(booking.status)}`}
+                  className="bg-white rounded-[20px] p-4 border border-slate-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] active:scale-[0.98] transition-transform cursor-pointer"
                 >
-                  {/* Decorative Elements */}
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-50 via-transparent to-transparent -z-0 opacity-50" />
-
-                  {/* Header Section */}
-                  <div className="relative z-10 flex items-start justify-between mb-4 border-b border-slate-100 pb-4">
-                    <div className="pr-4 flex-1">
-                      <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                        #{booking.bookingNumber || (booking._id || booking.id).substring(0, 8)}
-                      </p>
-
-                      {/* Detailed Booking Info */}
-                      <div className="space-y-1">
-                        {/* 1. Category */}
-                        {booking.serviceCategory && (
-                          <div className="text-xs font-bold text-brand bg-brand-bg px-2 py-0.5 w-fit rounded-md uppercase tracking-wider mb-1">
-                            {booking.serviceCategory}
-                          </div>
-                        )}
-
-                        {/* 2. Brand / Section (if available from booked items) */}
-                        {booking.bookedItems && booking.bookedItems.length > 0 && booking.bookedItems[0].sectionTitle && (
-                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            {booking.bookedItems.map(item => item.sectionTitle).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
-                          </div>
-                        )}
-
-                        {/* 3. Service Name */}
-                        <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-2 group-hover:text-brand transition-colors">
-                          {booking.serviceName || 'Service Request'}
-                        </h3>
-
-                        {/* Item Details (Preview) */}
-                        {booking.bookedItems && booking.bookedItems.length > 0 && (
-                          <p className="text-xs text-slate-400 line-clamp-1">
-                            {booking.bookedItems.map(item => item.card?.title || item.title).join(', ')}
+                  <div className="flex gap-4">
+                    {/* Image */}
+                    <div className="w-20 h-20 shrink-0 bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
+                      <img 
+                        src={imageUrl} 
+                        alt={booking.serviceName || 'Service'} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = getFallbackImage();
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between">
+                      <div>
+                        {/* Top Row: ID & Price */}
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="text-[11px] font-semibold text-slate-400 tracking-wider">
+                            #{booking.bookingNumber || (booking._id || booking.id).substring(0, 8)}
                           </p>
-                        )}
+                          <p className="text-[15px] font-extrabold text-brand flex items-center">
+                            <span className="text-[12px] font-bold mr-0.5">₹</span>
+                            {(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                        
+                        {/* Second Row: Title & Top Status */}
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-[14px] font-extrabold text-slate-800 leading-[1.2] pr-2 line-clamp-2">
+                            {booking.serviceName || 'Service Request'}
+                          </h3>
+                          <p className={`text-[10px] font-extrabold ${display.topColor} whitespace-nowrap mt-0.5 tracking-wide`}>
+                            {display.topText}
+                          </p>
+                        </div>
+                        
+                        {/* Date/Time */}
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <FiCalendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <p className="text-[11px] font-semibold text-slate-500">
+                            {formatDateTime(booking.scheduledDate, booking.scheduledTime)}
+                          </p>
+                        </div>
+                        
+                        {/* Location */}
+                        <div className="flex items-start gap-1.5 mb-3.5">
+                          <FiMapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                          <p className="text-[11px] font-medium text-slate-500 line-clamp-1">
+                            {getAddressString(booking.address)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Bottom Row: Pill & Button */}
+                      <div className="flex justify-between items-center mt-auto">
+                        <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${display.pillBg} ${display.pillText}`}>
+                          {display.pillLabel}
+                        </div>
+                        <button className="px-3 py-1.5 rounded-lg border border-brand text-brand text-[11px] font-bold hover:bg-brand-bg transition-colors">
+                          {display.actionLabel}
+                        </button>
                       </div>
                     </div>
-
-                    {/* Status Badge */}
-                    <div className={`shrink-0 px-3 py-1 pb-1.5 rounded-full border ring-1 ring-inset flex items-center gap-1.5 shadow-sm ${getStatusColor(booking.status)}`}>
-                      {getStatusIcon(booking.status)}
-                      <span className="text-[11px] font-bold uppercase tracking-wide">
-                        {getStatusLabel(booking.status)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Details Grid */}
-                  <div className="relative z-10 grid grid-cols-[auto_1fr] gap-x-3 gap-y-4 mb-5 p-3 rounded-xl bg-slate-50/50 border border-slate-200">
-                    {/* Schedule */}
-                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                      <FiCalendar className="w-4 h-4 text-brand" />
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Slot</p>
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
-                        <span>{formatDate(booking.scheduledDate)}</span>
-                        <span className="text-slate-300">•</span>
-                        <span>{booking.scheduledTime || booking.timeSlot?.start || 'N/A'}</span>
-                      </div>
-                    </div>
-
-                    {/* Location */}
-                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                      <FiMapPin className="w-4 h-4 text-rose-500" />
-                    </div>
-                    <div className="flex flex-col justify-center min-w-0">
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Location</p>
-                      <p className="text-sm font-medium text-slate-700 truncate w-full">
-                        {getAddressString(booking.address)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Footer Section */}
-                  <div className="relative z-10 flex items-center justify-between pt-4 border-t border-slate-200">
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Total Amount</p>
-                      <p className="text-xl font-bold text-slate-900 flex items-baseline gap-0.5">
-                        <span className="text-sm font-semibold text-slate-400">₹</span>
-                        {(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}
-                      </p>
-                    </div>
-
-                    <button
-                      className="flex items-center gap-1.5 pl-4 pr-3 py-2 rounded-lg bg-brand-bg text-brand font-bold text-sm hover:bg-brand hover:border-brand hover:text-white transition-all shadow-sm active:scale-95"
-                    >
-                      View Details
-                      <FiChevronRight className="w-4 h-4" />
-                    </button>
                   </div>
                 </motion.div>
-              ))}
-            </motion.div>
+                );
+              })}
+            </div>
           )}
         </main>
+
+        {/* Need Help Section */}
+        <div className="mt-8 mx-4 p-4 bg-[#EAF8F1] rounded-[20px] flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shrink-0 border border-[#bce8d4]">
+              <FiHeadphones className="w-5 h-5 text-brand" />
+            </div>
+            <div>
+              <h4 className="text-[15px] font-extrabold text-slate-900 mb-0.5">Need Help?</h4>
+              <p className="text-[11px] font-medium text-slate-600">Our support team is here to help you.</p>
+            </div>
+          </div>
+          <button className="px-4 py-2.5 bg-brand text-white text-[12px] font-bold rounded-xl whitespace-nowrap active:scale-95 transition-transform shadow-[0_4px_10px_rgba(16,175,165,0.3)]">
+            Contact Support
+          </button>
+        </div>
+
+        {/* Trust Badges */}
+        <div className="mt-10 px-4">
+          <div className="grid grid-cols-4 gap-1 border-t border-slate-100 pt-6">
+            <div className="flex flex-col items-center text-center">
+              <FiUsers className="w-5 h-5 mb-1.5 text-brand" />
+              <p className="text-[9px] font-extrabold text-slate-800 leading-tight mb-0.5">Verified Experts</p>
+              <p className="text-[7px] font-medium text-slate-400 leading-tight">Trusted professionals</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <FiTag className="w-5 h-5 mb-1.5 text-brand" />
+              <p className="text-[9px] font-extrabold text-slate-800 leading-tight mb-0.5">Upfront Pricing</p>
+              <p className="text-[7px] font-medium text-slate-400 leading-tight">No hidden charges</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <FiShield className="w-5 h-5 mb-1.5 text-brand" />
+              <p className="text-[9px] font-extrabold text-slate-800 leading-tight mb-0.5">Service Warranty</p>
+              <p className="text-[7px] font-medium text-slate-400 leading-tight">Assured support</p>
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <FiTruck className="w-5 h-5 mb-1.5 text-brand" />
+              <p className="text-[9px] font-extrabold text-slate-800 leading-tight mb-0.5">On-time Service</p>
+              <p className="text-[7px] font-medium text-slate-400 leading-tight">Punctual & reliable</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default MyBookings;
-

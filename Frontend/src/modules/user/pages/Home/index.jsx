@@ -28,6 +28,7 @@ const ExtendedServiceCategories = lazy(() => import('./components/ExtendedServic
 import TrustStrip from './components/TrustStrip';
 import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
+import PopularBrandsWeService from './components/PopularBrandsWeService';
 import InstantBookingBanner from './components/InstantBookingBanner';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
@@ -239,6 +240,7 @@ const Home = () => {
 
   const [categories, setCategories] = useState([]);
   const [homeContent, setHomeContent] = useState(null);
+  const [popularBrands, setPopularBrands] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Handle scroll separately (only when needed)
@@ -276,6 +278,10 @@ const Home = () => {
 
           if (response.homeContent) {
             setHomeContent(response.homeContent);
+          }
+          
+          if (response.popularBrands) {
+            setPopularBrands(response.popularBrands);
           }
         }
 
@@ -553,12 +559,21 @@ const Home = () => {
               </div>
 
               {/* 7. Extended Service Categories (Digital First) */}
-              <div className="relative z-10 mt-6">
+              <div className="relative z-10 mt-6 mb-4">
                 <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
                   <ExtendedServiceCategories />
                 </Suspense>
               </div>
 
+              {/* Popular Brands We Service (Moved to bottom) */}
+              {popularBrands.length > 0 && (
+                <section className="relative z-10 mt-6 mb-4">
+                  <PopularBrandsWeService 
+                    brands={popularBrands} 
+                    onSeeAllClick={() => setIsSearchOpen(true)} 
+                  />
+                </section>
+              )}
 
             </>
           )}

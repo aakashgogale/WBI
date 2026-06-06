@@ -114,9 +114,11 @@ const UserRoutes = () => {
 
   return (
     <ErrorBoundary>
-      {/* Main content area - leaves space for bottom nav when needed */}
-      <div className={shouldShowBottomNav ? "pb-24" : ""}>
-        <Suspense fallback={<LoadingFallback />}>
+      {/* Mobile App Container Wrapper for Desktop */}
+      <div className="mx-auto w-full max-w-[480px] bg-[#F8FCFC] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.08)] overflow-x-hidden flex flex-col">
+        {/* Main content area - leaves space for bottom nav when needed */}
+        <div className={`flex-1 ${shouldShowBottomNav ? "pb-24" : ""}`}>
+          <Suspense fallback={<LoadingFallback />}>
           <PageTransition>
             <Routes>
               {/* Public routes */}
@@ -154,13 +156,14 @@ const UserRoutes = () => {
             </Routes>
           </PageTransition>
         </Suspense>
-      </div>
+        </div>
 
-      {/* These components are OUTSIDE Suspense so they persist during page loads */}
-      {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
-      {shouldShowBottomNav && <BottomNav />}
-      {/* Footer hidden temporarily as requested */}
-      {/* {(location.pathname === '/user' || location.pathname === '/user/') && <Footer />} */}
+        {/* These components are OUTSIDE Suspense so they persist during page loads */}
+        {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
+        {shouldShowBottomNav && <BottomNav />}
+        {/* Footer hidden temporarily as requested */}
+        {/* {(location.pathname === '/user' || location.pathname === '/user/') && <Footer />} */}
+      </div>
     </ErrorBoundary>
   );
 };

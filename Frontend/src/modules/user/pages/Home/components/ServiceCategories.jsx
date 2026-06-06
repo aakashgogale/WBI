@@ -6,6 +6,14 @@ const THEME = {
   text: '#111827',
 };
 
+const toAssetUrl = (url) => {
+  if (!url) return '';
+  const clean = url.replace('/api/upload', '/upload');
+  if (clean.startsWith('http')) return clean;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+};
+
 const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllClick }) => {
   // Fallback to exact reference UI if DB is empty
   const fallbackCategories = [
@@ -39,7 +47,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
               }}
             >
               {/* Soft Teal Box Container */}
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#F8FAFC] rounded-full flex items-center justify-center mb-2 overflow-hidden">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#F8FAFC] rounded-full flex items-center justify-center mb-2 overflow-hidden flex-shrink-0">
                 {category.isMore ? (
                   <div className="grid grid-cols-2 gap-1 w-6 h-6">
                     <div className="rounded-full border-2 border-[#10AFA5] w-full h-full"></div>
@@ -48,18 +56,18 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
                     <div className="rounded-full border-2 border-[#10AFA5] w-full h-full"></div>
                   </div>
                 ) : (
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <ServiceIconRenderer 
-                      categoryName={category.title} 
-                    />
+                  <div className="w-9 h-9 flex items-center justify-center">
+                    <ServiceIconRenderer categoryName={category.title} />
                   </div>
                 )}
               </div>
               
-              {/* Category Title */}
-              <span className="text-[10px] sm:text-[11px] font-medium text-center leading-tight line-clamp-2 w-full break-words text-[#0F172A]">
-                {category.title}
-              </span>
+              {/* Category Title - Fixed height to perfectly align all texts */}
+              <div className="h-[28px] sm:h-[32px] flex items-start justify-center w-full">
+                <span className="text-[10px] sm:text-[11px] font-medium text-center leading-[1.2] line-clamp-2 w-full break-words text-[#0F172A]">
+                  {category.title}
+                </span>
+              </div>
             </div>
           );
         })}

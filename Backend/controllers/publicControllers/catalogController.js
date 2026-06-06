@@ -379,13 +379,18 @@ const getPublicHomeData = async (req, res) => {
   try {
     const { cityId } = req.query;
 
-    // Fetch both in parallel
-    const [categoriesRes, homeContent] = await Promise.all([
+    // Fetch all in parallel
+    const [categoriesRes, homeContent, popularBrandsRes] = await Promise.all([
       Category.find({ status: 'active', cityIds: cityId ? cityId : { $exists: true } })
         .select('title slug homeIconUrl homeBadge hasSaleBadge')
         .sort({ homeOrder: 1 })
         .lean(),
-      HomeContent.getHomeContent(cityId)
+      HomeContent.getHomeContent(cityId),
+      Brand.find({ status: 'active', cityIds: cityId ? cityId : { $exists: true } })
+        .select('title slug iconUrl badge')
+        .sort({ createdAt: -1 })
+        .limit(30)
+        .lean()
     ]);
 
     const formattedCategories = categoriesRes.map(cat => ({
@@ -455,10 +460,19 @@ const getPublicHomeData = async (req, res) => {
       };
     }
 
+    const formattedPopularBrands = popularBrandsRes.map(brand => ({
+      id: brand._id.toString(),
+      title: brand.title,
+      slug: brand.slug,
+      iconUrl: brand.iconUrl || '',
+      badge: brand.badge || ''
+    }));
+
     res.status(200).json({
       success: true,
       categories: formattedCategories,
-      homeContent: formattedContent
+      homeContent: formattedContent,
+      popularBrands: formattedPopularBrands
     });
   } catch (error) {
     console.error('Get public home data error:', error);

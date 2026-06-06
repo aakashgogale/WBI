@@ -177,7 +177,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #F8FCFC !important;
+  background-color: #E2E8F0 !important;
   background-attachment: fixed;
 }
 
@@ -195,7 +195,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #root {
-  background-color: #F8FCFC !important;
+  background-color: transparent !important;
   min-height: 100vh;
 }
 
