@@ -60,6 +60,7 @@ const Account = lazyLoad(() => import('../pages/Account'));
 const Native = lazyLoad(() => import('../pages/Native'));
 const Cart = lazyLoad(() => import('../pages/Cart'));
 const Services = lazyLoad(() => import('../pages/Services'));
+const CategoryDetails = lazyLoad(() => import('../pages/CategoryDetails'));
 const Checkout = lazyLoad(() => import('../pages/Checkout'));
 const MyBookings = lazyLoad(() => import('../pages/MyBookings'));
 const BookingDetails = lazyLoad(() => import('../pages/BookingDetails'));
@@ -129,6 +130,7 @@ const UserRoutes = () => {
               {/* Protected routes (auth required) */}
               <Route path="/" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute userType="user"><Services /></ProtectedRoute>} />
+              <Route path="/categories/:slug" element={<ProtectedRoute userType="user"><CategoryDetails /></ProtectedRoute>} />
               <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
 
               <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />
