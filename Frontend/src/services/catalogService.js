@@ -257,6 +257,19 @@ export const publicCatalogService = {
     return response.data;
   },
 
+  // Get all Premium Service Categories
+  getServiceCategories: async () => {
+    const cacheKey = `public:serviceCategories`;
+    const cached = apiCache.get(cacheKey);
+    if (cached) return cached;
+
+    const response = await api.get(`/service-categories`);
+    if (response.data.success) {
+      apiCache.set(cacheKey, response.data, 300);
+    }
+    return response.data;
+  },
+
   // Get all active brands (formerly services)
   getBrands: async (params = {}) => {
     const queryParams = new URLSearchParams();

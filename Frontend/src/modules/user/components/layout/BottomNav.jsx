@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiTag, FiShoppingCart, FiUser, FiTrash2, FiCalendar, FiMessageSquare } from 'react-icons/fi';
-import { HiHome, HiTag, HiShoppingCart, HiUser, HiTrash, HiCalendar } from 'react-icons/hi';
+import { FiHome, FiTag, FiShoppingCart, FiUser, FiTrash2, FiCalendar, FiMessageSquare, FiGrid } from 'react-icons/fi';
+import { HiHome, HiTag, HiShoppingCart, HiUser, HiTrash, HiCalendar, HiViewGrid } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
 
@@ -19,7 +19,7 @@ const navItemColors = {
     bg: 'rgba(16, 185, 129, 0.1)',
     shadow: 'rgba(16, 185, 129, 0.4)'
   },
-  scrap: {
+  services: {
     primary: '#F59E0B', // Amber
     gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
     bg: 'rgba(245, 158, 11, 0.1)',
@@ -48,16 +48,16 @@ const BottomNav = React.memo(() => {
   const navItems = useMemo(() => [
     { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
     { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
+    { id: 'services', label: 'Services', icon: FiGrid, filledIcon: HiViewGrid, path: '/user/services' },
     { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', badgeCount: cartCount },
-    { id: 'offers', label: 'Offers', icon: FiTag, filledIcon: HiTag, path: '/user/offers' },
     { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
   ], [cartCount]);
 
   const getActiveTab = () => {
     if (location.pathname === '/user' || location.pathname === '/user/') return 'home';
     if (location.pathname.includes('/my-bookings')) return 'bookings';
+    if (location.pathname.includes('/services')) return 'services';
     if (location.pathname.includes('/cart')) return 'cart';
-    if (location.pathname.includes('/offers')) return 'offers';
     if (location.pathname.includes('/account')) return 'account';
     return 'home';
   };

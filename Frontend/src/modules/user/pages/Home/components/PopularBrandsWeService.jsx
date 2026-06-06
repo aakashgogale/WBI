@@ -9,7 +9,45 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
-const PopularBrandsWeService = ({ brands = [], onSeeAllClick }) => {
+const PopularBrandsWeService = ({ brands = [], onSeeAllClick, isLoading = false, error = null }) => {
+  if (isLoading) {
+    return (
+      <div className="mb-4 px-4 mt-2">
+        <div className="flex items-center justify-between mb-3">
+          <div className="h-6 bg-slate-200 rounded animate-pulse w-48"></div>
+        </div>
+        <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="flex-shrink-0 w-[95px] h-[64px] bg-slate-200 rounded-[12px] animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mb-4 px-4 mt-2">
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm text-center border border-red-100">
+          Failed to load popular brands. Please try again.
+        </div>
+      </div>
+    );
+  }
+
+  if (!brands || brands.length === 0) {
+    return (
+      <div className="mb-4 px-4 mt-2">
+        <h2 className="text-[18px] font-bold text-[#0F172A] tracking-tight mb-3">
+          Popular Brands We Service
+        </h2>
+        <div className="p-4 bg-slate-50 text-slate-500 rounded-lg text-sm text-center border border-slate-100 italic">
+          No popular brands available right now.
+        </div>
+      </div>
+    );
+  }
+
   // Defined preferred order based on user request
   const preferredOrder = [
     'LG', 'SAMSUNG', 'VOLTAS', 'Whirlpool', 'Panasonic', 'Haier', 'BOSCH'

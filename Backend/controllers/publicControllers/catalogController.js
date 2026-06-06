@@ -386,9 +386,13 @@ const getPublicHomeData = async (req, res) => {
         .sort({ homeOrder: 1 })
         .lean(),
       HomeContent.getHomeContent(cityId),
-      Brand.find({ status: 'active', cityIds: cityId ? cityId : { $exists: true } })
+      Brand.find({ 
+        status: 'active', 
+        $or: [{ isPopular: true }, { isFeatured: true }],
+        cityIds: cityId ? cityId : { $exists: true } 
+      })
         .select('title slug iconUrl badge')
-        .sort({ createdAt: -1 })
+        .sort({ rating: -1, totalBookings: -1, createdAt: -1 })
         .limit(30)
         .lean()
     ]);
@@ -483,11 +487,50 @@ const getPublicHomeData = async (req, res) => {
   }
 };
 
+/**
+ * Get popular brands directly
+ */
+const getPopularBrands = async (req, res) => {
+  try {
+    const { cityId } = req.query;
+
+    const popularBrandsRes = await Brand.find({ 
+      status: 'active', 
+      $or: [{ isPopular: true }, { isFeatured: true }],
+      ...(cityId ? { cityIds: cityId } : {}) 
+    })
+      .select('title slug iconUrl badge')
+      .sort({ rating: -1, totalBookings: -1, createdAt: -1 })
+      .limit(30)
+      .lean();
+
+    const formattedPopularBrands = popularBrandsRes.map(brand => ({
+      id: brand._id.toString(),
+      title: brand.title,
+      slug: brand.slug,
+      iconUrl: brand.iconUrl || '',
+      badge: brand.badge || ''
+    }));
+
+    res.status(200).json({
+      success: true,
+      popularBrands: formattedPopularBrands
+    });
+  } catch (error) {
+    console.error('Get popular brands error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch popular brands'
+    });
+  }
+};
+
 module.exports = {
   getPublicCategories,
   getPublicBrands,
   getPublicBrandBySlug,
   getPublicServices,
   getPublicHomeContent,
-  getPublicHomeData
+  getPublicHomeData,
+  getPopularBrands
 };

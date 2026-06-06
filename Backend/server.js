@@ -163,6 +163,7 @@ app.get('/api/test/redis', async (req, res) => {
 
 // API Routes
 
+app.use('/api/service-categories', require('./routes/public-routes/serviceCategory.routes'));
 app.use('/api/public/cities', require('./routes/public-routes/city.routes.js'));
 
 
@@ -207,6 +208,7 @@ app.use('/api/admin', require('./routes/admin-routes/dashboard.routes'));
 app.use('/api/admin', require('./routes/admin-routes/userManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/vendorManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/workerManagement.routes'));
+app.use('/api/admin/service-categories', require('./routes/admin-routes/serviceCategoryManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/categoryManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/brandManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/serviceManagement.routes'));

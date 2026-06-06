@@ -566,14 +566,14 @@ const Home = () => {
               </div>
 
               {/* Popular Brands We Service (Moved to bottom) */}
-              {popularBrands.length > 0 && (
-                <section className="relative z-10 mt-6 mb-4">
-                  <PopularBrandsWeService 
-                    brands={popularBrands} 
-                    onSeeAllClick={() => setIsSearchOpen(true)} 
-                  />
-                </section>
-              )}
+              <section className="relative z-10 mt-6 mb-4">
+                <PopularBrandsWeService 
+                  brands={popularBrands} 
+                  isLoading={loading}
+                  error={null}
+                  onSeeAllClick={() => setIsSearchOpen(true)} 
+                />
+              </section>
 
             </>
           )}
