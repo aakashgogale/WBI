@@ -53,7 +53,7 @@ const Onboarding = ({ onComplete }) => {
 
   const finishOnboarding = () => {
     try {
-      localStorage.setItem('onboardingCompleted_v4', 'true');
+      localStorage.setItem('onboardingCompleted_v5', 'true');
     } catch (error) {
       console.warn('Could not save onboarding status to localStorage', error);
     }
@@ -74,6 +74,7 @@ const Onboarding = ({ onComplete }) => {
     setDevClicks(prev => prev + 1);
     if (devClicks > 3) {
       try {
+        localStorage.removeItem('onboardingCompleted_v5');
         localStorage.removeItem('onboardingCompleted_v4');
         localStorage.removeItem('onboardingCompleted_v3');
         localStorage.removeItem('onboardingCompleted_v2');
@@ -94,8 +95,8 @@ const Onboarding = ({ onComplete }) => {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Background Image Layer - Covers entire screen, pushes boundaries out to hide borders if possible */}
-      <div className="absolute inset-0 w-full h-full bg-white flex items-center justify-center">
+      {/* Background Image Layer */}
+      <div className="absolute inset-0 w-full h-full bg-white flex items-center justify-center pointer-events-none">
         {onboardingData.map((step, index) => {
           const isActive = index === currentStep;
           return (
@@ -104,8 +105,7 @@ const Onboarding = ({ onComplete }) => {
               src={step.image}
               alt={`Onboarding ${step.id}`}
               loading={index === 0 ? "eager" : "lazy"}
-              // Using scale-105 to push the thin border off the screen and make it look native
-              className={`absolute top-0 w-full h-full object-cover object-top sm:object-contain scale-[1.02] transform transition-opacity duration-500 ease-in-out ${
+              className={`absolute top-0 left-0 w-full h-full object-fill transform transition-opacity duration-500 ease-in-out ${
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
               }`}
             />
@@ -113,59 +113,21 @@ const Onboarding = ({ onComplete }) => {
         })}
       </div>
 
-      {/* Top Cover / Skip Button */}
-      {/* Solid white background at top right to OVERLAY and hide the baked-in "Skip" button in the image */}
-      <div className="absolute top-0 right-0 z-30 pt-[max(env(safe-area-inset-top),20px)] pr-6 pl-12 pb-4 bg-gradient-to-bl from-white via-white to-transparent rounded-bl-3xl">
-        <button
-          onClick={finishOnboarding}
-          className="px-6 py-2 rounded-full border border-gray-200 bg-white text-sm font-bold shadow-sm hover:bg-gray-50 transition-all active:scale-95"
-          style={{ color: brandColor }}
-        >
-          Skip
-        </button>
-      </div>
-
-      {/* Bottom Cover Overlay */}
-      {/* This solid white gradient completely covers the baked-in dots and buttons in the images */}
+      {/* Invisible Click Area for "Skip" (Top Right corner) */}
       <div 
-        className="absolute bottom-0 left-0 w-full z-20 pointer-events-none"
-        style={{ 
-          height: '240px',
-          background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.9) 20%, white 35%, white 100%)' 
-        }}
+        onClick={finishOnboarding}
+        className="absolute top-0 right-0 w-32 h-32 z-50 cursor-pointer"
+        aria-label="Skip"
       />
 
-      {/* Real Action Area */}
+      {/* Invisible Click Area for "Next" (Bottom portion of screen) */}
       <div 
-        className="absolute bottom-0 w-full px-6 z-30 flex flex-col items-center justify-end"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 32px)' }}
+        onClick={handleNext}
+        className="absolute bottom-0 left-0 w-full h-1/2 z-40 cursor-pointer flex items-end justify-center pb-2"
+        aria-label="Next"
       >
-        {/* Hidden clickable area for DEV reset */}
-        <div onClick={handleDevReset} className="w-full h-10 absolute bottom-0 left-0 opacity-0 z-50" />
-
-        {/* Single Set of Pagination Dots */}
-        <div className="flex justify-center gap-2 mb-6">
-          {onboardingData.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentStep(index)}
-              className={`h-2 rounded-full transition-all duration-300 ease-in-out ${
-                currentStep === index ? 'w-6' : 'w-2 bg-gray-200 hover:bg-gray-300'
-              }`}
-              style={{ backgroundColor: currentStep === index ? brandColor : undefined }}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Slightly Smaller Action Button */}
-        <button
-          onClick={handleNext}
-          className="w-full sm:max-w-md py-[14px] px-6 rounded-xl text-white font-bold text-[16px] active:scale-[0.98] transition-transform flex items-center justify-center shadow-md hover:shadow-lg"
-          style={{ backgroundColor: brandColor }}
-        >
-          {currentStep === onboardingData.length - 1 ? 'Get Started' : 'Next'}
-        </button>
+        {/* Hidden clickable area for DEV reset placed securely out of the way */}
+        <div onClick={(e) => { e.stopPropagation(); handleDevReset(); }} className="w-full h-4 absolute bottom-0 left-0 opacity-0 z-50" />
       </div>
     </div>
   );

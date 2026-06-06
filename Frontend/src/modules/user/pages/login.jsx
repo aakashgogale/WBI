@@ -19,7 +19,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
-      return !localStorage.getItem('onboardingCompleted_v4');
+      return !localStorage.getItem('onboardingCompleted_v5');
     } catch {
       return false; // Safely default to false if localStorage is unavailable
     }
