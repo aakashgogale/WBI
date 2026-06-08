@@ -195,7 +195,8 @@
       "Web Development",
       "App Development",
       "CRM",
-      "Digital Marketing"
+      "Digital Marketing",
+      "UI/UX Design"
     ]
   },
   {
@@ -212,6 +213,22 @@
       "Site Testing",
       "Panel installation",
       "Automated power monitoring"
+    ]
+  },
+  {
+    "title": "Banking Solutions",
+    "route": "/admin/banking-solutions",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": [
+      "ATM Service",
+      "ATM Cassette Service",
+      "Passbook Printer Service",
+      "CDM Service",
+      "POS Service",
+      "VSAT Service"
     ]
   }
 ]

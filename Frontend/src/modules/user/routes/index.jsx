@@ -86,7 +86,23 @@ const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));
 const WebDevelopmentEnquiry = lazyLoad(() => import('../pages/WebDevelopmentEnquiry'));
 const AppDevelopmentEnquiry = lazyLoad(() => import('../pages/AppDevelopmentEnquiry'));
+const CrmEnquiry = lazyLoad(() => import('../pages/CrmEnquiry'));
+const MarketingEnquiry = lazyLoad(() => import('../pages/MarketingEnquiry'));
+const DesignEnquiry = lazyLoad(() => import('../pages/DesignEnquiry'));
 const BankingEnquiry = lazyLoad(() => import('../pages/BankingEnquiry'));
+const InstallationEnquiry = lazyLoad(() => import('../pages/InstallationEnquiry'));
+const MaintenanceEnquiry = lazyLoad(() => import('../pages/MaintenanceEnquiry'));
+const BreakdownEnquiry = lazyLoad(() => import('../pages/BreakdownEnquiry'));
+const SiteTestingEnquiry = lazyLoad(() => import('../pages/SiteTestingEnquiry'));
+const PowerMonitoringEnquiry = lazyLoad(() => import('../pages/PowerMonitoringEnquiry'));
+const MultipleServicesEnquiry = lazyLoad(() => import('../pages/MultipleServicesEnquiry'));
+const AtmServiceEnquiry = lazyLoad(() => import('../pages/AtmServiceEnquiry'));
+const AtmCassetteService = lazyLoad(() => import('../pages/AtmCassetteService'));
+const PassbookPrinterService = lazyLoad(() => import('../pages/PassbookPrinterService'));
+const CdmService = lazyLoad(() => import('../pages/CdmService'));
+const PosService = lazyLoad(() => import('../pages/PosService'));
+const VsatService = lazyLoad(() => import('../pages/VsatService'));
+const BarcodeReaderService = lazyLoad(() => import('../pages/BarcodeReaderService'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -162,7 +178,23 @@ const UserRoutes = () => {
               <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />
               <Route path="/web-development-enquiry" element={<ProtectedRoute userType="user"><WebDevelopmentEnquiry /></ProtectedRoute>} />
               <Route path="/app-development-enquiry" element={<ProtectedRoute userType="user"><AppDevelopmentEnquiry /></ProtectedRoute>} />
+              <Route path="/crm-enquiry" element={<ProtectedRoute userType="user"><CrmEnquiry /></ProtectedRoute>} />
+              <Route path="/marketing-enquiry" element={<ProtectedRoute userType="user"><MarketingEnquiry /></ProtectedRoute>} />
+              <Route path="/design-enquiry" element={<ProtectedRoute userType="user"><DesignEnquiry /></ProtectedRoute>} />
               <Route path="/banking-enquiry" element={<ProtectedRoute userType="user"><BankingEnquiry /></ProtectedRoute>} />
+              <Route path="/installation-enquiry" element={<ProtectedRoute userType="user"><InstallationEnquiry /></ProtectedRoute>} />
+              <Route path="/maintenance-enquiry" element={<ProtectedRoute userType="user"><MaintenanceEnquiry /></ProtectedRoute>} />
+              <Route path="/breakdown-enquiry" element={<ProtectedRoute userType="user"><BreakdownEnquiry /></ProtectedRoute>} />
+              <Route path="/sitetesting-enquiry" element={<ProtectedRoute userType="user"><SiteTestingEnquiry /></ProtectedRoute>} />
+              <Route path="/powermonitoring-enquiry" element={<ProtectedRoute userType="user"><PowerMonitoringEnquiry /></ProtectedRoute>} />
+              <Route path="/multipleservices-enquiry" element={<ProtectedRoute userType="user"><MultipleServicesEnquiry /></ProtectedRoute>} />
+              <Route path="/atmservice-enquiry" element={<ProtectedRoute userType="user"><AtmServiceEnquiry /></ProtectedRoute>} />
+              <Route path="/atmcassette-enquiry" element={<ProtectedRoute userType="user"><AtmCassetteService /></ProtectedRoute>} />
+              <Route path="/passbookprinter-enquiry" element={<ProtectedRoute userType="user"><PassbookPrinterService /></ProtectedRoute>} />
+              <Route path="/cdm-enquiry" element={<ProtectedRoute userType="user"><CdmService /></ProtectedRoute>} />
+              <Route path="/pos-enquiry" element={<ProtectedRoute userType="user"><PosService /></ProtectedRoute>} />
+              <Route path="/vsat-enquiry" element={<ProtectedRoute userType="user"><VsatService /></ProtectedRoute>} />
+              <Route path="/barcode-reader-enquiry" element={<ProtectedRoute userType="user"><BarcodeReaderService /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

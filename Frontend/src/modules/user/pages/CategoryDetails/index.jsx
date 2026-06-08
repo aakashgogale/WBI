@@ -20,6 +20,15 @@ const CategoryDetails = () => {
   const fetchCategoryDetails = async () => {
     try {
       setLoading(true);
+
+      // Force fallback data for core categories to ensure custom UI forms are correctly mapped
+      const coreCategories = ['security-solutions', 'security', 'digital-solutions', 'digital', 'banking-solutions', 'banking', 'energy-solutions', 'energy'];
+      if (coreCategories.includes(slug.toLowerCase())) {
+        handleFallbackData();
+        setLoading(false);
+        return;
+      }
+
       // Fetch category data
       const catResponse = await publicCatalogService.getCategoryBySlug(slug);
       if (catResponse && catResponse.data) {
@@ -80,12 +89,12 @@ const CategoryDetails = () => {
         tags: ["Security Experts", "24/7 Monitoring", "Trusted Service"]
       });
       setServices([
-        { _id: '1', title: 'CCTV Installation', description: 'CCTV camera installation & configuration', rating: 4.8, reviews: 128, basePrice: 4999, iconName: 'FiVideo' },
-        { _id: '2', title: 'Access Control System', description: 'Access control installation & management', rating: 4.7, reviews: 96, basePrice: 3999, iconName: 'FiLock' },
-        { _id: '3', title: 'Biometric Attendance', description: 'Biometric system installation & support', rating: 4.8, reviews: 74, basePrice: 2599, iconName: 'FiUserCheck' },
-        { _id: '4', title: 'Alarm System', description: 'Security alarm installation & maintenance', rating: 4.8, reviews: 64, basePrice: 2499, iconName: 'FiBell' },
-        { _id: '5', title: 'Video Monitoring', description: 'Remote video monitoring & management', rating: 4.7, reviews: 53, basePrice: 3499, iconName: 'FiMonitor' },
-        { _id: '6', title: 'Security Audit', description: 'Security assessment & audit service', rating: 4.8, reviews: 45, basePrice: 4999, iconName: 'FiFileText' },
+        { _id: '1', title: 'Installation & Dismantle', description: 'Setup new equipment or remove old systems', rating: 4.8, reviews: 156, basePrice: 4999, iconName: 'FiTool' },
+        { _id: '2', title: 'Preventive Maintenance', description: 'Routine health checks and AMC services', rating: 4.9, reviews: 210, basePrice: 2999, iconName: 'FiCheckSquare' },
+        { _id: '3', title: 'Breakdown Calls', description: 'Emergency repairs and system troubleshooting', rating: 4.7, reviews: 185, basePrice: 1999, iconName: 'FiAlertTriangle' },
+        { _id: '4', title: 'Site Testing', description: 'Comprehensive site assessment & testing', rating: 4.8, reviews: 64, basePrice: 3499, iconName: 'FiCrosshair' },
+        { _id: '5', title: 'Panel Installation', description: 'Advanced security panel setup', rating: 4.7, reviews: 53, basePrice: 8999, iconName: 'FiServer' },
+        { _id: '6', title: 'Automated Power Monitoring', description: 'Smart power tracking & alerts', rating: 4.8, reviews: 45, basePrice: 5999, iconName: 'FiActivity' },
       ]);
     } else if (slug === 'energy-solutions' || slug === 'energy') {
       setCategory({
@@ -184,13 +193,47 @@ const CategoryDetails = () => {
   };
 
   const handleServiceClick = (svc) => {
-    const serviceName = svc.name || svc.title;
-    if ((slug === 'digital-solutions' || slug === 'digital') && serviceName === 'Web Development') {
+    const serviceName = (svc.name || svc.title || '').trim().toLowerCase();
+    const isDigital = slug.toLowerCase().includes('digital');
+
+    if (isDigital && serviceName === 'web development') {
       navigate('/user/web-development-enquiry');
-    } else if ((slug === 'digital-solutions' || slug === 'digital') && serviceName === 'App Development') {
+    } else if (isDigital && serviceName === 'app development') {
       navigate('/user/app-development-enquiry');
-    } else if (slug === 'banking-solutions' || slug === 'banking') {
-      navigate('/user/banking-enquiry', { state: { serviceType: serviceName } });
+    } else if (isDigital && serviceName === 'crm') {
+      navigate('/user/crm-enquiry');
+    } else if (isDigital && serviceName === 'digital marketing') {
+      navigate('/user/marketing-enquiry');
+    } else if (isDigital && (serviceName.includes('design') || serviceName.includes('ui/ux'))) {
+      navigate('/user/design-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.toLowerCase().includes('barcode')) {
+      navigate('/user/barcode-reader-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.toLowerCase().includes('vsat')) {
+      navigate('/user/vsat-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.toLowerCase().includes('pos')) {
+      navigate('/user/pos-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.includes('cdm')) {
+      navigate('/user/cdm-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.includes('passbook')) {
+      navigate('/user/passbookprinter-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.includes('cassette')) {
+      navigate('/user/atmcassette-enquiry');
+    } else if (slug.toLowerCase().includes('banking') && serviceName.includes('atm')) {
+      navigate('/user/atmservice-enquiry');
+    } else if (slug.toLowerCase().includes('banking')) {
+      navigate('/user/banking-enquiry', { state: { serviceType: svc.name || svc.title } });
+    } else if (slug.toLowerCase().includes('security') && (serviceName.includes('installation') || serviceName.includes('dismantle')) && !serviceName.includes('panel')) {
+      navigate('/user/installation-enquiry');
+    } else if (slug.toLowerCase().includes('security') && serviceName.includes('maintenance')) {
+      navigate('/user/maintenance-enquiry');
+    } else if (slug.toLowerCase().includes('security') && (serviceName.includes('breakdown') || serviceName.includes('repair'))) {
+      navigate('/user/breakdown-enquiry');
+    } else if (slug.toLowerCase().includes('security') && serviceName.includes('testing')) {
+      navigate('/user/sitetesting-enquiry');
+    } else if (slug.toLowerCase().includes('security') && serviceName.includes('monitoring')) {
+      navigate('/user/powermonitoring-enquiry');
+    } else if (slug.toLowerCase().includes('security') && serviceName.includes('panel')) {
+      navigate('/user/multipleservices-enquiry');
     } else {
       // General fallback if no specific enquiry form exists
       navigate(`/user/service/${svc._id}`);

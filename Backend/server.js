@@ -165,6 +165,15 @@ app.get('/api/test/redis', async (req, res) => {
 
 app.use('/api/service-categories', require('./routes/public-routes/serviceCategory.routes'));
 app.use('/api/public/cities', require('./routes/public-routes/city.routes.js'));
+app.use('/api/public/crm-enquiries', require('./routes/public-routes/crmEnquiry.routes'));
+app.use('/api/public/marketing-enquiries', require('./routes/public-routes/marketingEnquiry.routes'));
+app.use('/api/public/design-enquiries', require('./routes/public-routes/designEnquiry.routes'));
+app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
+app.use('/api/public/app-enquiries', require('./routes/public-routes/appEnquiry.routes'));
+app.use('/api/public/banking-enquiries', require('./routes/public-routes/bankingEnquiry.routes'));
+app.use('/api/public/installation-enquiries', require('./routes/public-routes/installationEnquiry.routes'));
+app.use('/api/public/maintenance-enquiries', require('./routes/public-routes/maintenanceEnquiry.routes'));
+app.use('/api/public/breakdown-enquiries', require('./routes/public-routes/breakdownEnquiry.routes'));
 
 
 // User routes
@@ -228,7 +237,23 @@ app.use('/api/admin/settlements', require('./routes/admin-routes/settlementManag
 app.use('/api/admin/admins', require('./routes/admin-routes/adminManagement.routes'));
 app.use('/api/admin/web-enquiries', require('./routes/admin-routes/webEnquiryAdmin.routes'));
 app.use('/api/admin/app-enquiries', require('./routes/admin-routes/appEnquiry.routes'));
+app.use('/api/admin/crm-enquiries', require('./routes/admin-routes/crmEnquiry.routes'));
+app.use('/api/admin/marketing-enquiries', require('./routes/admin-routes/marketingEnquiry.routes'));
+app.use('/api/admin/design-enquiries', require('./routes/admin-routes/designEnquiry.routes'));
 app.use('/api/admin/banking-enquiries', require('./routes/admin-routes/bankingEnquiryAdmin.routes'));
+app.use('/api/admin/installation-enquiries', require('./routes/admin-routes/installationEnquiry.routes'));
+app.use('/api/admin/maintenance-enquiries', require('./routes/admin-routes/maintenanceEnquiry.routes'));
+app.use('/api/admin/breakdown-enquiries', require('./routes/admin-routes/breakdownEnquiry.routes'));
+app.use('/api/admin/sitetesting-enquiries', require('./routes/admin-routes/siteTestingEnquiry.routes'));
+app.use('/api/admin/powermonitoring-enquiries', require('./routes/admin-routes/automatedPowerMonitoringEnquiry.routes'));
+app.use('/api/admin/multipleservices-enquiries', require('./routes/admin-routes/multipleServicesEnquiry.routes'));
+app.use('/api/admin/atmservice-enquiries', require('./routes/admin-routes/atmServiceEnquiry.routes'));
+app.use('/api/admin/atmcassette-enquiries', require('./routes/admin-routes/atmCassetteService.routes'));
+app.use('/api/admin/passbookprinter-enquiries', require('./routes/admin-routes/passbookPrinterService.routes'));
+app.use('/api/admin/cdmservice-enquiries', require('./routes/admin-routes/cdmService.routes'));
+app.use('/api/admin/posservice-enquiries', require('./routes/admin-routes/posService.routes'));
+app.use('/api/admin/vsatservice-enquiries', require('./routes/admin-routes/vsatService.routes'));
+app.use('/api/admin/barcodereaderservice-enquiries', require('./routes/admin-routes/barcodeReaderService.routes'));
 app.use('/api/image', require('./routes/admin-routes/image.routes'));
 app.use('/api', require('./routes/admin-routes/upload.routes')); // Generic upload access
 
@@ -258,6 +283,19 @@ app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
 app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
 app.use('/api/public/banking-enquiries', require('./routes/public-routes/bankingEnquiry.routes'));
+app.use('/api/public/installation-enquiries', require('./routes/public-routes/installationEnquiry.routes'));
+app.use('/api/public/maintenance-enquiries', require('./routes/public-routes/maintenanceEnquiry.routes'));
+app.use('/api/public/breakdown-enquiries', require('./routes/public-routes/breakdownEnquiry.routes'));
+app.use('/api/public/sitetesting-enquiries', require('./routes/public-routes/siteTestingEnquiry.routes'));
+app.use('/api/public/powermonitoring-enquiries', require('./routes/public-routes/automatedPowerMonitoringEnquiry.routes'));
+app.use('/api/public/multipleservices-enquiries', require('./routes/public-routes/multipleServicesEnquiry.routes'));
+app.use('/api/public/atmservice-enquiries', require('./routes/public-routes/atmServiceEnquiry.routes'));
+app.use('/api/public/atmcassette-enquiries', require('./routes/public-routes/atmCassetteService.routes'));
+app.use('/api/public/passbookprinter-enquiries', require('./routes/public-routes/passbookPrinterService.routes'));
+app.use('/api/public/cdmservice-enquiries', require('./routes/public-routes/cdmService.routes'));
+app.use('/api/public/posservice-enquiries', require('./routes/public-routes/posService.routes'));
+app.use('/api/public/vsatservice-enquiries', require('./routes/public-routes/vsatService.routes'));
+app.use('/api/public/barcodereaderservice-enquiries', require('./routes/public-routes/barcodeReaderService.routes'));
 
 // 404 handler
 app.use((req, res) => {

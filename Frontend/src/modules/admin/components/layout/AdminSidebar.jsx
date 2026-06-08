@@ -44,6 +44,7 @@ const iconMap = {
   "Premium Services": FiStar,
   "Digital Solutions": FiGrid,
   "Security Solutions": FiShield,
+  "Banking Solutions": FiDollarSign,
 };
 
 // Helper function to convert child name to route path
@@ -113,6 +114,7 @@ const getChildRoute = (parentRoute, childName) => {
       "App Development": "/admin/app-enquiries",
       "CRM": "/admin/crm-enquiries",
       "Digital Marketing": "/admin/marketing-enquiries",
+      "UI/UX Design": "/admin/design-enquiries",
     },
     "/admin/security-solutions": {
       "Installation & Dismantle": "/admin/security-solutions/installation",
@@ -121,6 +123,14 @@ const getChildRoute = (parentRoute, childName) => {
       "Site Testing": "/admin/security-solutions/testing",
       "Panel installation": "/admin/security-solutions/panel",
       "Automated power monitoring": "/admin/security-solutions/monitoring",
+    },
+    "/admin/banking-solutions": {
+      "ATM Service": "/admin/banking-solutions/atm-service",
+      "ATM Cassette Service": "/admin/banking-solutions/atm-cassette-service",
+      "Passbook Printer Service": "/admin/banking-solutions/passbook-printer-service",
+      "CDM Service": "/admin/banking-solutions/cdm-service",
+      "POS Service": "/admin/banking-solutions/pos-service",
+      "VSAT Service": "/admin/banking-solutions/vsat-service",
     },
   };
 
