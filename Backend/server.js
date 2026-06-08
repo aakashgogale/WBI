@@ -209,6 +209,7 @@ app.use('/api/admin', require('./routes/admin-routes/userManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/vendorManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/workerManagement.routes'));
 app.use('/api/admin/service-categories', require('./routes/admin-routes/serviceCategoryManagement.routes'));
+app.use('/api/admin/sub-services', require('./routes/admin-routes/subServiceManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/categoryManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/brandManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/serviceManagement.routes'));
@@ -225,6 +226,9 @@ app.use('/api/admin', require('./routes/admin-routes/trustVideoManagement.routes
 app.use('/api/admin', require('./routes/admin-routes/reportManagement.routes'));
 app.use('/api/admin/settlements', require('./routes/admin-routes/settlementManagement.routes'));
 app.use('/api/admin/admins', require('./routes/admin-routes/adminManagement.routes'));
+app.use('/api/admin/web-enquiries', require('./routes/admin-routes/webEnquiryAdmin.routes'));
+app.use('/api/admin/app-enquiries', require('./routes/admin-routes/appEnquiry.routes'));
+app.use('/api/admin/banking-enquiries', require('./routes/admin-routes/bankingEnquiryAdmin.routes'));
 app.use('/api/image', require('./routes/admin-routes/image.routes'));
 app.use('/api', require('./routes/admin-routes/upload.routes')); // Generic upload access
 
@@ -247,9 +251,13 @@ app.use('/api/notifications', require('./routes/notification.routes'));
 // Public routes (no authentication required)
 app.use('/api/public', require('./routes/public-routes/catalog.routes'));
 app.use('/api/public', require('./routes/public-routes/plan.routes'));
+app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
+app.use('/api/public/app-enquiries', require('./routes/public-routes/appEnquiry.routes'));
 app.use('/api/public', require('./routes/public-routes/config.routes'));
 app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
+app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
+app.use('/api/public/banking-enquiries', require('./routes/public-routes/bankingEnquiry.routes'));
 
 // 404 handler
 app.use((req, res) => {

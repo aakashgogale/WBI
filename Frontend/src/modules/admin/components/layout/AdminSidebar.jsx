@@ -17,7 +17,8 @@ import {
   FiPackage,
   FiTrash2,
   FiStar,
-  FiVideo
+  FiVideo,
+  FiShield
 } from "react-icons/fi";
 import adminMenu from "../../config/adminMenu.json";
 import dashboardService from "../../services/dashboardService";
@@ -40,6 +41,9 @@ const iconMap = {
   Settings: FiSettings,
   Plans: FiPackage,
   "Trust Videos": FiVideo,
+  "Premium Services": FiStar,
+  "Digital Solutions": FiGrid,
+  "Security Solutions": FiShield,
 };
 
 // Helper function to convert child name to route path
@@ -103,6 +107,20 @@ const getChildRoute = (parentRoute, childName) => {
       "Withdrawals": "/admin/settlements/withdrawals",
       "Vendors with Due": "/admin/settlements/vendors",
       "History": "/admin/settlements/history",
+    },
+    "/admin/digital-solutions": {
+      "Web Development": "/admin/web-enquiries",
+      "App Development": "/admin/app-enquiries",
+      "CRM": "/admin/crm-enquiries",
+      "Digital Marketing": "/admin/marketing-enquiries",
+    },
+    "/admin/security-solutions": {
+      "Installation & Dismantle": "/admin/security-solutions/installation",
+      "Preventive maintenance": "/admin/security-solutions/maintenance",
+      "Breakdown calls": "/admin/security-solutions/breakdown",
+      "Site Testing": "/admin/security-solutions/testing",
+      "Panel installation": "/admin/security-solutions/panel",
+      "Automated power monitoring": "/admin/security-solutions/monitoring",
     },
   };
 

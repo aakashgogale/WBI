@@ -18,6 +18,11 @@ const serviceCategorySchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  shortDescription: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   icon: {
     type: String, // Can be a URL from cloudinary or an SVG string / icon name
     default: null
@@ -26,6 +31,14 @@ const serviceCategorySchema = new mongoose.Schema({
     type: String, // URL for a banner or larger image if needed
     default: null
   },
+  bannerImage: {
+    type: String,
+    default: null
+  },
+  trustPoints: [{
+    type: String,
+    trim: true
+  }],
   displayOrder: {
     type: Number,
     default: 0,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronLeft, FiHeart, FiShare2, FiArrowRight, FiHeadphones, FiCheckCircle, FiClock, FiMapPin, FiMessageCircle, FiAlertCircle, FiCode, FiSmartphone, FiPenTool, FiSpeaker, FiMonitor, FiServer, FiArchive, FiPrinter, FiDollarSign, FiCreditCard, FiWifi, FiShield, FiSettings, FiVideo, FiLock, FiUserCheck, FiBell, FiFileText, FiZap, FiBattery, FiBatteryCharging, FiActivity, FiCpu, FiCheckSquare, FiTool, FiHome, FiGrid, FiLink, FiAlertTriangle, FiCrosshair, FiMap, FiUsers } from 'react-icons/fi';
-import api from '../../../../services/api';
+import { publicCatalogService } from '../../../../services/catalogService';
 import { toast } from 'react-hot-toast';
 
 const CategoryDetails = () => {
@@ -21,15 +21,18 @@ const CategoryDetails = () => {
     try {
       setLoading(true);
       // Fetch category data
-      const catResponse = await api.get(`/service-categories/slug/${slug}`);
-      if (catResponse.data && catResponse.data.data) {
-        setCategory(catResponse.data.data);
+      const catResponse = await publicCatalogService.getCategoryBySlug(slug);
+      if (catResponse && catResponse.data) {
+        setCategory(catResponse.data);
+      } else {
+        handleFallbackData();
+        return;
       }
 
       // Fetch services for this category
-      const srvResponse = await api.get(`/service-categories/${slug}/services`);
-      if (srvResponse.data && srvResponse.data.success) {
-        setServices(srvResponse.data.data || []);
+      const srvResponse = await publicCatalogService.getCategorySubServices(slug);
+      if (srvResponse && srvResponse.success) {
+        setServices(srvResponse.data || []);
       }
     } catch (error) {
       console.error("Error fetching category details:", error);
@@ -178,6 +181,20 @@ const CategoryDetails = () => {
 
   const handleContactSupport = () => {
     window.open('https://wa.me/911234567890?text=Hi, I need help choosing a service.', '_blank');
+  };
+
+  const handleServiceClick = (svc) => {
+    const serviceName = svc.name || svc.title;
+    if ((slug === 'digital-solutions' || slug === 'digital') && serviceName === 'Web Development') {
+      navigate('/user/web-development-enquiry');
+    } else if ((slug === 'digital-solutions' || slug === 'digital') && serviceName === 'App Development') {
+      navigate('/user/app-development-enquiry');
+    } else if (slug === 'banking-solutions' || slug === 'banking') {
+      navigate('/user/banking-enquiry', { state: { serviceType: serviceName } });
+    } else {
+      // General fallback if no specific enquiry form exists
+      navigate(`/user/service/${svc._id}`);
+    }
   };
 
   const renderIcon = (iconName, className) => {
@@ -350,17 +367,16 @@ const CategoryDetails = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => navigate(`/user/service/${svc._id}`)}
+                    onClick={() => handleServiceClick(svc)}
                     className="bg-white rounded-[24px] p-4 mb-3 flex items-center gap-4 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
                   >
                     {/* Icon Container */}
                     <div className="w-14 h-14 rounded-2xl bg-[#F8FCFC] border border-gray-100 flex items-center justify-center text-[#10AFA5] shrink-0">
-                      {renderIcon(svc.iconName || 'FiCheckCircle', 'w-6 h-6')}
+                      {renderIcon(svc.icon || svc.iconName || 'FiCheckCircle', 'w-6 h-6')}
                     </div>
                     
-                    {/* Middle Content */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-[15px] font-bold text-[#0F172A] mb-1 leading-tight truncate">{svc.title}</h4>
+                      <h4 className="text-[15px] font-bold text-[#0F172A] mb-1 leading-tight truncate">{svc.name || svc.title}</h4>
                       <p className="text-[11px] text-[#64748B] leading-[1.4] mb-2 line-clamp-2 pr-2">
                         {svc.description}
                       </p>
@@ -369,11 +385,11 @@ const CategoryDetails = () => {
                         <div className="flex items-center gap-1">
                           <span className="text-[13px]">⭐</span>
                           <span className="text-[12px] font-bold text-[#0F172A]">{svc.rating || 4.8}</span>
-                          <span className="text-[11px] text-[#64748B]">({svc.reviews || 128})</span>
+                          <span className="text-[11px] text-[#64748B]">({svc.reviewCount || svc.reviews || 128})</span>
                         </div>
                         <span className="text-gray-300">|</span>
                         <span className="text-[11px] text-[#64748B]">
-                          From <span className="font-bold text-[#0F172A]">₹{svc.basePrice?.toLocaleString('en-IN') || "4,999"}</span>
+                          From <span className="font-bold text-[#0F172A]">₹{(svc.startingPrice || svc.basePrice || 4999).toLocaleString('en-IN')}</span>
                         </span>
                       </div>
                     </div>

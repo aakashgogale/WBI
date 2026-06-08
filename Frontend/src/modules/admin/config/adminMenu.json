@@ -112,6 +112,15 @@
     ]
   },
   {
+    "title": "Premium Services",
+    "route": "/admin/service-categories",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Vendor Services",
     "route": "/admin/user-categories/vendor-services",
     "allowedRoles": [
@@ -174,5 +183,35 @@
       "admin"
     ],
     "children": []
+  },
+  {
+    "title": "Digital Solutions",
+    "route": "/admin/digital-solutions",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": [
+      "Web Development",
+      "App Development",
+      "CRM",
+      "Digital Marketing"
+    ]
+  },
+  {
+    "title": "Security Solutions",
+    "route": "/admin/security-solutions",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": [
+      "Installation & Dismantle",
+      "Preventive maintenance",
+      "Breakdown calls",
+      "Site Testing",
+      "Panel installation",
+      "Automated power monitoring"
+    ]
   }
 ]

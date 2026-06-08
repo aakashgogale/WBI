@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { uploadImage, uploadMedia } = require('../../middleware/uploadMiddleware');
+const { uploadImage, uploadMedia, uploadGenericFile } = require('../../middleware/uploadMiddleware');
 const { getSignature } = require('../../controllers/cloudinaryController');
 
 // Get signature for direct signed upload
@@ -47,6 +47,31 @@ router.post('/upload-media', uploadMedia, async (req, res) => {
       success: true,
       imageUrl: req.file.path,
       message: 'Media uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload file',
+      error: error.message
+    });
+  }
+});
+
+// Upload generic file (PDF, DOC, Images) to Cloudinary
+router.post('/upload-file', uploadGenericFile, async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded or file format not supported'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      imageUrl: req.file.path,
+      message: 'File uploaded successfully'
     });
   } catch (error) {
     console.error('Upload error:', error);

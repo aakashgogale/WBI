@@ -84,6 +84,9 @@ const AddScrap = lazyLoad(() => import('../pages/Scrap/AddScrap'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
 const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));
+const WebDevelopmentEnquiry = lazyLoad(() => import('../pages/WebDevelopmentEnquiry'));
+const AppDevelopmentEnquiry = lazyLoad(() => import('../pages/AppDevelopmentEnquiry'));
+const BankingEnquiry = lazyLoad(() => import('../pages/BankingEnquiry'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -157,6 +160,9 @@ const UserRoutes = () => {
               <Route path="/notifications" element={<ProtectedRoute userType="user"><Notifications /></ProtectedRoute>} />
               <Route path="/help-support" element={<ProtectedRoute userType="user"><HelpSupport /></ProtectedRoute>} />
               <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />
+              <Route path="/web-development-enquiry" element={<ProtectedRoute userType="user"><WebDevelopmentEnquiry /></ProtectedRoute>} />
+              <Route path="/app-development-enquiry" element={<ProtectedRoute userType="user"><AppDevelopmentEnquiry /></ProtectedRoute>} />
+              <Route path="/banking-enquiry" element={<ProtectedRoute userType="user"><BankingEnquiry /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

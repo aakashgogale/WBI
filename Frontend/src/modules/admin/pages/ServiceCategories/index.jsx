@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiImage } from 'react-icons/fi';
-import api from '../../../../services/api'; // Or your admin axios instance
+import { FiPlus, FiEdit2, FiTrash2, FiImage, FiList, FiX } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import api from '../../../../services/api';
 import toast from 'react-hot-toast';
 
 const ServiceCategories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState(null);
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    shortDescription: '',
+    icon: '',
+    bannerImage: '',
+    trustPoints: '',
+    displayOrder: 0,
+    isActive: true,
+    showOnApp: true
+  });
 
   const fetchCategories = async () => {
     try {
@@ -23,6 +39,51 @@ const ServiceCategories = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  const handleOpenModal = (cat = null) => {
+    if (cat) {
+      setCurrentCategory(cat);
+      setFormData({
+        name: cat.name || '',
+        description: cat.description || '',
+        shortDescription: cat.shortDescription || '',
+        icon: cat.icon || '',
+        bannerImage: cat.bannerImage || '',
+        trustPoints: cat.trustPoints ? cat.trustPoints.join(', ') : '',
+        displayOrder: cat.displayOrder || 0,
+        isActive: cat.isActive,
+        showOnApp: cat.showOnApp
+      });
+    } else {
+      setCurrentCategory(null);
+      setFormData({
+        name: '', description: '', shortDescription: '', icon: '', bannerImage: '', trustPoints: '', displayOrder: 0, isActive: true, showOnApp: true
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...formData,
+        trustPoints: formData.trustPoints.split(',').map(t => t.trim()).filter(t => t)
+      };
+
+      if (currentCategory) {
+        await api.put(`/admin/service-categories/${currentCategory._id}`, payload);
+        toast.success('Category updated successfully');
+      } else {
+        await api.post('/admin/service-categories', payload);
+        toast.success('Category created successfully');
+      }
+      setIsModalOpen(false);
+      fetchCategories();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save category');
+    }
+  };
 
   const toggleStatus = async (id, field, currentValue) => {
     try {
@@ -54,7 +115,7 @@ const ServiceCategories = () => {
           <h1 className="text-2xl font-bold text-gray-800">Premium Service Categories</h1>
           <p className="text-sm text-gray-500">Manage categories displayed on the Premium Services page</p>
         </div>
-        <button className="bg-[#10AFA5] text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <button onClick={() => handleOpenModal()} className="bg-[#10AFA5] text-white px-4 py-2 rounded-lg flex items-center gap-2">
           <FiPlus /> Add Category
         </button>
       </div>
@@ -67,10 +128,9 @@ const ServiceCategories = () => {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Icon</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Name & Description</th>
+                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Name & Desc</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Order</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Active</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Show on App</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase text-right">Actions</th>
               </tr>
             </thead>
@@ -79,11 +139,7 @@ const ServiceCategories = () => {
                 <tr key={cat._id} className="hover:bg-gray-50">
                   <td className="p-4">
                     <div className="w-10 h-10 rounded bg-[#10AFA5]/10 flex items-center justify-center text-[#10AFA5]">
-                      {cat.image ? (
-                        <img src={cat.image} alt={cat.name} className="w-6 h-6 object-contain" />
-                      ) : (
-                        <FiImage />
-                      )}
+                      {cat.icon ? <span className="text-xs">{cat.icon}</span> : <FiImage />}
                     </div>
                   </td>
                   <td className="p-4">
@@ -92,43 +148,74 @@ const ServiceCategories = () => {
                   </td>
                   <td className="p-4 text-sm font-medium">{cat.displayOrder}</td>
                   <td className="p-4">
-                    <button 
-                      onClick={() => toggleStatus(cat._id, 'isActive', cat.isActive)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${cat.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                    >
+                    <button onClick={() => toggleStatus(cat._id, 'isActive', cat.isActive)} className={`px-3 py-1 rounded-full text-xs font-semibold ${cat.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {cat.isActive ? 'Active' : 'Inactive'}
                     </button>
                   </td>
-                  <td className="p-4">
-                    <button 
-                      onClick={() => toggleStatus(cat._id, 'showOnApp', cat.showOnApp)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${cat.showOnApp ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}
-                    >
-                      {cat.showOnApp ? 'Visible' : 'Hidden'}
-                    </button>
-                  </td>
                   <td className="p-4 text-right flex justify-end gap-2">
-                    <button className="p-2 text-gray-400 hover:text-[#10AFA5] bg-gray-50 rounded">
+                    <button onClick={() => navigate(`/admin/sub-services?category=${cat._id}`)} className="px-3 py-1 text-[#10AFA5] bg-[#10AFA5]/10 rounded flex items-center gap-1 text-sm font-medium">
+                      <FiList size={14} /> Sub Services
+                    </button>
+                    <button onClick={() => handleOpenModal(cat)} className="p-2 text-gray-400 hover:text-[#10AFA5] bg-gray-50 rounded">
                       <FiEdit2 size={16} />
                     </button>
-                    <button 
-                      onClick={() => deleteCategory(cat._id)}
-                      className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 rounded"
-                    >
+                    <button onClick={() => deleteCategory(cat._id)} className="p-2 text-gray-400 hover:text-red-500 bg-gray-50 rounded">
                       <FiTrash2 size={16} />
                     </button>
                   </td>
                 </tr>
               ))}
-              {categories.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="p-8 text-center text-gray-500">
-                    No service categories found. Run the seed script to populate!
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white">
+              <h2 className="text-xl font-bold">{currentCategory ? 'Edit Category' : 'Add Category'}</h2>
+              <button onClick={() => setIsModalOpen(false)}><FiX size={24} className="text-gray-500" /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input required type="text" className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#10AFA5] outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Icon Name/URL</label>
+                  <input type="text" className="w-full p-2 border rounded-lg" value={formData.icon} onChange={e => setFormData({...formData, icon: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+                  <input type="number" className="w-full p-2 border rounded-lg" value={formData.displayOrder} onChange={e => setFormData({...formData, displayOrder: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea rows="2" className="w-full p-2 border rounded-lg" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trust Points (comma separated)</label>
+                <input type="text" className="w-full p-2 border rounded-lg" placeholder="Expert Team, 24/7 Support" value={formData.trustPoints} onChange={e => setFormData({...formData, trustPoints: e.target.value})} />
+              </div>
+              <div className="flex gap-4 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} className="w-4 h-4 text-[#10AFA5]" />
+                  <span className="text-sm font-medium">Is Active</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={formData.showOnApp} onChange={e => setFormData({...formData, showOnApp: e.target.checked})} className="w-4 h-4 text-[#10AFA5]" />
+                  <span className="text-sm font-medium">Show on App</span>
+                </label>
+              </div>
+              <div className="pt-4 flex justify-end gap-2">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-lg text-gray-600">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-[#10AFA5] text-white rounded-lg">Save Category</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

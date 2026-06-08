@@ -14,7 +14,7 @@ const cloudinaryStorage = new CloudinaryStorage({
       { quality: 'auto:good', fetch_format: 'auto' }
     ],
     public_id: (req, file) => {
-      const name = file.originalname.split('.')[0];
+      const name = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
       return `${name}-${Date.now()}`;
     }
   }
@@ -28,8 +28,21 @@ const cloudinaryMediaStorage = new CloudinaryStorage({
     resource_type: 'auto',
     // Let cloudinary handle formatting
     public_id: (req, file) => {
-      const name = file.originalname.split('.')[0];
+      const name = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
       return `media-${name}-${Date.now()}`;
+    }
+  }
+});
+
+// Configure Cloudinary Storage for Documents & Generic files
+const cloudinaryDocumentStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'appzeto/documents',
+    resource_type: 'auto',
+    public_id: (req, file) => {
+      const name = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
+      return `doc-${name}-${Date.now()}`;
     }
   }
 });
@@ -91,6 +104,15 @@ const uploadMedia = multer({
   }
 }).single('file');
 
+// Generic Document Upload (Cloudinary) - Expecting 'file' field
+const uploadGenericFile = multer({
+  storage: cloudinaryDocumentStorage,
+  fileFilter: documentFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+}).single('file');
+
 // Profile photo upload (legacy/specific) - Expecting 'photo' field
 const uploadProfilePhoto = multer({
   storage: cloudinaryStorage, // Updated to use Cloudinary
@@ -144,6 +166,7 @@ const handleMulterError = (err, req, res, next) => {
 module.exports = {
   uploadImage,
   uploadMedia,
+  uploadGenericFile,
   uploadProfilePhoto,
   uploadDocuments,
   handleMulterError

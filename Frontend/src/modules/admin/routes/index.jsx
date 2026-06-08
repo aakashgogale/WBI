@@ -12,6 +12,8 @@ import Login from '../pages/login';
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Settings = lazy(() => import('../pages/Settings'));
 const UserCategories = lazy(() => import('../pages/UserCategories'));
+const ServiceCategories = lazy(() => import('../pages/ServiceCategories'));
+const SubServices = lazy(() => import('../pages/SubServices'));
 const Users = lazy(() => import('../pages/Users'));
 const Vendors = lazy(() => import('../pages/Vendors'));
 const Workers = lazy(() => import('../pages/Workers'));
@@ -27,6 +29,8 @@ const Scrap = lazy(() => import('../pages/Scrap'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
 const TrustVideos = lazy(() => import('../pages/TrustVideos'));
+const WebEnquiries = lazy(() => import('../pages/WebEnquiries'));
+const AppEnquiries = lazy(() => import('../pages/AppEnquiries'));
 
 
 
@@ -63,6 +67,8 @@ const AdminRoutes = () => {
           <Route path="bookings/tracking" element={<BookingTracking />} />
           <Route path="bookings/notifications" element={<BookingNotifications />} />
           <Route path="user-categories/*" element={<UserCategories />} />
+          <Route path="service-categories/*" element={<ServiceCategories />} />
+          <Route path="sub-services/*" element={<SubServices />} />
           <Route path="payments/*" element={<Payments />} />
           <Route path="reports/*" element={<Reports />} />
           <Route path="notifications/*" element={<Notifications />} />
@@ -70,6 +76,18 @@ const AdminRoutes = () => {
           <Route path="plans" element={<Plans />} />
           <Route path="reviews" element={<Reviews />} />
           <Route path="trust-videos" element={<TrustVideos />} />
+          <Route path="web-enquiries" element={<WebEnquiries />} />
+          <Route path="app-enquiries" element={<AppEnquiries />} />
+          <Route path="crm-enquiries" element={<div className="p-6 text-gray-500 font-medium">CRM Enquiries - Coming Soon</div>} />
+          <Route path="marketing-enquiries" element={<div className="p-6 text-gray-500 font-medium">Digital Marketing Enquiries - Coming Soon</div>} />
+          
+          <Route path="security-solutions/installation" element={<div className="p-6 text-gray-500 font-medium">Installation & Dismantle - Coming Soon</div>} />
+          <Route path="security-solutions/maintenance" element={<div className="p-6 text-gray-500 font-medium">Preventive maintenance - Coming Soon</div>} />
+          <Route path="security-solutions/breakdown" element={<div className="p-6 text-gray-500 font-medium">Breakdown calls - Coming Soon</div>} />
+          <Route path="security-solutions/testing" element={<div className="p-6 text-gray-500 font-medium">Site Testing - Coming Soon</div>} />
+          <Route path="security-solutions/panel" element={<div className="p-6 text-gray-500 font-medium">Panel installation - Coming Soon</div>} />
+          <Route path="security-solutions/monitoring" element={<div className="p-6 text-gray-500 font-medium">Automated power monitoring - Coming Soon</div>} />
+
           <Route path="settlements/*" element={<Settlements />} />
           <Route path="settings/*" element={<Settings />} />
         </Route>

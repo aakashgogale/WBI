@@ -270,6 +270,32 @@ export const publicCatalogService = {
     return response.data;
   },
 
+  // Get single Premium Service Category
+  getCategoryBySlug: async (slug) => {
+    const cacheKey = `public:serviceCategory:${slug}`;
+    const cached = apiCache.get(cacheKey);
+    if (cached) return cached;
+
+    const response = await api.get(`/service-categories/slug/${slug}`);
+    if (response.data.success) {
+      apiCache.set(cacheKey, response.data, 300);
+    }
+    return response.data;
+  },
+
+  // Get sub services for a category
+  getCategorySubServices: async (slug) => {
+    const cacheKey = `public:categorySubServices:${slug}`;
+    const cached = apiCache.get(cacheKey);
+    if (cached) return cached;
+
+    const response = await api.get(`/service-categories/${slug}/services`);
+    if (response.data.success) {
+      apiCache.set(cacheKey, response.data, 300);
+    }
+    return response.data;
+  },
+
   // Get all active brands (formerly services)
   getBrands: async (params = {}) => {
     const queryParams = new URLSearchParams();
