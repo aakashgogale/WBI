@@ -42,10 +42,19 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // SAFE STRATEGY: Bundle all dependencies into one vendor file
-          // This fixes the "Cannot set properties of undefined (setting 'Activity')" error
-          // by ensuring all libraries share the same execution context.
           if (id.includes('node_modules')) {
+            if (id.includes('react/') || id.includes('react-dom/') || id.includes('react-router-dom/')) {
+              return 'react-core';
+            }
+            if (id.includes('firebase/')) {
+              return 'firebase';
+            }
+            if (id.includes('leaflet') || id.includes('react-google-maps')) {
+              return 'maps';
+            }
+            if (id.includes('framer-motion') || id.includes('gsap') || id.includes('recharts')) {
+              return 'ui-heavy';
+            }
             return 'vendor';
           }
         },
@@ -54,8 +63,7 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    // Increase limit since the vendor chunk will be larger
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 800,
     sourcemap: false,
     cssCodeSplit: true,
     target: 'es2020',

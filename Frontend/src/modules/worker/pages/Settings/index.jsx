@@ -5,7 +5,6 @@ import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../../theme';
 import { workerAuthService } from '../../../../services/authService';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import workerService from '../../../../services/workerService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
 
@@ -118,20 +117,20 @@ const Settings = () => {
       try {
         await workerAuthService.logout();
         toast.success('Logged out successfully');
-        navigate('/worker/login');
+        navigate('/engineer/login');
       } catch (error) {
         // Even if API call fails, clear local storage
         localStorage.removeItem('workerAccessToken');
         localStorage.removeItem('workerRefreshToken');
         localStorage.removeItem('workerData');
         toast.success('Logged out successfully');
-        navigate('/worker/login');
+        navigate('/engineer/login');
       }
     }
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
+    <div className="min-h-screen " style={{ background: themeColors.backgroundGradient }}>
       <Header title="Settings" />
 
       <main className="px-4 py-6">
@@ -253,7 +252,7 @@ const Settings = () => {
         </button>
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 };

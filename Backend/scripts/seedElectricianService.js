@@ -77,17 +77,17 @@ const seedElectricianService = async () => {
       imageUploads[banner.key] = await uploadImageToCloudinary(banner.path, 'electrician/banners');
     }
 
-    // Use Homster Cloudinary URLs
+    // Use WBI Cloudinary URLs
     const organizedImageUrls = {
-      homeWiring: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135138/Homster/electricity/service/home-wiring.jpg',
-      electricalPanel: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135139/Homster/electricity/service/electrical-panel-upgrade.jpg',
-      smartHomeSetup: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135140/Homster/electricity/service/smart-home-setup.jpg',
-      switchSocket: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135141/Homster/electricity/service/switch-socket.jpg',
-      fan: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135144/Homster/electricity/service/fan.png',
-      light: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135146/Homster/electricity/service/light.jpg',
-      wiring: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135147/Homster/electricity/service/wiring.jpg',
-      mcb: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135149/Homster/electricity/service/mcb.jpg',
-      inverter: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135150/Homster/electricity/service/invertor.jpg'
+      homeWiring: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135138/WBI/electricity/service/home-wiring.jpg',
+      electricalPanel: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135139/WBI/electricity/service/electrical-panel-upgrade.jpg',
+      smartHomeSetup: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135140/WBI/electricity/service/smart-home-setup.jpg',
+      switchSocket: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135141/WBI/electricity/service/switch-socket.jpg',
+      fan: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135144/WBI/electricity/service/fan.png',
+      light: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135146/WBI/electricity/service/light.jpg',
+      wiring: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135147/WBI/electricity/service/wiring.jpg',
+      mcb: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135149/WBI/electricity/service/mcb.jpg',
+      inverter: 'https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766135150/WBI/electricity/service/invertor.jpg'
     };
 
     Object.assign(imageUploads, organizedImageUrls);

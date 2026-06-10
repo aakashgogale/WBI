@@ -1,4 +1,4 @@
-const CdmService = require('../../models/CdmService');
+const CdmService = require('../models/CdmService');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 require('dotenv').config({ path: '../.env' }); // Adjust path if needed
 const ServiceCategory = require('../models/ServiceCategory');
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/homestr';
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/WBI';
 
 const seedData = [
   {

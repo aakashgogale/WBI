@@ -1,4 +1,4 @@
-// Location Permission Checker Component for Homestr
+// Location Permission Checker Component for WBI
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import flutterBridge from '../../utils/flutterBridge';
@@ -27,7 +27,7 @@ export const LocationPermissionChecker = () => {
             } catch (err) {
                 if (!hasGrantedPreviously || err.code === 1 || err.code === 2) {
                     // Just show a toast once on mount if we can't get location
-                    toast("Please turn on your location for accurate services.", { icon: '📍' });
+                    toast("Please turn on your location for accurate services.", { icon: 'ðŸ“' });
                 }
             }
         };

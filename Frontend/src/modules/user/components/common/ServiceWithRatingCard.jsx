@@ -32,7 +32,7 @@ const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, orig
         ) : (
           <div className="w-full h-36 flex items-center justify-center bg-gray-50 border-b border-gray-100">
             <img
-              src="/Homestr-logo.png"
+              src="/WBI-logo.png"
               alt="Placeholder"
               className="w-12 h-12 object-contain opacity-40 grayscale"
             />
@@ -54,10 +54,10 @@ const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, orig
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="text-[15px] font-bold text-gray-900">
-                {price && !isNaN(price.toString().replace(/[,]/g, '')) ? `₹${price}` : (price || 'Contact for price')}
+                {price && !isNaN(price.toString().replace(/[,]/g, '')) ? `â‚¹${price}` : (price || 'Contact for price')}
               </span>
               {originalPrice && (
-                <span className="text-[11px] text-gray-400 line-through decoration-gray-400/60">₹{originalPrice}</span>
+                <span className="text-[11px] text-gray-400 line-through decoration-gray-400/60">â‚¹{originalPrice}</span>
               )}
             </div>
           </div>

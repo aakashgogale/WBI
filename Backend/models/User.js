@@ -132,6 +132,12 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Indexes for performance
+userSchema.index({ phone: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ 'wallet.balance': -1 });
+
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {

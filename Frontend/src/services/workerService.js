@@ -94,13 +94,45 @@ const workerService = {
     return response.data;
   },
 
-  addJobNotes: async (id, notes) => {
-    const response = await api.post(`/workers/jobs/${id}/notes`, { notes });
+  addJobNotes: async (id, data) => {
+    // data can be a string (legacy) or an object { notes, structuredNotes }
+    const payload = typeof data === 'string' ? { notes: data } : data;
+    const response = await api.post(`/workers/jobs/${id}/notes`, payload);
     return response.data;
   },
 
   respondToJob: async (id, status) => {
     const response = await api.put(`/workers/jobs/${id}/respond`, { status });
+    return response.data;
+  },
+
+  uploadJobMedia: async (id, data) => {
+    const response = await api.post(`/workers/jobs/${id}/upload`, data);
+    return response.data;
+  },
+
+  addJobMaterials: async (id, materials) => {
+    const response = await api.post(`/workers/jobs/${id}/materials`, { materials });
+    return response.data;
+  },
+
+  getJobTimeline: async (id) => {
+    const response = await api.get(`/workers/jobs/${id}/timeline`);
+    return response.data;
+  },
+
+  getJobProgress: async (id) => {
+    const response = await api.get(`/workers/jobs/${id}/progress`);
+    return response.data;
+  },
+
+  addJobExpenses: async (id, expenses) => {
+    const response = await api.post(`/workers/jobs/${id}/expenses`, { expenses });
+    return response.data;
+  },
+
+  getJobReport: async (id) => {
+    const response = await api.get(`/workers/jobs/${id}/report`);
     return response.data;
   },
 

@@ -25,7 +25,8 @@ exports.getServiceReviews = async (req, res) => {
       .populate('userId', 'name profilePhoto')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
 
     const total = await Review.countDocuments(query);
 

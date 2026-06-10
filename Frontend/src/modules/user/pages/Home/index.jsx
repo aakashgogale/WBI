@@ -545,11 +545,21 @@ const Home = () => {
               </div>
 
               {/* 5. How It Works */}
-              <div className="relative z-10 mt-6">
-                <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
-                  <HowItWorks />
-                </Suspense>
-              </div>
+              {homeContent?.isHowItWorksVisible !== false && (
+                <div className="relative z-10 mt-6">
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                    <HowItWorks 
+                      steps={(homeContent?.howItWorks || []).sort((a,b) => (a.order||0) - (b.order||0)).map(s => ({
+                        id: s.id || s._id,
+                        title: s.title,
+                        description: s.description,
+                        iconUrl: s.iconUrl ? toAssetUrl(s.iconUrl) : null
+                      }))}
+                      isLoading={loading}
+                    />
+                  </Suspense>
+                </div>
+              )}
 
               {/* 6. Customer Reviews */}
               <div className="relative z-10 mt-2">
@@ -559,11 +569,20 @@ const Home = () => {
               </div>
 
               {/* 7. Extended Service Categories (Digital First) */}
-              <div className="relative z-10 mt-6 mb-4">
-                <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
-                  <ExtendedServiceCategories />
-                </Suspense>
-              </div>
+              {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || []).sort((a,b) => (a.order||0) - (b.order||0)).map((section, idx) => (
+                <div key={section.id || idx} className="relative z-10 mt-6 mb-4">
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                    <ExtendedServiceCategories 
+                      categories={(section.cards || []).map(c => ({
+                        ...c,
+                        imageUrl: c.imageUrl ? toAssetUrl(c.imageUrl) : null
+                      }))}
+                      isLoading={loading}
+                      onCategoryClick={handleCategoryClick}
+                    />
+                  </Suspense>
+                </div>
+              ))}
 
               {/* Popular Brands We Service (Moved to bottom) */}
               <section className="relative z-10 mt-6 mb-4">

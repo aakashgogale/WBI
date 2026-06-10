@@ -12,6 +12,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const rateLimiter = require('./middleware/rateLimiter');
+const mongoSanitize = require('express-mongo-sanitize');
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -26,18 +27,27 @@ initRedis();
 // Initialize Express app
 const app = express();
 
-// Security middleware - allow cross-origin resource loading (images) for user app
+// Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allows images/assets
+  contentSecurityPolicy: false, // Often conflicts with React if not configured perfectly
+  dnsPrefetchControl: { allow: false },
+  frameguard: { action: 'deny' }, // Prevent clickjacking
+  hidePoweredBy: true, // Hide Express
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }, // Enforce HTTPS
+  ieNoOpen: true,
+  noSniff: true, // Prevent MIME type sniffing
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  xssFilter: true // Basic XSS protection
 }));
 
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://www.homster.in',
-  'https://homster.in',
-  'https://api.homster.in'
+  'https://www.WBI.in',
+  'https://WBI.in',
+  'https://api.WBI.in'
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -77,6 +87,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
 //For camera clicks feature 
 // app.use(express.json({ limit: "20mb" })); // REMOVED redundant
 // app.use(express.urlencoded({ extended: true, limit: "20mb" })); // REMOVED redundant
@@ -106,7 +119,7 @@ app.use('/api', rateLimiter);
 app.get('/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Homster API is running',
+    message: 'WBI API is running',
     timestamp: new Date().toISOString()
   });
 });
@@ -209,6 +222,16 @@ app.use('/api/workers', require('./routes/worker-routes/job.routes'));
 app.use('/api/workers', require('./routes/worker-routes/dashboard.routes'));
 app.use('/api/workers/wallet', require('./routes/worker-routes/wallet.routes'));
 app.use('/api/workers/fcm-tokens', require('./routes/worker-routes/fcmToken.routes'));
+app.use('/api/workers/projects', require('./routes/worker-routes/project.routes'));
+
+// Engineer routes
+app.use('/api/engineers/auth', require('./routes/engineer-routes/auth.routes'));
+app.use('/api/engineers', require('./routes/engineer-routes/profile.routes'));
+app.use('/api/engineers', require('./routes/engineer-routes/job.routes'));
+app.use('/api/engineers', require('./routes/engineer-routes/dashboard.routes'));
+app.use('/api/engineers/wallet', require('./routes/engineer-routes/wallet.routes'));
+app.use('/api/engineers/fcm-tokens', require('./routes/engineer-routes/fcmToken.routes'));
+app.use('/api/engineers/projects', require('./routes/engineer-routes/project.routes'));
 
 // Admin routes
 app.use('/api/admin/auth', require('./routes/admin-routes/adminAuth.routes'));
@@ -217,6 +240,7 @@ app.use('/api/admin', require('./routes/admin-routes/dashboard.routes'));
 app.use('/api/admin', require('./routes/admin-routes/userManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/vendorManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/workerManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/engineerManagement.routes'));
 app.use('/api/admin/service-categories', require('./routes/admin-routes/serviceCategoryManagement.routes'));
 app.use('/api/admin/sub-services', require('./routes/admin-routes/subServiceManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/categoryManagement.routes'));
@@ -235,6 +259,7 @@ app.use('/api/admin', require('./routes/admin-routes/trustVideoManagement.routes
 app.use('/api/admin', require('./routes/admin-routes/reportManagement.routes'));
 app.use('/api/admin/settlements', require('./routes/admin-routes/settlementManagement.routes'));
 app.use('/api/admin/admins', require('./routes/admin-routes/adminManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/formBuilder.routes'));
 app.use('/api/admin/web-enquiries', require('./routes/admin-routes/webEnquiryAdmin.routes'));
 app.use('/api/admin/app-enquiries', require('./routes/admin-routes/appEnquiry.routes'));
 app.use('/api/admin/crm-enquiries', require('./routes/admin-routes/crmEnquiry.routes'));
@@ -254,6 +279,23 @@ app.use('/api/admin/cdmservice-enquiries', require('./routes/admin-routes/cdmSer
 app.use('/api/admin/posservice-enquiries', require('./routes/admin-routes/posService.routes'));
 app.use('/api/admin/vsatservice-enquiries', require('./routes/admin-routes/vsatService.routes'));
 app.use('/api/admin/barcodereaderservice-enquiries', require('./routes/admin-routes/barcodeReaderService.routes'));
+
+// Energy Solutions Routes - Admin
+app.use('/api/admin/dgservice-enquiries', require('./routes/admin-routes/dgService.routes'));
+app.use('/api/admin/batteryservice-enquiries', require('./routes/admin-routes/batteryService.routes'));
+app.use('/api/admin/upsbatteryservice-enquiries', require('./routes/admin-routes/upsBatteryService.routes'));
+app.use('/api/admin/evservice-enquiries', require('./routes/admin-routes/evService.routes'));
+app.use('/api/admin/acpowerservice-enquiries', require('./routes/admin-routes/acPowerService.routes'));
+app.use('/api/admin/dcpowerservice-enquiries', require('./routes/admin-routes/dcPowerService.routes'));
+app.use('/api/admin/powertestingservice-enquiries', require('./routes/admin-routes/powerTestingService.routes'));
+
+// Healthcare Solutions Routes - Admin
+app.use('/api/admin/medicalequipment-enquiries', require('./routes/admin-routes/medicalEquipment.routes'));
+app.use('/api/admin/qctest-enquiries', require('./routes/admin-routes/qcTest.routes'));
+app.use('/api/admin/safetytest-enquiries', require('./routes/admin-routes/safetyTest.routes'));
+app.use('/api/admin/hcpm-enquiries', require('./routes/admin-routes/hcPm.routes'));
+app.use('/api/admin/hcamc-enquiries', require('./routes/admin-routes/hcAmc.routes'));
+
 app.use('/api/image', require('./routes/admin-routes/image.routes'));
 app.use('/api', require('./routes/admin-routes/upload.routes')); // Generic upload access
 
@@ -283,19 +325,46 @@ app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
 app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
 app.use('/api/public/banking-enquiries', require('./routes/public-routes/bankingEnquiry.routes'));
+
+// --- PUBLIC ROUTES (No auth required) ---
+// app.use('/api/public/sub-service-management', require('./routes/public-routes/subServiceManagement.routes'));
+
+// Multiple Services Public Route
+app.use('/api/public/multiple-services-enquiries', require('./routes/public-routes/multipleServicesEnquiry.routes'));
+app.use('/api/public/power-monitoring-enquiries', require('./routes/public-routes/automatedPowerMonitoringEnquiry.routes'));
+
+// Contact and Core Service Enquiries
+// app.use('/api/public/contact', require('./routes/public-routes/contact.routes'));
 app.use('/api/public/installation-enquiries', require('./routes/public-routes/installationEnquiry.routes'));
-app.use('/api/public/maintenance-enquiries', require('./routes/public-routes/maintenanceEnquiry.routes'));
+app.use('/api/public/marketing-enquiries', require('./routes/public-routes/marketingEnquiry.routes'));
+app.use('/api/public/design-enquiries', require('./routes/public-routes/designEnquiry.routes'));
 app.use('/api/public/breakdown-enquiries', require('./routes/public-routes/breakdownEnquiry.routes'));
 app.use('/api/public/sitetesting-enquiries', require('./routes/public-routes/siteTestingEnquiry.routes'));
-app.use('/api/public/powermonitoring-enquiries', require('./routes/public-routes/automatedPowerMonitoringEnquiry.routes'));
-app.use('/api/public/multipleservices-enquiries', require('./routes/public-routes/multipleServicesEnquiry.routes'));
-app.use('/api/public/atmservice-enquiries', require('./routes/public-routes/atmServiceEnquiry.routes'));
-app.use('/api/public/atmcassette-enquiries', require('./routes/public-routes/atmCassetteService.routes'));
+
+// Banking Service Enquiries (Public)
+app.use('/api/public/atm-cassette-service-enquiries', require('./routes/public-routes/atmCassetteService.routes'));
+app.use('/api/public/atm-service-enquiries', require('./routes/public-routes/atmServiceEnquiry.routes'));
 app.use('/api/public/passbookprinter-enquiries', require('./routes/public-routes/passbookPrinterService.routes'));
 app.use('/api/public/cdmservice-enquiries', require('./routes/public-routes/cdmService.routes'));
 app.use('/api/public/posservice-enquiries', require('./routes/public-routes/posService.routes'));
 app.use('/api/public/vsatservice-enquiries', require('./routes/public-routes/vsatService.routes'));
 app.use('/api/public/barcodereaderservice-enquiries', require('./routes/public-routes/barcodeReaderService.routes'));
+
+// Energy Solutions Routes - Public
+app.use('/api/public/dgservice-enquiries', require('./routes/public-routes/dgService.routes'));
+app.use('/api/public/batteryservice-enquiries', require('./routes/public-routes/batteryService.routes'));
+app.use('/api/public/upsbatteryservice-enquiries', require('./routes/public-routes/upsBatteryService.routes'));
+app.use('/api/public/evservice-enquiries', require('./routes/public-routes/evService.routes'));
+app.use('/api/public/acpowerservice-enquiries', require('./routes/public-routes/acPowerService.routes'));
+app.use('/api/public/dcpowerservice-enquiries', require('./routes/public-routes/dcPowerService.routes'));
+app.use('/api/public/powertestingservice-enquiries', require('./routes/public-routes/powerTestingService.routes'));
+
+// Healthcare Solutions Routes - Public
+app.use('/api/public/medicalequipment-enquiries', require('./routes/public-routes/medicalEquipment.routes'));
+app.use('/api/public/qctest-enquiries', require('./routes/public-routes/qcTest.routes'));
+app.use('/api/public/safetytest-enquiries', require('./routes/public-routes/safetyTest.routes'));
+app.use('/api/public/hcpm-enquiries', require('./routes/public-routes/hcPm.routes'));
+app.use('/api/public/hcamc-enquiries', require('./routes/public-routes/hcAmc.routes'));
 
 // 404 handler
 app.use((req, res) => {

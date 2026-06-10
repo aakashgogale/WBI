@@ -1,6 +1,7 @@
 const Worker = require('../../models/Worker');
 const Transaction = require('../../models/Transaction');
 const Booking = require('../../models/Booking');
+const Withdrawal = require('../../models/Withdrawal');
 
 /**
  * Get worker wallet with ledger balance
@@ -23,10 +24,35 @@ const getWallet = async (req, res) => {
       .select('bookingNumber serviceName completedAt vendorId finalAmount vendorBillId')
       .sort({ completedAt: -1 });
 
+    // Calculate Dynamic Wallet Balances
+    const completedTransactions = await Transaction.find({
+      workerId: workerId,
+      status: 'completed',
+      type: { $in: ['worker_payment', 'commission', 'cash_collected', 'earnings_credit'] }
+    });
+    
+    const totalEarnings = completedTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const approvedWithdrawals = await Withdrawal.find({ workerId, status: 'approved' });
+    const withdrawnAmount = approvedWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+
+    const pendingWithdrawals = await Withdrawal.find({ workerId, status: 'pending' });
+    const pendingWithdrawalAmount = pendingWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+
+    // Save accurate synced data if not perfectly aligned
+    worker.wallet.totalEarnings = totalEarnings;
+    worker.wallet.withdrawnAmount = withdrawnAmount;
+    worker.wallet.pendingBalance = pendingWithdrawalAmount;
+    await worker.save();
+
     res.status(200).json({
       success: true,
       data: {
         balance: worker.wallet?.balance || 0,
+        availableBalance: worker.wallet?.balance || 0,
+        totalBalance: totalEarnings,
+        withdrawnAmount: withdrawnAmount,
+        pendingBalance: pendingWithdrawalAmount,
         pendingBookings: pendingBookings
       }
     });
@@ -137,8 +163,130 @@ const requestPayout = async (req, res) => {
   }
 };
 
+/**
+ * Get wallet summary for worker
+ */
+const getWalletSummary = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const worker = await Worker.findById(workerId);
+
+    if (!worker) {
+      return res.status(404).json({ success: false, message: 'Worker not found' });
+    }
+
+    // Pending bookings sum
+    const pendingBookings = await Booking.find({
+      workerId: workerId,
+      status: 'completed',
+      workerPaymentStatus: 'PENDING'
+    });
+
+    // In a real system, you'd calculate exact worker commission from VendorBill.
+    // Here we use finalAmount as a proxy if no explicit commission is set.
+    const pendingPayouts = pendingBookings.reduce((sum, b) => sum + (b.finalAmount || 0), 0);
+
+    // Total Monthly Earnings
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const monthlyTransactions = await Transaction.find({
+      workerId: workerId,
+      status: 'completed',
+      type: { $in: ['worker_payment', 'cash_collected', 'credit', 'commission'] },
+      createdAt: { $gte: startOfMonth }
+    });
+
+    const totalMonthlyEarnings = monthlyTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        walletBalance: worker.wallet?.balance || 0,
+        pendingPayouts: pendingPayouts,
+        totalMonthlyEarnings: totalMonthlyEarnings,
+      }
+    });
+
+  } catch (error) {
+    console.error('Get wallet summary error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch wallet summary' });
+  }
+};
+
+/**
+ * Request Withdrawal
+ */
+const requestWithdrawal = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { amount, bankDetails } = req.body;
+    
+    const worker = await Worker.findById(workerId);
+    if (!worker) return res.status(404).json({ success: false, message: 'Worker not found' });
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid withdrawal amount' });
+    }
+
+    if (worker.wallet.balance < amount) {
+      return res.status(400).json({ success: false, message: 'Insufficient balance' });
+    }
+
+    // Deduct available balance
+    worker.wallet.balance -= amount;
+    worker.wallet.pendingBalance += amount;
+    await worker.save();
+
+    const withdrawal = await Withdrawal.create({
+      workerId,
+      amount,
+      status: 'pending',
+      bankDetails,
+      requestDate: new Date()
+    });
+
+    const transaction = await Transaction.create({
+      workerId,
+      type: 'withdrawal',
+      amount: -amount,
+      status: 'pending',
+      description: 'Withdrawal Request',
+      referenceId: withdrawal._id.toString(),
+      balanceBefore: worker.wallet.balance + amount,
+      balanceAfter: worker.wallet.balance
+    });
+
+    // Notify admins
+    const { createNotification } = require('../notificationControllers/notificationController');
+    const Admin = require('../../models/Admin');
+    const admins = await Admin.find({ role: { $in: ['Super Admin', 'Finance'] } });
+    
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin._id,
+        userModel: 'Admin',
+        type: 'worker_withdrawal_request',
+        title: '💸 Worker Withdrawal',
+        message: `${worker.name} requested a withdrawal of ₹${amount}`,
+        relatedId: withdrawal._id,
+        relatedType: 'withdrawal',
+        priority: 'high'
+      });
+    }
+
+    res.status(200).json({ success: true, message: 'Withdrawal request submitted', data: withdrawal });
+  } catch (error) {
+    console.error('Request withdrawal error:', error);
+    res.status(500).json({ success: false, message: 'Failed to request withdrawal' });
+  }
+};
+
 module.exports = {
   getWallet,
   getTransactions,
-  requestPayout
+  requestPayout,
+  getWalletSummary,
+  requestWithdrawal
 };

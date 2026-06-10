@@ -37,6 +37,10 @@ const getProfile = async (req, res) => {
         settings: worker.settings || { notifications: true, language: 'en' },
         isPhoneVerified: worker.isPhoneVerified || false,
         isEmailVerified: worker.isEmailVerified || false,
+        bankDetails: worker.bankDetails || {},
+        documents: worker.documents || {},
+        workLocations: worker.workLocations || {},
+        customFields: worker.customFields || {},
         createdAt: worker.createdAt,
         updatedAt: worker.updatedAt
       }
@@ -110,6 +114,10 @@ const updateProfile = async (req, res) => {
       }
     }
 
+    if (req.body.customFields) {
+      worker.customFields = { ...worker.customFields, ...req.body.customFields };
+    }
+
     if (req.body.settings) {
       worker.settings = {
         notifications: req.body.settings.notifications !== undefined ? req.body.settings.notifications : (worker.settings?.notifications ?? true),
@@ -139,7 +147,8 @@ const updateProfile = async (req, res) => {
         profilePhoto: worker.profilePhoto, // Include in response
         settings: worker.settings,
         isPhoneVerified: worker.isPhoneVerified,
-        isEmailVerified: worker.isEmailVerified
+        isEmailVerified: worker.isEmailVerified,
+        customFields: worker.customFields || {}
       }
     });
   } catch (error) {
@@ -175,9 +184,89 @@ const updateLocation = async (req, res) => {
   }
 };
 
+/**
+ * Get profile completion percentage
+ */
+const getProfileCompletion = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const worker = await Worker.findById(workerId);
+    
+    if (!worker) return res.status(404).json({ success: false, message: 'Worker not found' });
+
+    let score = 0;
+    
+    // Personal Info (20%)
+    if (worker.name && worker.phone && worker.email && worker.address?.city) score += 20;
+    
+    // Bank Details (20%)
+    if (worker.bankDetails?.accountNumber && worker.bankDetails?.ifscCode) score += 20;
+    
+    // Documents (25%)
+    if (worker.documents?.aadhaar || worker.aadhar?.document) score += 25;
+    
+    // Work Locations (20%)
+    if (worker.workLocations?.primaryArea || worker.serviceCategories?.length > 0) score += 20;
+    
+    // Profile Photo (15%)
+    if (worker.profilePhoto) score += 15;
+
+    res.status(200).json({ success: true, data: { completionPercentage: score } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to calculate profile completion' });
+  }
+};
+
+/**
+ * Update Bank Details
+ */
+const updateBankDetails = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const worker = await Worker.findByIdAndUpdate(workerId, { bankDetails: req.body }, { new: true });
+    res.status(200).json({ success: true, message: 'Bank details updated', worker });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Update Work Locations
+ */
+const updateWorkLocations = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const worker = await Worker.findByIdAndUpdate(workerId, { workLocations: req.body }, { new: true });
+    res.status(200).json({ success: true, message: 'Work locations updated', worker });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Update Documents
+ */
+const updateDocuments = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const worker = await Worker.findById(workerId);
+    
+    worker.documents = { ...worker.documents, ...req.body, status: 'Pending' };
+    await worker.save();
+    
+    res.status(200).json({ success: true, message: 'Documents updated', worker });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
-  updateLocation
+  updateLocation,
+  getProfileCompletion,
+  updateBankDetails,
+  updateWorkLocations,
+  updateDocuments
 };
 

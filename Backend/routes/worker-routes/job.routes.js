@@ -13,7 +13,15 @@ const {
   verifyVisit,
   workerReachedLocation,
   collectCash,
-  respondToJob
+  respondToJob,
+  uploadJobMedia,
+  addJobMaterials,
+  getJobTimeline,
+  getJobProgress,
+  addJobExpenses,
+  getJobReport,
+  getJobCompletionDetails,
+  shareJobReport
 } = require('../../controllers/bookingControllers/workerBookingController');
 const {
   createOrUpdateBill,
@@ -47,6 +55,14 @@ router.post('/jobs/:id/visit/verify', authenticate, isWorker, verifyVisit);
 router.post('/jobs/:id/complete', authenticate, isWorker, completeJob);
 router.post('/jobs/:id/payment/collect', authenticate, isWorker, collectCash);
 router.post('/jobs/:id/notes', authenticate, isWorker, addNotesValidation, addWorkerNotes);
+router.post('/jobs/:id/upload', authenticate, isWorker, uploadJobMedia);
+router.post('/jobs/:id/materials', authenticate, isWorker, addJobMaterials);
+router.get('/jobs/:id/timeline', authenticate, isWorker, getJobTimeline);
+router.get('/jobs/:id/progress', authenticate, isWorker, getJobProgress);
+router.post('/jobs/:id/expenses', authenticate, isWorker, addJobExpenses);
+router.get('/jobs/:id/report', authenticate, isWorker, getJobReport);
+router.get('/jobs/:id/completion', authenticate, isWorker, getJobCompletionDetails);
+router.post('/jobs/:id/share', authenticate, isWorker, shareJobReport);
 
 // Bill Routes
 router.post('/jobs/:id/bill', authenticate, isWorker, (req, res, next) => {

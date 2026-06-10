@@ -6,31 +6,31 @@ dotenv.config();
 
 const migrateCategoryIcons = async () => {
   try {
-    console.log('🔌 Connecting to MongoDB...');
+    console.log('ðŸ”Œ Connecting to MongoDB...');
     await connectDB();
-    console.log('✅ Connected to MongoDB\n');
+    console.log('âœ… Connected to MongoDB\n');
 
     // Find all categories with icons
     const categories = await Category.find({
       homeIconUrl: { $exists: true, $ne: null, $ne: '' }
     });
 
-    console.log(`📂 Found ${categories.length} categories with icons\n`);
+    console.log(`ðŸ“‚ Found ${categories.length} categories with icons\n`);
 
     for (const category of categories) {
       const currentIconUrl = category.homeIconUrl;
-      console.log(`🔄 Processing: ${category.title} (${category.slug})`);
+      console.log(`ðŸ”„ Processing: ${category.title} (${category.slug})`);
       console.log(`   Current URL: ${currentIconUrl}`);
 
-      // Check if URL already uses Homster folder
-      if (currentIconUrl.includes('/Homster/')) {
-        console.log(`   ✅ Already in Homster folder\n`);
+      // Check if URL already uses WBI folder
+      if (currentIconUrl.includes('/WBI/')) {
+        console.log(`   âœ… Already in WBI folder\n`);
         continue;
       }
 
-      // Generate new Homster URL
+      // Generate new WBI URL
       const iconFilename = currentIconUrl.split('/').pop();
-      const newIconUrl = `https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766136203/Homster/${category.slug}/icons/${iconFilename}`;
+      const newIconUrl = `https://res.cloudinary.com/shubhamcloudinary/image/upload/v1766136203/WBI/${category.slug}/icons/${iconFilename}`;
 
       console.log(`   New URL: ${newIconUrl}`);
 
@@ -38,18 +38,18 @@ const migrateCategoryIcons = async () => {
       category.homeIconUrl = newIconUrl;
       await category.save();
 
-      console.log(`   ✅ Updated in database\n`);
+      console.log(`   âœ… Updated in database\n`);
     }
 
-    console.log('🎉 Category icon migration completed!');
-    console.log('📋 All category icons now use Homster folder structure');
+    console.log('ðŸŽ‰ Category icon migration completed!');
+    console.log('ðŸ“‹ All category icons now use WBI folder structure');
 
   } catch (error) {
-    console.error('❌ Error migrating category icons:', error);
+    console.error('âŒ Error migrating category icons:', error);
   } finally {
     const mongoose = require('mongoose');
     await mongoose.connection.close();
-    console.log('\n🔌 Database connection closed');
+    console.log('\nðŸ”Œ Database connection closed');
   }
 };
 

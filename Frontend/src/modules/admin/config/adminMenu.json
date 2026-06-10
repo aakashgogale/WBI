@@ -48,6 +48,28 @@
     ]
   },
   {
+    "title": "Engineers",
+    "route": "/admin/engineers",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": [
+      "All Engineers",
+      "Engineer Jobs",
+      "Engineer Analytics"
+    ]
+  },
+  {
+    "title": "Form Builder",
+    "route": "/admin/form-builder",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Bookings",
     "route": "/admin/bookings",
     "allowedRoles": [
@@ -228,7 +250,40 @@
       "Passbook Printer Service",
       "CDM Service",
       "POS Service",
-      "VSAT Service"
+      "VSAT Service",
+      "Barcode Reader Service"
+    ]
+  },
+  {
+    "title": "Energy Solutions",
+    "route": "/admin/energy-solutions",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": [
+      "Diesel Generator Service",
+      "Battery Service",
+      "UPS Battery Service",
+      "EV Service",
+      "AC Power System Service",
+      "DC Power System Service",
+      "Power System Testing"
+    ]
+  },
+  {
+    "title": "Healthcare Solutions",
+    "route": "/admin/healthcare-solutions",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": [
+      "Medical Equipment Services",
+      "Quality Control Test",
+      "Electrical Safety Test",
+      "Preventive Maintenance",
+      "Annual Maintenance Contract (AMC)"
     ]
   }
 ]

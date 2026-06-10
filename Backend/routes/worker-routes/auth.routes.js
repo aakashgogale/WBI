@@ -11,6 +11,7 @@ const {
 } = require('../../controllers/workerControllers/workerAuthController');
 const { authenticate } = require('../../middleware/authMiddleware');
 const { isWorker } = require('../../middleware/roleMiddleware');
+const { getRegistrationConfig } = require('../../controllers/workerControllers/workerConfigController');
 
 // Validation rules
 const sendOTPValidation = [
@@ -26,14 +27,13 @@ const verifyLoginValidation = [
 const registerValidation = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('phone').trim().notEmpty().withMessage('Phone number is required').isLength({ min: 10, max: 10 }).withMessage('Phone number must be 10 digits'),
-  body('email').isEmail().withMessage('Please provide a valid email')
-  // otp/token optional (handled by controller)
+  body('email').optional({ nullable: true, checkFalsy: true }).isEmail().withMessage('Please provide a valid email'),
+  body('password').trim().notEmpty().withMessage('Password is required').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ];
 
 const loginValidation = [
   body('phone').trim().notEmpty().withMessage('Phone number is required').isLength({ min: 10, max: 10 }).withMessage('Phone number must be 10 digits'),
-  body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
-  body('token').trim().notEmpty().withMessage('Verification token is required')
+  body('password').trim().notEmpty().withMessage('Password is required')
 ];
 
 // Routes
@@ -42,6 +42,7 @@ router.post('/verify-login', verifyLoginValidation, verifyLogin); // New Unified
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.post('/refresh-token', refreshToken);
+router.get('/config/registration', getRegistrationConfig); // Added config route
 router.post('/logout', authenticate, isWorker, logout);
 
 module.exports = router;

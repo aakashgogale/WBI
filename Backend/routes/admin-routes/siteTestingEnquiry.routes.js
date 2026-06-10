@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const siteTestingEnquiryController = require('../../controllers/siteTestingEnquiry.controller');
-const { protect, authorize } = require('../../middlewares/auth');
+const { authenticate } = require('../../middleware/authMiddleware');
+const { isAdmin } = require('../../middleware/roleMiddleware');
 
-// Protect all routes and restrict to admin/super_admin
-router.use(protect);
-router.use(authorize('admin', 'super_admin'));
+// Protect all routes and restrict to admin
+router.use(authenticate);
+router.use(isAdmin);
 
 router.get('/', siteTestingEnquiryController.getEnquiries);
 router.get('/:id', siteTestingEnquiryController.getEnquiry);

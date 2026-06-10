@@ -315,7 +315,7 @@ const JobTimeline = () => {
   }
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
+    <div className="min-h-screen " style={{ background: themeColors.backgroundGradient }}>
       <Header title="Job Timeline" />
 
       <main className="px-4 py-8">

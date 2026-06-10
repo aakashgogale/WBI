@@ -140,7 +140,7 @@ const verifyLogin = async (req, res) => {
 };
 
 /**
- * Register worker with Verification Token
+ * Register worker (Multi-Step payload)
  */
 const register = async (req, res) => {
   try {
@@ -153,54 +153,84 @@ const register = async (req, res) => {
       });
     }
 
-    // verificationToken handling
-    const { name, email, verificationToken, aadharNumber, aadharDocument, aadharBackDocument } = req.body;
-    let phone = req.body.phone;
-
-    if (verificationToken) {
-      const verifiedPhone = verifyVerificationToken(verificationToken);
-      if (!verifiedPhone) return res.status(400).json({ success: false, message: 'Invalid verification session.' });
-      phone = verifiedPhone;
-    } else {
-      // Fallback OTP
-      if (!req.body.otp) return res.status(400).json({ success: false, message: 'Verification required.' });
-      const ver = await verifyOTP(phone, req.body.otp);
-      if (!ver.success) return res.status(400).json({ success: false, message: ver.message });
-    }
+    const { 
+      name, email, phone, password,
+      serviceCategories, skills,
+      availability,
+      address, workLocations, location,
+      uploadedDocuments,
+      // New Comprehensive Fields
+      dob, gender, roleType, experience, workType,
+      workingDays, workingHours, emergencyService,
+      workTools, engineerDetails, customFields
+    } = req.body;
 
     // Check existing
     const existingWorker = await Worker.findOne({ $or: [{ phone }, { email }] });
     if (existingWorker) {
       return res.status(400).json({
         success: false,
-        message: 'Worker already exists. Please login.'
+        message: 'Worker already exists with this phone or email. Please login.'
       });
     }
 
-    // Upload Aadhar
-    let aadharUrl = aadharDocument || null;
-    let aadharBackUrl = aadharBackDocument || null;
+    // Process Documents to Cloudinary
+    let processedDocuments = [];
+    if (uploadedDocuments && Array.isArray(uploadedDocuments)) {
+      for (let doc of uploadedDocuments) {
+        let processedDoc = { key: doc.key, status: 'Pending' };
+        
+        if (doc.url && doc.url.startsWith('data:')) {
+          const uploadRes = await cloudinaryService.uploadFile(doc.url, { folder: 'workers/documents' });
+          if (uploadRes.success) processedDoc.url = uploadRes.url;
+        } else {
+          processedDoc.url = doc.url;
+        }
 
-    if (aadharUrl && aadharUrl.startsWith('data:')) {
-      const uploadRes = await cloudinaryService.uploadFile(aadharUrl, { folder: 'workers/documents' });
-      if (uploadRes.success) aadharUrl = uploadRes.url;
+        if (doc.backUrl && doc.backUrl.startsWith('data:')) {
+          const uploadResBack = await cloudinaryService.uploadFile(doc.backUrl, { folder: 'workers/documents' });
+          if (uploadResBack.success) processedDoc.backUrl = uploadResBack.url;
+        } else {
+          processedDoc.backUrl = doc.backUrl;
+        }
+
+        processedDocuments.push(processedDoc);
+      }
     }
 
-    if (aadharBackUrl && aadharBackUrl.startsWith('data:')) {
-      const uploadRes = await cloudinaryService.uploadFile(aadharBackUrl, { folder: 'workers/documents' });
-      if (uploadRes.success) aadharBackUrl = uploadRes.url;
-    }
+    // Extract Aadhaar/PAN for backwards compatibility
+    const aadhaarDoc = processedDocuments.find(d => d.key === 'aadhaar' || d.key === 'aadhar');
+    const panDoc = processedDocuments.find(d => d.key === 'pan');
 
     // Create worker
     const worker = await Worker.create({
-      name, email, phone,
-      isPhoneVerified: true,
-      aadhar: {
-        number: req.body.aadhar || aadharNumber,
-        document: aadharUrl,
-        backDocument: aadharBackUrl
+      name, email, phone, password,
+      serviceCategories: serviceCategories || [],
+      skills: skills || [],
+      availability: availability || 'Full Time',
+      address: address || {},
+      workLocations: workLocations || { primaryArea: '', serviceRadius: 10 },
+      location: location || null,
+      uploadedDocuments: processedDocuments,
+      // New fields
+      dob: dob || null,
+      gender: gender || '',
+      roleType: roleType || 'Worker',
+      experience: experience || '',
+      workType: workType || '',
+      workingDays: workingDays || [],
+      workingHours: workingHours || { start: '09:00 AM', end: '06:00 PM' },
+      emergencyService: emergencyService || false,
+      workTools: workTools || { ownTools: false, vehicleAvailable: false, vehicleType: '', drivingLicense: '' },
+      engineerDetails: engineerDetails || { qualification: '', degree: '', specialization: '', projectExperience: '', portfolio: '', certifications: [], previousCompany: '', canHandleMilestones: false },
+      customFields: customFields || {},
+      documents: {
+        aadhaar: aadhaarDoc?.url || null,
+        pan: panDoc?.url || null,
+        status: 'Pending'
       },
-      status: WORKER_STATUS.OFFLINE
+      status: WORKER_STATUS.OFFLINE,
+      approvalStatus: 'pending' // Admin needs to approve
     });
 
     // Generate JWT tokens with initial session
@@ -215,13 +245,14 @@ const register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful',
+      message: 'Registration successful. Account pending approval.',
       worker: {
         id: worker._id,
         name: worker.name,
         email: worker.email,
         phone: worker.phone,
-        status: worker.status
+        status: worker.status,
+        approvalStatus: worker.approvalStatus
       },
       ...tokens
     });
@@ -229,13 +260,13 @@ const register = async (req, res) => {
     console.error('Worker registration error:', error);
     res.status(500).json({
       success: false,
-      message: 'Registration failed. Please try again.'
+      message: error.message || 'Registration failed. Please try again.'
     });
   }
 };
 
 /**
- * Login worker with OTP
+ * Login worker with Password
  */
 const login = async (req, res) => {
   try {
@@ -248,25 +279,27 @@ const login = async (req, res) => {
       });
     }
 
-    const { phone, otp } = req.body;
-
-    // Verify OTP
-    const verification = await verifyOTP(phone, otp);
-    if (!verification.success) {
-      return res.status(400).json({
-        success: false,
-        message: verification.message
-      });
-    }
+    const { phone, password } = req.body;
 
     // Find worker
-    const worker = await Worker.findOne({ phone });
+    const worker = await Worker.findOne({ phone }).select('+password');
     if (!worker) {
       return res.status(404).json({
         success: false,
         message: 'Worker not found. Please register first.'
       });
     }
+
+    // Verify Password
+    const isMatch = await worker.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid phone or password'
+      });
+    }
+
+
 
     if (!worker.isActive) {
       return res.status(403).json({ success: false, message: 'Account deactivated.' });

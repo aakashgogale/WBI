@@ -201,7 +201,7 @@ const Login = () => {
       <div className="w-full flex justify-center mb-10 h-16 items-center mt-2 shrink-0">
           <img 
             src="/logo/logo.webp" 
-            alt="Homestr Logo" 
+            alt="WBI Logo" 
             className="h-full w-auto max-w-[180px] object-contain"
             onError={(e) => {
               e.target.style.display = 'none';
@@ -210,7 +210,7 @@ const Login = () => {
               }
             }}
           />
-          <span className="hidden text-3xl font-extrabold text-[#FF8A00] tracking-tight">Homestr</span>
+          <span className="hidden text-3xl font-extrabold text-[#FF8A00] tracking-tight">WBI</span>
       </div>
 
       {/* Heading Area */}
@@ -274,7 +274,7 @@ const Login = () => {
                 </button>
 
                 <p className="text-sm text-gray-500 font-medium text-center">
-                  New to Homestr?{' '}
+                  New to WBI?{' '}
                   <Link
                     to="/user/signup"
                     className="text-[#FF8A00] hover:text-[#e65100] font-bold transition-colors"
@@ -366,7 +366,7 @@ const Login = () => {
 
       {/* Footer */}
       <div className="w-full text-center text-xs text-gray-400 mt-4 shrink-0 pb-2">
-        &copy; {new Date().getFullYear()} Homestr. All rights reserved.
+        &copy; {new Date().getFullYear()} WBI. All rights reserved.
       </div>
       <DebugConsole />
     </div>

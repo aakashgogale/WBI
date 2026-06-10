@@ -22,7 +22,7 @@ const getHomeContent = async (req, res) => {
         noteworthy: homeContent.noteworthy || [],
         booked: homeContent.booked || [],
         categorySections: homeContent.categorySections || [],
-        categorySections: homeContent.categorySections || [],
+        howItWorks: homeContent.howItWorks || [],
         isActive: homeContent.isActive,
         isBannersVisible: homeContent.isBannersVisible ?? true,
         isPromosVisible: homeContent.isPromosVisible ?? true,
@@ -31,6 +31,7 @@ const getHomeContent = async (req, res) => {
         isBookedVisible: homeContent.isBookedVisible ?? true,
         isCategorySectionsVisible: homeContent.isCategorySectionsVisible ?? true,
         isCategoriesVisible: homeContent.isCategoriesVisible ?? true,
+        isHowItWorksVisible: homeContent.isHowItWorksVisible ?? true,
         createdAt: homeContent.createdAt,
         updatedAt: homeContent.updatedAt
       }
@@ -77,7 +78,8 @@ const updateHomeContent = async (req, res) => {
           newItem.id.startsWith('hcur-') ||
           newItem.id.startsWith('hnot-') ||
           newItem.id.startsWith('hbkd-') ||
-          newItem.id.startsWith('hsec-')
+          newItem.id.startsWith('hsec-') ||
+          newItem.id.startsWith('hhiw-')
         )) {
           delete newItem.id;
         }
@@ -118,6 +120,7 @@ const updateHomeContent = async (req, res) => {
       homeContent.categorySections = sanitizeItems(req.body.categorySections);
       homeContent.markModified('categorySections');
     }
+    if (req.body.howItWorks !== undefined) homeContent.howItWorks = sanitizeItems(req.body.howItWorks);
     if (req.body.isActive !== undefined) homeContent.isActive = req.body.isActive;
     if (req.body.isBannersVisible !== undefined) homeContent.isBannersVisible = req.body.isBannersVisible;
     if (req.body.isPromosVisible !== undefined) homeContent.isPromosVisible = req.body.isPromosVisible;
@@ -126,6 +129,7 @@ const updateHomeContent = async (req, res) => {
     if (req.body.isBookedVisible !== undefined) homeContent.isBookedVisible = req.body.isBookedVisible;
     if (req.body.isCategorySectionsVisible !== undefined) homeContent.isCategorySectionsVisible = req.body.isCategorySectionsVisible;
     if (req.body.isCategoriesVisible !== undefined) homeContent.isCategoriesVisible = req.body.isCategoriesVisible;
+    if (req.body.isHowItWorksVisible !== undefined) homeContent.isHowItWorksVisible = req.body.isHowItWorksVisible;
 
     await homeContent.save();
 
@@ -141,7 +145,7 @@ const updateHomeContent = async (req, res) => {
         noteworthy: homeContent.noteworthy,
         booked: homeContent.booked,
         categorySections: homeContent.categorySections,
-        categorySections: homeContent.categorySections,
+        howItWorks: homeContent.howItWorks,
         isActive: homeContent.isActive,
         isBannersVisible: homeContent.isBannersVisible,
         isPromosVisible: homeContent.isPromosVisible,
@@ -149,7 +153,8 @@ const updateHomeContent = async (req, res) => {
         isNoteworthyVisible: homeContent.isNoteworthyVisible,
         isBookedVisible: homeContent.isBookedVisible,
         isCategorySectionsVisible: homeContent.isCategorySectionsVisible,
-        isCategoriesVisible: homeContent.isCategoriesVisible
+        isCategoriesVisible: homeContent.isCategoriesVisible,
+        isHowItWorksVisible: homeContent.isHowItWorksVisible
       }
     });
   } catch (error) {

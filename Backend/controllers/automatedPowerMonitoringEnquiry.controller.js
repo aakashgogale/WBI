@@ -1,4 +1,4 @@
-const AutomatedPowerMonitoringEnquiry = require('../../models/AutomatedPowerMonitoringEnquiry');
+const AutomatedPowerMonitoringEnquiry = require('../models/AutomatedPowerMonitoringEnquiry');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

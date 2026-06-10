@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { FiBell, FiCheck, FiBriefcase, FiChevronRight, FiTrash2, FiX } from 'react-icons/fi';
 import { workerTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import workerService from '../../../../services/workerService';
 import { toast } from 'react-hot-toast';
 
@@ -150,7 +149,7 @@ const Notifications = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
+    <div className="min-h-screen " style={{ background: themeColors.backgroundGradient }}>
       <Header title="Notifications" />
 
       <main className="px-4 py-6">
@@ -323,7 +322,7 @@ const Notifications = () => {
         )}
       </main>
 
-      <BottomNav />
+      
 
       {/* Confirmation Modal */}
       {showClearConfirm && (

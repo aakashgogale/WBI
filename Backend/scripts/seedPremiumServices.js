@@ -6,7 +6,7 @@ const SubService = require('../models/SubService');
 // Load env vars
 dotenv.config({ path: '../.env' });
 
-const dbUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/homestr';
+const dbUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/WBI';
 
 mongoose.connect(dbUrl, {
   useNewUrlParser: true,
@@ -176,10 +176,10 @@ const seedDB = async () => {
       }
     }
     
-    console.log('✅ Premium Services Data Seeded Successfully!');
+    console.log('âœ… Premium Services Data Seeded Successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Seeding Error:', error);
+    console.error('âŒ Seeding Error:', error);
     process.exit(1);
   }
 };

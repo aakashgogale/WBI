@@ -1,4 +1,4 @@
-const SiteTestingEnquiry = require('../../models/SiteTestingEnquiry');
+const SiteTestingEnquiry = require('../models/SiteTestingEnquiry');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

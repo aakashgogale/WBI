@@ -3,8 +3,11 @@ const mongoose = require('mongoose');
 const withdrawalSchema = new mongoose.Schema({
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor',
-    required: true
+    ref: 'Vendor'
+  },
+  workerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Worker'
   },
   amount: {
     type: Number,

@@ -1,4 +1,4 @@
-const PassbookPrinterService = require('../../models/PassbookPrinterService');
+const PassbookPrinterService = require('../models/PassbookPrinterService');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

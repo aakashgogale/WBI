@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import brandConfig from '../../config/brandConfig';
 
 /**
  * LogoLoader Component
@@ -37,8 +38,8 @@ const LogoLoader = ({ fullScreen = false, overlay = false, inline = false, size 
         className={`relative ${size} flex items-center justify-center`}
       >
         <img
-          src="/logo/logo.webp"
-          alt="Loading..."
+          src={brandConfig.logoPath}
+          alt={brandConfig.brandName}
           className="w-full h-full object-contain"
         />
         {/* Subtle ripple effect */}

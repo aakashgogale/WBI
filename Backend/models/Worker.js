@@ -27,6 +27,29 @@ const workerSchema = new mongoose.Schema({
     enum: ['worker'],
     default: 'worker'
   },
+  roleType: {
+    type: String,
+    enum: ['Worker', 'Engineer', 'Both'],
+    default: 'Worker'
+  },
+  dob: {
+    type: Date,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other', ''],
+    default: ''
+  },
+  experience: {
+    type: String,
+    default: ''
+  },
+  workType: {
+    type: String,
+    enum: ['One-time Jobs', 'Project Work', 'Both', ''],
+    default: ''
+  },
   password: {
     type: String,
     select: false
@@ -56,6 +79,26 @@ const workerSchema = new mongoose.Schema({
   serviceCategories: [{
     type: String
   }],
+  skills: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'WorkerSkill'
+  }],
+  availability: {
+    type: String,
+    enum: ['Full Time', 'Part Time', 'Weekends', 'Emergency Support'],
+    default: 'Full Time'
+  },
+  workingDays: [{
+    type: String
+  }],
+  workingHours: {
+    start: { type: String, default: '09:00 AM' },
+    end: { type: String, default: '06:00 PM' }
+  },
+  emergencyService: {
+    type: Boolean,
+    default: false
+  },
   status: {
     type: String,
     enum: Object.values(WORKER_STATUS),
@@ -102,6 +145,18 @@ const workerSchema = new mongoose.Schema({
     balance: {
       type: Number,
       default: 0
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0
+    },
+    pendingBalance: {
+      type: Number,
+      default: 0
+    },
+    withdrawnAmount: {
+      type: Number,
+      default: 0
     }
   },
   // Settings
@@ -124,6 +179,69 @@ const workerSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
     updatedAt: Date
+  },
+  // Bank Details
+  bankDetails: {
+    accountHolder: String,
+    accountNumber: String,
+    ifscCode: String,
+    bankName: String,
+    upiId: String
+  },
+  documents: {
+    aadhaar: String,
+    pan: String,
+    certificates: [String],
+    status: {
+      type: String,
+      enum: ['Pending', 'Approved', 'Rejected'],
+      default: 'Pending'
+    }
+  },
+  // Dynamic Documents from Config
+  uploadedDocuments: [{
+    key: String,
+    url: String,
+    backUrl: String,
+    status: {
+      type: String,
+      enum: ['Pending', 'Approved', 'Rejected'],
+      default: 'Pending'
+    }
+  }],
+  // Work Locations
+  workLocations: {
+    primaryArea: String,
+    secondaryAreas: [String],
+    availableCities: [String],
+    serviceRadius: {
+      type: Number,
+      default: 10
+    }
+  },
+  // Work Tools
+  workTools: {
+    ownTools: { type: Boolean, default: false },
+    vehicleAvailable: { type: Boolean, default: false },
+    vehicleType: { type: String, default: '' },
+    drivingLicense: { type: String, default: '' }
+  },
+  // Engineer Specific Details
+  engineerDetails: {
+    qualification: { type: String, default: '' },
+    degree: { type: String, default: '' },
+    specialization: { type: String, default: '' },
+    projectExperience: { type: String, default: '' },
+    portfolio: { type: String, default: '' },
+    certifications: [{ type: String }],
+    previousCompany: { type: String, default: '' },
+    canHandleMilestones: { type: Boolean, default: false }
+  },
+  // Dynamic Admin Configured Fields
+  customFields: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   // Additional Stats
   cancelledJobs: {

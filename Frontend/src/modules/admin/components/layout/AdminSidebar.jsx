@@ -29,6 +29,8 @@ const iconMap = {
   Users: FiUsers,
   Vendors: FiBriefcase,
   Workers: FiUser,
+  Engineers: FiUser,
+  "Form Builder": FiGrid,
   Bookings: FiShoppingBag,
   "User Catalog": FiGrid,
   "Vendor Services": FiGrid,
@@ -45,6 +47,8 @@ const iconMap = {
   "Digital Solutions": FiGrid,
   "Security Solutions": FiShield,
   "Banking Solutions": FiDollarSign,
+  "Energy Solutions": FiPackage,
+  "Healthcare Solutions": FiStar,
 };
 
 // Helper function to convert child name to route path
@@ -67,6 +71,12 @@ const getChildRoute = (parentRoute, childName) => {
       "Worker Jobs": "/admin/workers/jobs",
       "Worker Analytics": "/admin/workers/analytics",
       "Worker Payments": "/admin/workers/payments",
+    },
+    "/admin/engineers": {
+      "All Engineers": "/admin/engineers/all",
+      "Engineer Jobs": "/admin/engineers/jobs",
+      "Engineer Analytics": "/admin/engineers/analytics",
+      "Engineer Payments": "/admin/engineers/payments",
     },
     "/admin/bookings": {
       "All Bookings": "/admin/bookings",
@@ -131,6 +141,23 @@ const getChildRoute = (parentRoute, childName) => {
       "CDM Service": "/admin/banking-solutions/cdm-service",
       "POS Service": "/admin/banking-solutions/pos-service",
       "VSAT Service": "/admin/banking-solutions/vsat-service",
+      "Barcode Reader Service": "/admin/banking-solutions/barcode-reader-service",
+    },
+    "/admin/energy-solutions": {
+      "Diesel Generator Service": "/admin/energy-solutions/dg-services",
+      "Battery Service": "/admin/energy-solutions/battery-services",
+      "UPS Battery Service": "/admin/energy-solutions/ups-battery-services",
+      "EV Service": "/admin/energy-solutions/ev-services",
+      "AC Power System Service": "/admin/energy-solutions/ac-power-services",
+      "DC Power System Service": "/admin/energy-solutions/dc-power-services",
+      "Power System Testing": "/admin/energy-solutions/power-testing-services",
+    },
+    "/admin/healthcare-solutions": {
+      "Medical Equipment Services": "/admin/healthcare-solutions/medical-equipment",
+      "Quality Control Test": "/admin/healthcare-solutions/qc-test",
+      "Electrical Safety Test": "/admin/healthcare-solutions/safety-test",
+      "Preventive Maintenance": "/admin/healthcare-solutions/preventive-maintenance",
+      "Annual Maintenance Contract (AMC)": "/admin/healthcare-solutions/amc",
     },
   };
 

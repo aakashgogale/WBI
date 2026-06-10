@@ -1,4 +1,4 @@
-const VsatService = require('../../models/VsatService');
+const VsatService = require('../models/VsatService');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

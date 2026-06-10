@@ -33,6 +33,16 @@ const isWorker = (req, res, next) => {
   next();
 };
 
+const isEngineer = (req, res, next) => {
+  if (req.userRole !== USER_ROLES.ENGINEER && req.userRole !== 'engineer') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Engineer role required.'
+    });
+  }
+  next();
+};
+
 const isAdmin = (req, res, next) => {
   if (req.userRole !== USER_ROLES.ADMIN && req.userRole !== 'super_admin' && req.userRole !== 'admin' && req.userRole !== 'ADMIN') {
     return res.status(403).json({
@@ -87,6 +97,7 @@ module.exports = {
   isUser,
   isVendor,
   isWorker,
+  isEngineer,
   isAdmin,
   isAdminOrVendor,
   isSuperAdmin

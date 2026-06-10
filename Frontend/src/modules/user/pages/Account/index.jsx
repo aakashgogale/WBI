@@ -177,7 +177,7 @@ const Account = () => {
   }
 
   return (
-    <div className="min-h-screen pb-[env(safe-area-inset-bottom)] mb-20 bg-[#F7F7FB] relative">
+    <div className="min-h-[100dvh] pb-24 bg-[#F7F7FB] relative">
       <div className="relative z-10">
         <header className="pt-6 pb-4 px-5 flex items-center justify-between">
           <h1 className="text-2xl font-extrabold text-gray-900 font-poppins tracking-tight">Profile</h1>

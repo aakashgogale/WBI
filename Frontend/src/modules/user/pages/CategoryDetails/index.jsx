@@ -170,8 +170,8 @@ const CategoryDetails = () => {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: category?.title || 'Homestr Services',
-          text: `Check out ${category?.title} on Homestr!`,
+          title: category?.title || 'WBI Services',
+          text: `Check out ${category?.title} on WBI!`,
           url: window.location.href,
         });
       } else {
@@ -234,6 +234,26 @@ const CategoryDetails = () => {
       navigate('/user/powermonitoring-enquiry');
     } else if (slug.toLowerCase().includes('security') && serviceName.includes('panel')) {
       navigate('/user/multipleservices-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('diesel generator')) {
+      navigate('/user/dg-service-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('ups battery')) {
+      navigate('/user/ups-battery-service-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('battery')) {
+      navigate('/user/battery-service-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('ev')) {
+      navigate('/user/ev-service-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('ac power')) {
+      navigate('/user/ac-power-service-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('dc power')) {
+      navigate('/user/dc-power-service-enquiry');
+    } else if (slug.toLowerCase().includes('energy') && serviceName.includes('testing')) {
+      navigate('/user/power-testing-service-enquiry');
+    } else if (slug.toLowerCase().includes('healthcare')) {
+      if (serviceName.includes('medical')) navigate('/user/medical-equipment-enquiry');
+      else if (serviceName.includes('quality')) navigate('/user/qc-test-enquiry');
+      else if (serviceName.includes('safety')) navigate('/user/safety-test-enquiry');
+      else if (serviceName.includes('preventive')) navigate('/user/hc-pm-enquiry');
+      else if (serviceName.includes('annual') || serviceName.includes('amc')) navigate('/user/hc-amc-enquiry');
     } else {
       // General fallback if no specific enquiry form exists
       navigate(`/user/service/${svc._id}`);
@@ -426,13 +446,13 @@ const CategoryDetails = () => {
                       
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
-                          <span className="text-[13px]">⭐</span>
+                          <span className="text-[13px]">â­</span>
                           <span className="text-[12px] font-bold text-[#0F172A]">{svc.rating || 4.8}</span>
                           <span className="text-[11px] text-[#64748B]">({svc.reviewCount || svc.reviews || 128})</span>
                         </div>
                         <span className="text-gray-300">|</span>
                         <span className="text-[11px] text-[#64748B]">
-                          From <span className="font-bold text-[#0F172A]">₹{(svc.startingPrice || svc.basePrice || 4999).toLocaleString('en-IN')}</span>
+                          From <span className="font-bold text-[#0F172A]">â‚¹{(svc.startingPrice || svc.basePrice || 4999).toLocaleString('en-IN')}</span>
                         </span>
                       </div>
                     </div>

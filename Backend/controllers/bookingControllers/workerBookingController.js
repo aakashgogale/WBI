@@ -12,8 +12,16 @@ const getAssignedJobs = async (req, res) => {
 
     // Build query
     const query = { workerId };
-    if (status) {
-      query.status = status;
+    if (status && status !== 'all') {
+      if (status === 'assigned') {
+        query.status = { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED] };
+      } else if (status === 'in_progress') {
+        query.status = { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] };
+      } else if (status === 'completed') {
+        query.status = { $in: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED] };
+      } else {
+        query.status = status;
+      }
     }
 
     // Pagination
@@ -23,7 +31,7 @@ const getAssignedJobs = async (req, res) => {
     const bookings = await Booking.find(query)
       .populate('userId', 'name phone email')
       .populate('vendorId', 'name businessName phone')
-      .populate('serviceId', 'title iconUrl')
+      .populate('serviceId', 'title iconUrl categoryIcon')
       .populate('categoryId', 'title slug')
       .sort({ scheduledDate: 1, createdAt: -1 })
       .skip(skip)
@@ -32,9 +40,23 @@ const getAssignedJobs = async (req, res) => {
     // Get total count
     const total = await Booking.countDocuments(query);
 
+    // Get dynamic counts for tabs
+    const [all, assigned, inProgress, completed] = await Promise.all([
+      Booking.countDocuments({ workerId }),
+      Booking.countDocuments({ workerId, status: { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED] } }),
+      Booking.countDocuments({ workerId, status: { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] } }),
+      Booking.countDocuments({ workerId, status: { $in: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED] } })
+    ]);
+
     res.status(200).json({
       success: true,
       data: bookings,
+      counts: {
+        all,
+        assigned,
+        in_progress: inProgress,
+        completed
+      },
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -424,7 +446,7 @@ const completeJob = async (req, res) => {
   try {
     const workerId = req.user.id;
     const { id } = req.params;
-    const { workPhotos, workDoneDetails } = req.body;
+    const { workPhotos, workDoneDetails, customerSignature, completionReport } = req.body;
 
     const booking = await Booking.findOne({ _id: id, workerId });
 
@@ -455,6 +477,21 @@ const completeJob = async (req, res) => {
     if (workDoneDetails) {
       booking.workDoneDetails = workDoneDetails;
     }
+    if (customerSignature) {
+      booking.customerSignature = customerSignature;
+    }
+    if (completionReport) {
+      booking.completionReport = completionReport;
+    }
+
+    // Validation Check (required before complete)
+    if (!booking.workPhotos || booking.workPhotos.length === 0) {
+      return res.status(400).json({ success: false, message: 'Progress images are required to complete the job.' });
+    }
+    if (!booking.structuredNotes || (!booking.structuredNotes.issueFound && !booking.structuredNotes.resolutionDetails && !booking.workerNotes)) {
+      return res.status(400).json({ success: false, message: 'Work notes are required to complete the job.' });
+    }
+    // We assume customerSignature or OTP verified. We won't block strictly on materials because some jobs might not need materials.
 
     await booking.save();
 
@@ -697,7 +734,7 @@ const addWorkerNotes = async (req, res) => {
 
     const workerId = req.user.id;
     const { id } = req.params;
-    const { notes } = req.body;
+    const { notes, structuredNotes } = req.body;
 
     const booking = await Booking.findOne({ _id: id, workerId });
 
@@ -709,7 +746,13 @@ const addWorkerNotes = async (req, res) => {
     }
 
     // Update booking
-    booking.workerNotes = notes;
+    if (notes) booking.workerNotes = notes;
+    if (structuredNotes) {
+      booking.structuredNotes = {
+        ...(booking.structuredNotes || {}),
+        ...structuredNotes
+      };
+    }
 
     await booking.save();
 
@@ -804,6 +847,282 @@ const respondToJob = async (req, res) => {
   }
 };
 
+/**
+ * Upload Job Media (Before/After Photos, Videos)
+ */
+const uploadJobMedia = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+    const { workPhotos, progressVideos } = req.body;
+
+    const booking = await Booking.findOne({ _id: id, workerId });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    if (workPhotos && Array.isArray(workPhotos)) {
+      booking.workPhotos = [...(booking.workPhotos || []), ...workPhotos];
+    }
+    if (progressVideos && Array.isArray(progressVideos)) {
+      booking.progressVideos = [...(booking.progressVideos || []), ...progressVideos];
+    }
+
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Media uploaded successfully',
+      data: booking
+    });
+  } catch (error) {
+    console.error('Upload job media error:', error);
+    res.status(500).json({ success: false, message: 'Failed to upload media' });
+  }
+};
+
+/**
+ * Add Job Materials
+ */
+const addJobMaterials = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+    const { materials } = req.body;
+
+    if (!materials || !Array.isArray(materials)) {
+      return res.status(400).json({ success: false, message: 'Materials array is required' });
+    }
+
+    const booking = await Booking.findOne({ _id: id, workerId });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    booking.materials = [...(booking.materials || []), ...materials];
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Materials added successfully',
+      data: booking
+    });
+  } catch (error) {
+    console.error('Add job materials error:', error);
+    res.status(500).json({ success: false, message: 'Failed to add materials' });
+  }
+};
+
+/**
+ * Get Job Timeline
+ */
+const getJobTimeline = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+
+    const booking = await Booking.findOne({ _id: id, workerId })
+      .select('assignedAt workerAcceptedAt journeyStartedAt visitedAt startedAt completedAt cancelledAt status');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    const timeline = [];
+    if (booking.assignedAt) timeline.push({ title: 'Assigned', time: booking.assignedAt });
+    if (booking.workerAcceptedAt) timeline.push({ title: 'Accepted', time: booking.workerAcceptedAt });
+    if (booking.journeyStartedAt) timeline.push({ title: 'Journey Started', time: booking.journeyStartedAt });
+    if (booking.visitedAt) timeline.push({ title: 'Arrived', time: booking.visitedAt });
+    if (booking.startedAt) timeline.push({ title: 'Work Started', time: booking.startedAt });
+    if (booking.completedAt) timeline.push({ title: 'Work Completed', time: booking.completedAt });
+    if (booking.cancelledAt) timeline.push({ title: 'Cancelled', time: booking.cancelledAt });
+
+    // Sort chronologically
+    timeline.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+    res.status(200).json({
+      success: true,
+      data: timeline
+    });
+  } catch (error) {
+    console.error('Get job timeline error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch timeline' });
+  }
+};
+
+/**
+ * Get Job Progress Aggregated Data
+ */
+const getJobProgress = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+
+    const booking = await Booking.findOne({ _id: id, workerId })
+      .populate('userId', 'name phone email')
+      .populate('serviceId', 'title')
+      .populate('categoryId', 'title');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    // Build timeline for progress
+    const timeline = [];
+    if (booking.assignedAt) timeline.push({ status: 'Assigned', timestamp: booking.assignedAt });
+    if (booking.workerAcceptedAt) timeline.push({ status: 'Accepted', timestamp: booking.workerAcceptedAt });
+    if (booking.journeyStartedAt) timeline.push({ status: 'Arrived', timestamp: booking.journeyStartedAt }); // or visitedAt
+    if (booking.startedAt) timeline.push({ status: 'In Progress', timestamp: booking.startedAt });
+    if (booking.completedAt) timeline.push({ status: 'Completed', timestamp: booking.completedAt });
+
+    timeline.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        job: booking,
+        timeline
+      }
+    });
+  } catch (error) {
+    console.error('Get job progress error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch job progress' });
+  }
+};
+
+/**
+ * Add Job Expenses
+ */
+const addJobExpenses = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+    const { expenses } = req.body;
+
+    if (!expenses || !Array.isArray(expenses)) {
+      return res.status(400).json({ success: false, message: 'Expenses array is required' });
+    }
+
+    const booking = await Booking.findOne({ _id: id, workerId });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    booking.expenses = [...(booking.expenses || []), ...expenses];
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Expenses added successfully',
+      data: booking
+    });
+  } catch (error) {
+    console.error('Add job expenses error:', error);
+    res.status(500).json({ success: false, message: 'Failed to add expenses' });
+  }
+};
+
+/**
+ * Get Job Report
+ */
+const getJobReport = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+
+    const booking = await Booking.findOne({ _id: id, workerId })
+      .populate('userId', 'name phone email')
+      .populate('workerId', 'name phone')
+      .populate('serviceId', 'title');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: booking
+    });
+  } catch (error) {
+    console.error('Get job report error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch job report' });
+  }
+};
+
+/**
+ * Get Job Completion Details
+ */
+const getJobCompletionDetails = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+
+    const booking = await Booking.findOne({ _id: id, workerId })
+      .populate('userId', 'name phone email address')
+      .populate('serviceId', 'title')
+      .populate('categoryId', 'title');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    const VendorBill = require('../../models/VendorBill');
+    const vendorBill = await VendorBill.findOne({ bookingId: id });
+
+    // Assuming worker's explicit earning isn't stored, we fallback to bill grandTotal or booking finalAmount
+    const earnedAmount = vendorBill ? vendorBill.grandTotal : (booking.finalAmount || 0);
+
+    // Calculate duration
+    let duration = 'N/A';
+    if (booking.startedAt && booking.completedAt) {
+      const diffMs = new Date(booking.completedAt) - new Date(booking.startedAt);
+      const diffMins = Math.round(diffMs / 60000);
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      duration = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        booking,
+        vendorBill,
+        earnedAmount,
+        duration
+      }
+    });
+  } catch (error) {
+    console.error('Get job completion error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch job completion details' });
+  }
+};
+
+/**
+ * Share Job Report
+ */
+const shareJobReport = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+
+    const booking = await Booking.findOne({ _id: id, workerId }).populate('serviceId', 'title');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    const shareText = `WBI Job Completed!\n\nService: ${booking.serviceName || booking.serviceId?.title}\nBooking ID: ${booking.bookingNumber}\nCompleted On: ${booking.completedAt ? new Date(booking.completedAt).toLocaleDateString() : 'N/A'}\nTotal Value: ₹${booking.finalAmount}\n\nThank you for choosing WBI!`;
+
+    res.status(200).json({
+      success: true,
+      data: { shareText }
+    });
+  } catch (error) {
+    console.error('Share job report error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate share text' });
+  }
+};
+
 module.exports = {
   getAssignedJobs,
   getJobById,
@@ -814,5 +1133,13 @@ module.exports = {
   verifyVisit,
   workerReachedLocation,
   collectCash,
-  respondToJob
+  respondToJob,
+  uploadJobMedia,
+  addJobMaterials,
+  getJobTimeline,
+  getJobProgress,
+  addJobExpenses,
+  getJobReport,
+  getJobCompletionDetails,
+  shareJobReport
 };

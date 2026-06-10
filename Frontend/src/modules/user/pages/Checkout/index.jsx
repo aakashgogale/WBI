@@ -709,7 +709,7 @@ const Checkout = () => {
         amount: orderResponse.data.amount * 100,
         currency: orderResponse.data.currency || 'INR',
         order_id: orderResponse.data.orderId,
-        name: 'Homestr',
+        name: 'WBI',
         description: `Payment for ${bookingRequest.serviceName || 'service'}`,
         handler: async function (response) {
           try {
@@ -912,7 +912,7 @@ const Checkout = () => {
           key,
           amount: amount * 100,
           currency: 'INR',
-          name: 'Homestr',
+          name: 'WBI',
           description: `Payment for ${plan.name} ${isUpgrade ? '(Upgrade)' : ''}`,
           order_id: orderId,
           handler: async (response) => {
@@ -1178,7 +1178,7 @@ const Checkout = () => {
               <div>
                 <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Smart Choice!</p>
                 <p className="text-sm font-black text-slate-900">
-                  You're saving ₹{savings.toLocaleString('en-IN')}
+                  You're saving â‚¹{savings.toLocaleString('en-IN')}
                 </p>
               </div>
             </div>
@@ -1259,7 +1259,7 @@ const Checkout = () => {
                     {calculateItemPrice(item) === 0 ? (
                       <span className="text-green-600">Free</span>
                     ) : (
-                      `₹${(item.price || 0).toLocaleString('en-IN')}`
+                      `â‚¹${(item.price || 0).toLocaleString('en-IN')}`
                     )}
                   </span>
                   {calculateItemPrice(item) === 0 && (
@@ -1275,7 +1275,7 @@ const Checkout = () => {
                     if (originalTotal > currentTotal) {
                       return (
                         <span className="text-sm text-gray-400 line-through">
-                          ₹{originalTotal.toLocaleString('en-IN')}
+                          â‚¹{originalTotal.toLocaleString('en-IN')}
                         </span>
                       );
                     }
@@ -1324,7 +1324,7 @@ const Checkout = () => {
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-600">Item Total</span>
               <span className="text-sm font-medium text-slate-900">
-                ₹{totalOriginalPrice.toLocaleString('en-IN')}
+                â‚¹{totalOriginalPrice.toLocaleString('en-IN')}
               </span>
             </div>
 
@@ -1332,7 +1332,7 @@ const Checkout = () => {
             {displaySavings > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-green-600">Discount</span>
-                <span className="text-sm font-medium text-green-600">-₹{displaySavings.toLocaleString('en-IN')}</span>
+                <span className="text-sm font-medium text-green-600">-â‚¹{displaySavings.toLocaleString('en-IN')}</span>
               </div>
             )}
 
@@ -1340,7 +1340,7 @@ const Checkout = () => {
             {upgradePreview && upgradePreview.credit > 0 && (
               <div className="flex justify-between items-center text-green-600">
                 <span className="text-sm font-medium">Plan Credit</span>
-                <span className="text-sm font-bold">-₹{upgradePreview.credit.toLocaleString('en-IN')}</span>
+                <span className="text-sm font-bold">-â‚¹{upgradePreview.credit.toLocaleString('en-IN')}</span>
               </div>
             )}
 
@@ -1348,7 +1348,7 @@ const Checkout = () => {
             {displayTax > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500">GST ({gstPercentage}%)</span>
-                <span className="text-sm font-medium text-slate-700">₹{displayTax.toLocaleString('en-IN')}</span>
+                <span className="text-sm font-medium text-slate-700">â‚¹{displayTax.toLocaleString('en-IN')}</span>
               </div>
             )}
 
@@ -1356,7 +1356,7 @@ const Checkout = () => {
             {displayFee > 0 && (
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500">Convenience Fee</span>
-                <span className="text-sm font-medium text-slate-700">₹{displayFee.toLocaleString('en-IN')}</span>
+                <span className="text-sm font-medium text-slate-700">â‚¹{displayFee.toLocaleString('en-IN')}</span>
               </div>
             )}
 
@@ -1368,13 +1368,13 @@ const Checkout = () => {
                   {totalAmount === 0 ? (
                     <>
                       <span className="text-sm font-medium text-slate-400 line-through">
-                        ₹{Math.round(totalOriginalPrice + displayTax + displayFee).toLocaleString('en-IN')}
+                        â‚¹{Math.round(totalOriginalPrice + displayTax + displayFee).toLocaleString('en-IN')}
                       </span>
                       <span className="text-xl font-black text-green-600">FREE</span>
                     </>
                   ) : (
                     <span className="text-xl font-black text-slate-900">
-                      ₹{totalAmount.toLocaleString('en-IN')}
+                      â‚¹{totalAmount.toLocaleString('en-IN')}
                     </span>
                   )}
                 </div>
@@ -1406,7 +1406,7 @@ const Checkout = () => {
               <div>
                 <h3 className="text-lg font-bold text-green-800 mb-1">Covered by {planBenefits.name}</h3>
                 <p className="text-sm text-green-700 leading-relaxed font-medium opacity-90">
-                  You save <span className="font-bold">₹{Math.round(totalOriginalPrice + displayTax + displayFee).toLocaleString('en-IN')}</span> on this booking!
+                  You save <span className="font-bold">â‚¹{Math.round(totalOriginalPrice + displayTax + displayFee).toLocaleString('en-IN')}</span> on this booking!
                   Your plan covers all costs.
                 </p>
               </div>
@@ -1442,18 +1442,18 @@ const Checkout = () => {
               onClick={() => setBookingType('instant')}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bookingType === 'instant' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}
             >
-              <span className="text-yellow-500">⚡</span> Book
+              <span className="text-yellow-500">âš¡</span> Book
             </button>
             <button
               onClick={() => setBookingType('scheduled')}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bookingType === 'scheduled' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}
             >
-              <span>📅</span> Slot
+              <span>ðŸ“…</span> Slot
             </button>
           </div>
           {bookingType === 'instant' && (
             <p className="text-xs text-center text-green-600 font-medium mt-1 mb-1">
-              <span className="font-bold">⚡ Priority Service:</span> Vendor arrives in ~45 mins
+              <span className="font-bold">âš¡ Priority Service:</span> Vendor arrives in ~45 mins
             </p>
           )}
         </div>
@@ -1494,7 +1494,7 @@ const Checkout = () => {
                         const { day, date: dateNum } = formatDate(selectedDate);
                         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                         const month = monthNames[selectedDate.getMonth()];
-                        const timeStr = selectedTime && getTimeSlots().find(slot => slot.value === selectedTime)?.display ? ` • ${getTimeSlots().find(slot => slot.value === selectedTime).display}` : '';
+                        const timeStr = selectedTime && getTimeSlots().find(slot => slot.value === selectedTime)?.display ? ` â€¢ ${getTimeSlots().find(slot => slot.value === selectedTime).display}` : '';
                         return `${day}, ${dateNum} ${month}${timeStr}`;
                       })() : (
                         <span className="text-gray-400">Select Date & Time</span>

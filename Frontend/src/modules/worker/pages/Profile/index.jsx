@@ -1,25 +1,24 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase, FiStar, FiChevronRight, FiTag, FiLogOut } from 'react-icons/fi';
+import { FiUser, FiEdit, FiStar, FiChevronRight, FiShield, FiCreditCard, FiFileText, FiMapPin, FiBell, FiHelpCircle, FiLogOut } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { workerTheme as themeColors, vendorTheme } from '../../../../theme';
 import { workerAuthService } from '../../../../services/authService';
+import { workerTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Profile = () => {
   const navigate = useNavigate();
-  // Initialize with empty/default values - will be loaded from localStorage
   const [profile, setProfile] = useState(null);
+  const [completion, setCompletion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useLayoutEffect(() => {
     const html = document.documentElement;
     const body = document.body;
     const root = document.getElementById('root');
-    const bgStyle = themeColors.backgroundGradient;
+    const bgStyle = '#F8FCFC';
 
     if (html) html.style.background = bgStyle;
     if (body) body.style.background = bgStyle;
@@ -33,320 +32,163 @@ const Profile = () => {
   }, []);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       setIsLoading(true);
-      setError(null);
       try {
-        const response = await workerAuthService.getProfile();
-        if (response.success) {
-          const workerData = response.worker;
-          // Format address
-          const addressString = workerData.address
-            ? `${workerData.address.addressLine1 || ''} ${workerData.address.addressLine2 || ''} ${workerData.address.city || ''} ${workerData.address.state || ''} ${workerData.address.pincode || ''}`.trim() || 'Not set'
-            : 'Not set';
-
-          setProfile({
-            name: workerData.name || 'Worker Name',
-            phone: workerData.phone || '',
-            email: workerData.email || '',
-            address: addressString,
-            rating: workerData.rating || 0,
-            totalJobs: workerData.totalJobs || 0,
-            completedJobs: workerData.completedJobs || 0,
-            serviceCategories: workerData.serviceCategories || (workerData.serviceCategory ? [workerData.serviceCategory] : []),
-            photo: workerData.profilePhoto || null,
-            isPhoneVerified: workerData.isPhoneVerified || false,
-            isEmailVerified: workerData.isEmailVerified || false
-          });
-          localStorage.setItem('workerData', JSON.stringify(workerData));
-        } else {
-          setError(response.message || 'Failed to fetch profile');
-          toast.error(response.message || 'Failed to fetch profile');
-          // Fallback to local storage if API fails
-          const localWorkerData = JSON.parse(localStorage.getItem('workerData') || '{}');
-          if (localWorkerData && Object.keys(localWorkerData).length > 0) {
-            setProfile({
-              name: localWorkerData.name || 'Worker Name',
-              phone: localWorkerData.phone || '',
-              email: localWorkerData.email || '',
-              address: 'Not set',
-              rating: localWorkerData.rating || 0,
-              totalJobs: localWorkerData.totalJobs || 0,
-              completedJobs: localWorkerData.completedJobs || 0,
-              serviceCategories: localWorkerData.serviceCategories || (localWorkerData.serviceCategory ? [localWorkerData.serviceCategory] : []),
-              photo: localWorkerData.profilePhoto || null
-            });
-            toast('Loaded profile from local storage (API failed)');
-          }
+        const [profileRes, completionRes] = await Promise.all([
+          workerAuthService.getProfile(),
+          workerAuthService.getProfileCompletion()
+        ]);
+        
+        if (profileRes.success) {
+          setProfile(profileRes.worker);
+        }
+        if (completionRes.success) {
+          setCompletion(completionRes.data.completionPercentage);
         }
       } catch (err) {
-        console.error('Error fetching worker profile:', err);
-        setError(err.response?.data?.message || 'Failed to fetch profile');
-        toast.error(err.response?.data?.message || 'Failed to fetch profile');
-        // Fallback to local storage if API fails
+        toast.error('Failed to load profile from server. Loading local data.');
         const localWorkerData = JSON.parse(localStorage.getItem('workerData') || '{}');
         if (localWorkerData && Object.keys(localWorkerData).length > 0) {
-          setProfile({
-            name: localWorkerData.name || 'Worker Name',
-            phone: localWorkerData.phone || '',
-            email: localWorkerData.email || '',
-            address: 'Not set',
-            rating: localWorkerData.rating || 0,
-            totalJobs: localWorkerData.totalJobs || 0,
-            completedJobs: localWorkerData.completedJobs || 0,
-            serviceCategories: localWorkerData.serviceCategories || (localWorkerData.serviceCategory ? [localWorkerData.serviceCategory] : []),
-            photo: localWorkerData.profilePhoto || null
-          });
-          toast('Loaded profile from local storage (API failed)');
+          setProfile(localWorkerData);
+        } else {
+          setProfile(null);
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchProfileData();
   }, []);
 
   const handleLogout = async () => {
     try {
       await workerAuthService.logout();
       toast.success('Logged out successfully');
-      navigate('/worker/login');
+      navigate('/engineer/login');
     } catch (error) {
-      // Even if API call fails, clear local storage
-      localStorage.removeItem('workerAccessToken');
-      localStorage.removeItem('workerRefreshToken');
-      localStorage.removeItem('workerData');
+      localStorage.clear();
       toast.success('Logged out successfully');
-      navigate('/worker/login');
+      navigate('/engineer/login');
     }
   };
 
-  if (isLoading) {
-    return <LogoLoader />;
-  }
+  // Determine base path dynamically
+  const basePath = window.location.pathname.startsWith('/engineer') ? '/engineer' : '/worker';
 
-  if (error && !profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: themeColors.backgroundGradient }}>
-        <div className="text-center p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Error loading profile</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
-            style={{ backgroundColor: themeColors.button }}
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const menuItems = [
+    { id: 'personal', title: 'Personal Information', icon: <FiUser />, route: `${basePath}/profile/personal-info`, color: 'text-teal-600', bgColor: 'bg-teal-50' },
+    { id: 'bank', title: 'Bank Details', icon: <FiCreditCard />, route: `${basePath}/profile/bank-details`, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+    { id: 'documents', title: 'Documents', icon: <FiFileText />, route: `${basePath}/profile/documents`, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+    { id: 'locations', title: 'Work Locations', icon: <FiMapPin />, route: `${basePath}/profile/work-locations`, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { id: 'customDetails', title: 'Custom Details', icon: <FiFileText />, route: `${basePath}/profile/custom-details`, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { id: 'notifications', title: 'Notification Settings', icon: <FiBell />, route: `${basePath}/profile/notifications`, color: 'text-orange-500', bgColor: 'bg-orange-50' },
+    { id: 'support', title: 'Help & Support', icon: <FiHelpCircle />, route: `${basePath}/profile/support`, color: 'text-teal-600', bgColor: 'bg-teal-50' }
+  ];
 
-  if (!profile) {
-    return null;
-  }
+  if (isLoading) return <LogoLoader />;
+  if (!profile) return null;
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="Profile" />
-
-      <main className="px-4 pt-4 pb-6">
-        {/* Profile Header Card */}
-        <div
-          className="rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden"
-          style={{
-            background: vendorTheme.button,
-            border: `2px solid ${vendorTheme.button}`,
-          }}
+    <div className="min-h-screen flex flex-col  font-sans text-[#0F172A] bg-[#F8FCFC]">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-[#F8FCFC] border-b border-gray-100 px-4 py-4 flex items-center justify-between">
+        <div className="w-10">
+           {/* Menu Icon Placeholder */}
+           <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </div>
+        <h1 className="text-lg font-bold">Profile</h1>
+        <button 
+          onClick={() => navigate('/engineer/profile/edit')}
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-700 active:scale-95 transition-all"
         >
-          {/* Decorative Pattern */}
-          <div
-            className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
-            style={{
-              background: `radial-gradient(circle, ${vendorTheme.button} 0%, transparent 70%)`,
-              transform: 'translate(30px, -30px)',
-            }}
-          />
+          <FiEdit className="w-5 h-5" />
+        </button>
+      </div>
 
-          <div className="relative z-10">
-            <div className="flex items-start gap-4">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.3)',
-                  border: '3px solid white',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                }}
+      <main className="flex-1 flex flex-col px-4 pt-6 pb-6">
+        {/* Profile Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 mb-6 flex items-center gap-5 relative overflow-hidden">
+          <div className="w-20 h-20 rounded-full bg-teal-50 border-4 border-[#10AFA5]/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+            {profile.profilePhoto ? (
+              <img src={profile.profilePhoto} alt={profile.name} className="w-full h-full object-cover" />
+            ) : (
+              <FiUser className="w-8 h-8 text-[#10AFA5]" />
+            )}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{profile.name || 'Worker'}</h2>
+            <div className="flex items-center gap-1.5 mb-2 text-sm text-gray-500 font-medium">
+              <FiShield className="w-4 h-4 text-emerald-500" />
+              <span>ID: {profile.id ? profile.id.substring(profile.id.length - 6).toUpperCase() : profile._id ? profile._id.substring(profile._id.length - 6).toUpperCase() : 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-lg w-max font-bold text-sm cursor-pointer hover:bg-yellow-100 transition-colors" onClick={() => navigate('/worker/profile/ratings')}>
+              <FiStar className="fill-yellow-500 text-yellow-500" />
+              <span>{profile.rating?.toFixed(1) || '0.0'}</span>
+              <span className="text-yellow-600/70 ml-1 font-semibold text-xs">({profile.totalReviews || 0} reviews)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Completion Progress */}
+        <div className="mb-8">
+          <div className="flex justify-between items-end mb-3">
+            <h3 className="font-bold text-[#10AFA5] text-[15px]">Profile Completion</h3>
+            <span className="font-black text-[#10AFA5] text-lg">{completion}%</span>
+          </div>
+          <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${completion}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-[#10AFA5] to-teal-400 rounded-full"
+            />
+          </div>
+        </div>
+
+        {/* Menu Sections */}
+        <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50 mb-6 py-2">
+          {menuItems.map((item, index) => (
+            <React.Fragment key={item.id}>
+              <button
+                onClick={() => navigate(item.route)}
+                className="w-full px-5 py-4 flex items-center justify-between bg-white hover:bg-gray-50 active:bg-gray-100 transition-colors"
               >
-                {profile.photo ? (
-                  <img
-                    src={profile.photo}
-                    alt={profile.name}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <FiUser className="w-10 h-10 text-white" />
-                )}
-              </div>
-              <div className="flex-1 pr-12">
-                <h2 className="text-xl font-bold text-white mb-0.5">{profile.name}</h2>
-                <div className="mb-2"></div>
-
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-lg backdrop-blur-sm">
-                    <FiStar className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                    <span className="text-white text-sm font-bold">{profile.rating}</span>
+                <div className="flex items-center gap-5">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${item.bgColor} ${item.color}`}>
+                    {React.cloneElement(item.icon, { className: 'w-5 h-5' })}
                   </div>
+                  <span className="font-bold text-[#0F172A] text-[15px]">{item.title}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Edit Profile Button - Absolute Positioned */}
-            <button
-              onClick={() => navigate('/worker/profile/edit')}
-              className="absolute top-0 right-0 p-2.5 rounded-lg transition-all active:scale-95"
-              style={{
-                background: 'rgba(255, 255, 255, 0.25)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
-              }}
-            >
-              <FiEdit2 className="w-5 h-5 text-white" />
-            </button>
-          </div>
+                <FiChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+              {index < menuItems.length - 1 && (
+                <div className="mx-6 h-[1px] bg-gray-50/80" />
+              )}
+            </React.Fragment>
+          ))}
         </div>
 
-        {/* Profile Details */}
-        <div
-          className="bg-white rounded-xl p-4 mb-4 shadow-md"
-          style={{
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <h3 className="font-bold text-gray-800 mb-4">Personal Information</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <FiPhone className="w-5 h-5" style={{ color: themeColors.icon }} />
-              <div>
-                <p className="text-sm text-gray-600">Phone</p>
-                <p className="text-sm font-semibold text-gray-800">{profile.phone}</p>
+        {/* Logout */}
+        <div className="mt-auto pt-6">
+          <button
+            onClick={handleLogout}
+            className="w-full bg-white rounded-2xl p-4 flex items-center justify-between shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-50 active:scale-[0.98] transition-transform"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+                <FiLogOut />
               </div>
+              <span className="font-bold text-red-500">Logout</span>
             </div>
-            <div className="flex items-center gap-3">
-              <FiMail className="w-5 h-5" style={{ color: themeColors.icon }} />
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="text-sm font-semibold text-gray-800">{profile.email}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <FiMapPin className="w-5 h-5" style={{ color: themeColors.icon }} />
-              <div>
-                <p className="text-sm text-gray-600">Address</p>
-                <p className="text-sm font-semibold text-gray-800">{profile.address}</p>
-              </div>
-            </div>
-          </div>
+          </button>
         </div>
-
-        {/* Service Category & Skills */}
-        <div
-          className="bg-white rounded-xl p-4 mb-4 shadow-md"
-          style={{
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <h3 className="font-bold text-gray-800 mb-4">Service Information</h3>
-          <div className="space-y-3">
-            {/* Service Categories */}
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg" style={{ background: `${themeColors.icon}15` }}>
-                <FiBriefcase className="w-5 h-5" style={{ color: themeColors.icon }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Service Categories</p>
-                {profile.serviceCategories && profile.serviceCategories.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.serviceCategories.map((cat, idx) => (
-                      <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-sm font-medium border border-gray-200">
-                        {cat}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm font-semibold text-gray-800">Not set</p>
-                )}
-              </div>
-            </div>
-
-            {/* Removed Skills display */}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div
-          className="bg-white rounded-xl p-4 mb-4 shadow-md"
-          style={{
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <h3 className="font-bold text-gray-800 mb-3">Statistics</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Total Jobs</p>
-              <p className="text-2xl font-bold text-gray-800">{profile.totalJobs}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-gray-800">{profile.completedJobs}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Settings Button */}
-        <button
-          onClick={() => navigate('/worker/settings')}
-          className="w-full bg-white rounded-xl p-4 flex items-center justify-between shadow-md transition-all active:scale-95 mb-4"
-          style={{
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <FiEdit2 className="w-5 h-5" style={{ color: themeColors.button }} />
-            <span className="font-semibold text-gray-800">Settings</span>
-          </div>
-          <FiChevronRight className="w-5 h-5 text-gray-400" />
-        </button>
-
-        {/* Logout Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleLogout();
-          }}
-          className="w-full bg-white rounded-xl p-4 flex items-center justify-between shadow-md transition-all active:scale-95"
-          style={{
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-            cursor: 'pointer'
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <FiLogOut className="w-5 h-5 text-red-500" />
-            <span className="font-semibold text-red-500">Logout</span>
-          </div>
-          <FiChevronRight className="w-5 h-5 text-gray-400" />
-        </button>
       </main>
 
-      <BottomNav />
+      
     </div>
   );
 };
 
 export default Profile;
-

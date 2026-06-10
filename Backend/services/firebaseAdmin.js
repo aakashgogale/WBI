@@ -9,7 +9,7 @@ const path = require('path');
 // Initialize Firebase Admin SDK
 // Initialize Firebase Admin SDK
 let serviceAccount;
-console.log('🔍 Loading Firebase credentials...',process.env.FIREBASE_CONFIG);
+console.log('ðŸ” Loading Firebase credentials...',process.env.FIREBASE_CONFIG);
 try {
   if (process.env.FIREBASE_CONFIG) {
     // Production: Use environment variable JSON content
@@ -23,7 +23,7 @@ try {
     serviceAccount = require(path.resolve(__dirname, '..', serviceAccountPath));
   }
 } catch (error) {
-  console.error('❌ Failed to load Firebase credentials:', error.message);
+  console.error('âŒ Failed to load Firebase credentials:', error.message);
 }
 
 // Initialize only if not already initialized
@@ -31,7 +31,7 @@ if (!admin.apps.length && serviceAccount) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
-  console.log('✅ Firebase Admin SDK initialized');
+  console.log('âœ… Firebase Admin SDK initialized');
 }
 
 /**
@@ -143,8 +143,8 @@ async function sendPushNotification(tokens, payload) {
     message.webpush.notification = {
       title: message.notification.title,
       body: message.notification.body,
-      icon: payload.icon || '/Homster-logo.png',
-      badge: '/Homster-logo.png',
+      icon: payload.icon || '/WBI-logo.png',
+      badge: '/WBI-logo.png',
     };
 
     /*
@@ -165,7 +165,7 @@ async function sendPushNotification(tokens, payload) {
 
     const response = await admin.messaging().sendEachForMulticast(message);
 
-    console.log(`✅ Push notification sent - Success: ${response.successCount}, Failed: ${response.failureCount}`);
+    console.log(`âœ… Push notification sent - Success: ${response.successCount}, Failed: ${response.failureCount}`);
 
     // Log failed tokens for debugging and cleanup invalid ones
     if (response.failureCount > 0) {
@@ -173,7 +173,7 @@ async function sendPushNotification(tokens, payload) {
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
           const errorCode = resp.error?.code;
-          console.log(`❌ Failed token[${idx}]: ${errorCode} - ${resp.error?.message}`);
+          console.log(`âŒ Failed token[${idx}]: ${errorCode} - ${resp.error?.message}`);
 
           if (errorCode === 'messaging/registration-token-not-registered' ||
             errorCode === 'messaging/invalid-registration-token') {
@@ -190,7 +190,7 @@ async function sendPushNotification(tokens, payload) {
 
     return response;
   } catch (error) {
-    console.error('❌ Error sending push notification:', error);
+    console.error('âŒ Error sending push notification:', error);
     throw error;
   }
 }
@@ -220,9 +220,9 @@ async function removeInvalidTokens(tokens) {
       Worker.updateMany({ $or: [{ fcmTokens: { $in: tokens } }, { fcmTokenMobile: { $in: tokens } }] }, updateQuery)
     ]);
 
-    console.log('[FCM Cleanup] ✅ Invalid tokens removed from database');
+    console.log('[FCM Cleanup] âœ… Invalid tokens removed from database');
   } catch (err) {
-    console.error('[FCM Cleanup] ❌ Error removing tokens:', err);
+    console.error('[FCM Cleanup] âŒ Error removing tokens:', err);
   }
 }
 
@@ -238,7 +238,7 @@ async function sendNotificationToUser(userId, payload, includeMobile = true) {
     const user = await User.findById(userId);
 
     if (!user) {
-      console.log(`[FCM] ❌ User not found for notification: ${userId}`);
+      console.log(`[FCM] âŒ User not found for notification: ${userId}`);
       return;
     }
 
@@ -251,11 +251,11 @@ async function sendNotificationToUser(userId, payload, includeMobile = true) {
     }
 
     if (tokens.length === 0) {
-      console.log(`[FCM] ⚠️ No FCM tokens found for user: ${userId}`);
+      console.log(`[FCM] âš ï¸ No FCM tokens found for user: ${userId}`);
       return;
     }
 
-    console.log(`[FCM] 📤 Sending notification to user ${user.name} (${userId}) on ${tokens.length} devices`);
+    console.log(`[FCM] ðŸ“¤ Sending notification to user ${user.name} (${userId}) on ${tokens.length} devices`);
 
     // Add priority and sound for user notifications too
     const finalPayload = {
@@ -267,7 +267,7 @@ async function sendNotificationToUser(userId, payload, includeMobile = true) {
 
     await sendPushNotification(tokens, finalPayload);
   } catch (error) {
-    console.error(`[FCM] ❌ Error sending notification to user ${userId}:`, error);
+    console.error(`[FCM] âŒ Error sending notification to user ${userId}:`, error);
   }
 }
 
@@ -283,7 +283,7 @@ async function sendNotificationToVendor(vendorId, payload, includeMobile = true)
     const vendor = await Vendor.findById(vendorId);
 
     if (!vendor) {
-      console.log(`[FCM] ❌ Vendor not found for notification: ${vendorId}`);
+      console.log(`[FCM] âŒ Vendor not found for notification: ${vendorId}`);
       return;
     }
 
@@ -296,20 +296,20 @@ async function sendNotificationToVendor(vendorId, payload, includeMobile = true)
     }
 
     if (tokens.length === 0) {
-      console.log(`[FCM] ⚠️ No FCM tokens found for vendor: ${vendorId}`);
+      console.log(`[FCM] âš ï¸ No FCM tokens found for vendor: ${vendorId}`);
       return;
     }
 
-    console.log(`[FCM] 📤 Sending notification to vendor ${vendor.businessName || vendor.name} (${vendorId}) on ${tokens.length} devices`);
+    console.log(`[FCM] ðŸ“¤ Sending notification to vendor ${vendor.businessName || vendor.name} (${vendorId}) on ${tokens.length} devices`);
 
     const finalPayload = {
       ...payload,
-      title: `🏢 [Partner] ${payload.title}` // Add identification
+      title: `ðŸ¢ [Partner] ${payload.title}` // Add identification
     };
 
     await sendPushNotification(tokens, finalPayload);
   } catch (error) {
-    console.error(`[FCM] ❌ Error sending notification to vendor ${vendorId}:`, error);
+    console.error(`[FCM] âŒ Error sending notification to vendor ${vendorId}:`, error);
   }
 }
 
@@ -325,7 +325,7 @@ async function sendNotificationToWorker(workerId, payload, includeMobile = true)
     const worker = await Worker.findById(workerId);
 
     if (!worker) {
-      console.log(`[FCM] ❌ Worker not found for notification: ${workerId}`);
+      console.log(`[FCM] âŒ Worker not found for notification: ${workerId}`);
       return;
     }
 
@@ -338,20 +338,20 @@ async function sendNotificationToWorker(workerId, payload, includeMobile = true)
     }
 
     if (tokens.length === 0) {
-      console.log(`[FCM] ⚠️ No FCM tokens found for worker: ${workerId}`);
+      console.log(`[FCM] âš ï¸ No FCM tokens found for worker: ${workerId}`);
       return;
     }
 
-    console.log(`[FCM] 📤 Sending notification to worker ${worker.name} (${workerId}) on ${tokens.length} devices`);
+    console.log(`[FCM] ðŸ“¤ Sending notification to worker ${worker.name} (${workerId}) on ${tokens.length} devices`);
 
     const finalPayload = {
       ...payload,
-      title: `👷 [Pro] ${payload.title}` // Add identification
+      title: `ðŸ‘· [Pro] ${payload.title}` // Add identification
     };
 
     await sendPushNotification(tokens, finalPayload);
   } catch (error) {
-    console.error(`[FCM] ❌ Error sending notification to worker ${workerId}:`, error);
+    console.error(`[FCM] âŒ Error sending notification to worker ${workerId}:`, error);
   }
 }
 
@@ -389,16 +389,16 @@ async function sendNotificationToAdmin(adminId, payload, includeMobile = true) {
       tokens = [...tokens, ...adminUser.fcmTokenMobile];
     }
 
-    console.log(`[FCM] 📤 Sending notification to admin (${adminId}) on ${tokens.length} devices`);
+    console.log(`[FCM] ðŸ“¤ Sending notification to admin (${adminId}) on ${tokens.length} devices`);
 
     const finalPayload = {
       ...payload,
-      title: `🛡️ [Admin] ${payload.title}` // Add identification
+      title: `ðŸ›¡ï¸ [Admin] ${payload.title}` // Add identification
     };
 
     await sendPushNotification(tokens, finalPayload);
   } catch (error) {
-    console.error(`[FCM] ❌ Error sending notification to admin ${adminId}:`, error);
+    console.error(`[FCM] âŒ Error sending notification to admin ${adminId}:`, error);
   }
 }
 

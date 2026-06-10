@@ -213,6 +213,12 @@ export const workerAuthService = {
     return response.data;
   },
 
+  // Get Registration Config
+  getRegistrationConfig: async () => {
+    const response = await api.get('/workers/auth/config/registration');
+    return response.data;
+  },
+
   // Verify Login (Unified Flow)
   verifyLogin: async (data) => {
     const response = await api.post('/workers/auth/verify-login', data);
@@ -282,6 +288,139 @@ export const workerAuthService = {
     if (response.data.worker) {
       localStorage.setItem('workerData', JSON.stringify(response.data.worker));
     }
+    return response.data;
+  },
+
+  getProfileCompletion: async () => {
+    const response = await api.get('/workers/profile/completion');
+    return response.data;
+  },
+
+  updateBankDetails: async (data) => {
+    const response = await api.put('/workers/profile/bank-details', data);
+    if (response.data.worker) localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+    return response.data;
+  },
+
+  updateWorkLocations: async (data) => {
+    const response = await api.put('/workers/profile/work-locations', data);
+    if (response.data.worker) localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+    return response.data;
+  },
+
+  updateDocuments: async (data) => {
+    const response = await api.post('/workers/profile/documents', data);
+    if (response.data.worker) localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+    return response.data;
+  }
+};
+
+/**
+ * Engineer Authentication Service
+ */
+export const engineerAuthService = {
+  // Send OTP
+  sendOTP: async (phone, email = null) => {
+    const response = await api.post('/engineers/auth/send-otp', { phone, email });
+    return response.data;
+  },
+
+  // Get Registration Config
+  getRegistrationConfig: async () => {
+    const response = await api.get('/engineers/auth/config/registration');
+    return response.data;
+  },
+
+  // Verify Login (Unified Flow)
+  verifyLogin: async (data) => {
+    const response = await api.post('/engineers/auth/verify-login', data);
+    if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
+      localStorage.setItem('engineerAccessToken', response.data.accessToken);
+      localStorage.setItem('engineerRefreshToken', response.data.refreshToken);
+      localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+      notifyFlutterLogin(response.data);
+      registerFCMToken('engineer', true).catch(console.error);
+    }
+    return response.data;
+  },
+
+  // Register
+  register: async (data) => {
+    const response = await api.post('/engineers/auth/register', data);
+    if (response.data.accessToken) {
+      localStorage.setItem('engineerAccessToken', response.data.accessToken);
+      localStorage.setItem('engineerRefreshToken', response.data.refreshToken);
+      localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+      notifyFlutterLogin(response.data);
+    }
+    return response.data;
+  },
+
+  // Login
+  login: async (data) => {
+    const { email, ...loginData } = data;
+    const response = await api.post('/engineers/auth/login', loginData);
+    if (response.data.accessToken) {
+      localStorage.setItem('engineerAccessToken', response.data.accessToken);
+      localStorage.setItem('engineerRefreshToken', response.data.refreshToken);
+      localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+      notifyFlutterLogin(response.data);
+      registerFCMToken('engineer', true).catch(console.error);
+    }
+    return response.data;
+  },
+
+  // Logout
+  logout: async () => {
+    await removeFCMToken('engineer');
+    try {
+      await api.post('/engineers/auth/logout', { platform: getPlatformType() });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    localStorage.removeItem('engineerAccessToken');
+    localStorage.removeItem('engineerRefreshToken');
+    localStorage.removeItem('engineerData');
+  },
+
+  // Get profile
+  getProfile: async () => {
+    const response = await api.get('/engineers/profile');
+    if (response.data.engineer) {
+      localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+    }
+    return response.data;
+  },
+
+  // Update profile
+  updateProfile: async (data) => {
+    const response = await api.put('/engineers/profile', data);
+    if (response.data.engineer) {
+      localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+    }
+    return response.data;
+  },
+
+  getProfileCompletion: async () => {
+    const response = await api.get('/engineers/profile/completion');
+    return response.data;
+  },
+
+  updateBankDetails: async (data) => {
+    const response = await api.put('/engineers/profile/bank-details', data);
+    if (response.data.engineer) localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+    return response.data;
+  },
+
+  updateWorkLocations: async (data) => {
+    const response = await api.put('/engineers/profile/work-locations', data);
+    if (response.data.engineer) localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
+    return response.data;
+  },
+
+  updateDocuments: async (data) => {
+    const response = await api.post('/engineers/profile/documents', data);
+    if (response.data.engineer) localStorage.setItem('engineerData', JSON.stringify(response.data.engineer));
     return response.data;
   }
 };

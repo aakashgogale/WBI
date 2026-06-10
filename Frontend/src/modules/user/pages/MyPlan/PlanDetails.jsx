@@ -125,7 +125,7 @@ const PlanDetails = () => {
             <div>
               <p className="text-gray-500 text-sm font-medium mb-1">Total Pricing</p>
               <div className="flex items-baseline">
-                <span className={`text-4xl font-black ${theme.color}`}>₹{plan.price}</span>
+                <span className={`text-4xl font-black ${theme.color}`}>â‚¹{plan.price}</span>
                 <span className="text-gray-400 text-sm ml-1">/ {plan.duration || '1'} Months</span>
               </div>
             </div>
@@ -361,7 +361,7 @@ const PlanDetails = () => {
                 </div>
                 <div>
                   <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-0.5">Amount Paid</p>
-                  <p className="text-lg font-black">₹{currentPlan.price}</p>
+                  <p className="text-lg font-black">â‚¹{currentPlan.price}</p>
                 </div>
               </div>
 
@@ -433,7 +433,7 @@ const PlanDetails = () => {
             </p>
           </div>
           <p className="text-center text-gray-300 text-[10px] uppercase font-bold tracking-widest pb-10">
-            Homestr Subscription • Secure & Trusted
+            WBI Subscription â€¢ Secure & Trusted
           </p>
         </div>
       </div>

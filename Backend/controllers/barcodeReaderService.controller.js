@@ -1,4 +1,4 @@
-const BarcodeReaderService = require('../../models/BarcodeReaderService');
+const BarcodeReaderService = require('../models/BarcodeReaderService');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

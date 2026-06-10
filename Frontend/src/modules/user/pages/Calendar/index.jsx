@@ -75,7 +75,7 @@ const Calendar = () => {
       {/* Appointments List */}
       <h3 className="text-lg font-bold text-gray-900 mb-4">Appointments on June {selectedDate}</h3>
       
-      <StaggerContainer className="flex flex-col gap-4 mb-20">
+      <StaggerContainer className="flex flex-col gap-4 pb-24">
         {mockAppointments.map((apt) => (
           <StaggerItem key={apt.id} className="bg-white p-4 rounded-2xl shadow-sm">
             <div className="flex justify-between items-start mb-2">

@@ -1,4 +1,4 @@
-const PosService = require('../../models/PosService');
+const PosService = require('../models/PosService');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

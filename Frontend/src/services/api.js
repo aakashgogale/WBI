@@ -22,6 +22,9 @@ const getTokenKeys = (url) => {
   if (window.location.pathname.startsWith('/vendor')) {
     return { access: 'vendorAccessToken', refresh: 'vendorRefreshToken', role: 'vendor' };
   }
+  if (window.location.pathname.startsWith('/engineer')) {
+    return { access: 'engineerAccessToken', refresh: 'engineerRefreshToken', role: 'engineer' };
+  }
   if (window.location.pathname.startsWith('/worker')) {
     return { access: 'workerAccessToken', refresh: 'workerRefreshToken', role: 'worker' };
   }
@@ -29,6 +32,7 @@ const getTokenKeys = (url) => {
   // 2. Explicitly detect auth routes regardless of current page (for cross-role login/actions)
   if (url?.includes('/admin/auth')) return { access: 'adminAccessToken', refresh: 'adminRefreshToken', role: 'admin' };
   if (url?.includes('/vendors/auth')) return { access: 'vendorAccessToken', refresh: 'vendorRefreshToken', role: 'vendor' };
+  if (url?.includes('/engineers/auth')) return { access: 'engineerAccessToken', refresh: 'engineerRefreshToken', role: 'engineer' };
   if (url?.includes('/workers/auth')) return { access: 'workerAccessToken', refresh: 'workerRefreshToken', role: 'worker' };
 
   // 3. Fallback to user token (most common case for user app)
@@ -109,6 +113,7 @@ api.interceptors.response.use(
         // Determine correct refresh endpoint based on current path
         let refreshEndpoint = '/users/auth/refresh-token'; // Default to user
         if (role === 'vendor') refreshEndpoint = '/vendors/auth/refresh-token';
+        else if (role === 'engineer') refreshEndpoint = '/engineers/auth/refresh-token';
         else if (role === 'worker') refreshEndpoint = '/workers/auth/refresh-token';
         else if (role === 'admin') refreshEndpoint = '/admin/auth/refresh-token';
 
@@ -163,6 +168,7 @@ export const handleLogout = (role = null) => {
     const path = window.location.pathname;
     if (path.startsWith('/admin')) role = 'admin';
     else if (path.startsWith('/vendor')) role = 'vendor';
+    else if (path.startsWith('/engineer')) role = 'engineer';
     else if (path.startsWith('/worker')) role = 'worker';
     else role = 'user';
   }
@@ -183,6 +189,11 @@ export const handleLogout = (role = null) => {
     clearTokens('vendor');
     if (window.location.pathname !== '/vendor/login') {
       window.location.href = '/vendor/login';
+    }
+  } else if (role === 'engineer') {
+    clearTokens('engineer');
+    if (window.location.pathname !== '/engineer/login') {
+      window.location.href = '/engineer/login';
     }
   } else if (role === 'worker') {
     clearTokens('worker');

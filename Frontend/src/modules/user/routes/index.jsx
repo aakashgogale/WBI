@@ -75,7 +75,7 @@ const Wallet = lazyLoad(() => import('../pages/Wallet'));
 const MyPlan = lazyLoad(() => import('../pages/MyPlan'));
 const PlanDetails = lazyLoad(() => import('../pages/MyPlan/PlanDetails'));
 const MyRating = lazyLoad(() => import('../pages/MyRating'));
-const AboutHomestr = lazyLoad(() => import('../pages/AboutHomster'));
+const AboutWBI = lazyLoad(() => import('../pages/AboutWBI'));
 const UpdateProfile = lazyLoad(() => import('../pages/UpdateProfile'));
 const Login = lazyLoad(() => import('../pages/login'));
 const Signup = lazyLoad(() => import('../pages/signup'));
@@ -103,6 +103,21 @@ const CdmService = lazyLoad(() => import('../pages/CdmService'));
 const PosService = lazyLoad(() => import('../pages/PosService'));
 const VsatService = lazyLoad(() => import('../pages/VsatService'));
 const BarcodeReaderService = lazyLoad(() => import('../pages/BarcodeReaderService'));
+// Energy Solutions
+const DgService = lazyLoad(() => import('../pages/DgService'));
+const BatteryService = lazyLoad(() => import('../pages/BatteryService'));
+const UpsBatteryService = lazyLoad(() => import('../pages/UpsBatteryService'));
+const EvService = lazyLoad(() => import('../pages/EvService'));
+const AcPowerService = lazyLoad(() => import('../pages/AcPowerService'));
+const DcPowerService = lazyLoad(() => import('../pages/DcPowerService'));
+const PowerTestingService = lazyLoad(() => import('../pages/PowerTestingService'));
+
+// Healthcare Solutions
+const MedicalEquipmentEnquiry = lazyLoad(() => import('../pages/MedicalEquipmentEnquiry'));
+const QualityControlTestEnquiry = lazyLoad(() => import('../pages/QualityControlTestEnquiry'));
+const ElectricalSafetyTestEnquiry = lazyLoad(() => import('../pages/ElectricalSafetyTestEnquiry'));
+const HcPreventiveMaintenanceEnquiry = lazyLoad(() => import('../pages/HcPreventiveMaintenanceEnquiry'));
+const HcAmcEnquiry = lazyLoad(() => import('../pages/HcAmcEnquiry'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -169,7 +184,7 @@ const UserRoutes = () => {
               <Route path="/my-plan" element={<ProtectedRoute userType="user"><MyPlan /></ProtectedRoute>} />
               <Route path="/my-plan/:id" element={<ProtectedRoute userType="user"><PlanDetails /></ProtectedRoute>} />
               <Route path="/my-rating" element={<ProtectedRoute userType="user"><MyRating /></ProtectedRoute>} />
-              <Route path="/about-homestr" element={<ProtectedRoute userType="user"><AboutHomestr /></ProtectedRoute>} />
+              <Route path="/about-wbi" element={<ProtectedRoute userType="user"><AboutWBI /></ProtectedRoute>} />
               <Route path="/update-profile" element={<ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute>} />
               <Route path="/scrap" element={<ProtectedRoute userType="user"><Scrap /></ProtectedRoute>} />
               <Route path="/scrap/add" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
@@ -195,6 +210,18 @@ const UserRoutes = () => {
               <Route path="/pos-enquiry" element={<ProtectedRoute userType="user"><PosService /></ProtectedRoute>} />
               <Route path="/vsat-enquiry" element={<ProtectedRoute userType="user"><VsatService /></ProtectedRoute>} />
               <Route path="/barcode-reader-enquiry" element={<ProtectedRoute userType="user"><BarcodeReaderService /></ProtectedRoute>} />
+              <Route path="/dg-service-enquiry" element={<ProtectedRoute userType="user"><DgService /></ProtectedRoute>} />
+              <Route path="/battery-service-enquiry" element={<ProtectedRoute userType="user"><BatteryService /></ProtectedRoute>} />
+              <Route path="/ups-battery-service-enquiry" element={<ProtectedRoute userType="user"><UpsBatteryService /></ProtectedRoute>} />
+              <Route path="/ev-service-enquiry" element={<ProtectedRoute userType="user"><EvService /></ProtectedRoute>} />
+              <Route path="/ac-power-service-enquiry" element={<ProtectedRoute userType="user"><AcPowerService /></ProtectedRoute>} />
+              <Route path="/dc-power-service-enquiry" element={<ProtectedRoute userType="user"><DcPowerService /></ProtectedRoute>} />
+              <Route path="/power-testing-service-enquiry" element={<ProtectedRoute userType="user"><PowerTestingService /></ProtectedRoute>} />
+              <Route path="/medical-equipment-enquiry" element={<ProtectedRoute userType="user"><MedicalEquipmentEnquiry /></ProtectedRoute>} />
+              <Route path="/qc-test-enquiry" element={<ProtectedRoute userType="user"><QualityControlTestEnquiry /></ProtectedRoute>} />
+              <Route path="/safety-test-enquiry" element={<ProtectedRoute userType="user"><ElectricalSafetyTestEnquiry /></ProtectedRoute>} />
+              <Route path="/hc-pm-enquiry" element={<ProtectedRoute userType="user"><HcPreventiveMaintenanceEnquiry /></ProtectedRoute>} />
+              <Route path="/hc-amc-enquiry" element={<ProtectedRoute userType="user"><HcAmcEnquiry /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

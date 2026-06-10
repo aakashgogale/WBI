@@ -17,6 +17,8 @@ const SubServices = lazy(() => import('../pages/SubServices'));
 const Users = lazy(() => import('../pages/Users'));
 const Vendors = lazy(() => import('../pages/Vendors'));
 const Workers = lazy(() => import('../pages/Workers'));
+const Engineers = lazy(() => import('../pages/Engineers'));
+const FormBuilder = lazy(() => import('../pages/FormBuilder'));
 const Bookings = lazy(() => import('../pages/Bookings'));
 const BookingTracking = lazy(() => import('../pages/Bookings/Tracking'));
 const BookingNotifications = lazy(() => import('../pages/Bookings/BookingNotifications'));
@@ -49,7 +51,21 @@ const PosServices = lazy(() => import('../pages/PosServices'));
 const VsatServices = lazy(() => import('../pages/VsatServices'));
 const BarcodeReaderServices = lazy(() => import('../pages/BarcodeReaderServices'));
 
+// Energy Solutions
+const DgServices = lazy(() => import('../pages/DgServices'));
+const BatteryServices = lazy(() => import('../pages/BatteryServices'));
+const UpsBatteryServices = lazy(() => import('../pages/UpsBatteryServices'));
+const EvServices = lazy(() => import('../pages/EvServices'));
+const AcPowerServices = lazy(() => import('../pages/AcPowerServices'));
+const DcPowerServices = lazy(() => import('../pages/DcPowerServices'));
+const PowerTestingServices = lazy(() => import('../pages/PowerTestingServices'));
 
+// Healthcare
+const MedicalEquipmentEnquiries = lazy(() => import('../pages/MedicalEquipmentEnquiries'));
+const QualityControlTestEnquiries = lazy(() => import('../pages/QualityControlTestEnquiries'));
+const ElectricalSafetyTestEnquiries = lazy(() => import('../pages/ElectricalSafetyTestEnquiries'));
+const HcPreventiveMaintenanceEnquiries = lazy(() => import('../pages/HcPreventiveMaintenanceEnquiries'));
+const HcAmcEnquiries = lazy(() => import('../pages/HcAmcEnquiries'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -80,6 +96,8 @@ const AdminRoutes = () => {
           <Route path="users/*" element={<Users />} />
           <Route path="vendors/*" element={<Vendors />} />
           <Route path="workers/*" element={<Workers />} />
+          <Route path="engineers/*" element={<Engineers />} />
+          <Route path="form-builder/*" element={<FormBuilder />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="bookings/tracking" element={<BookingTracking />} />
           <Route path="bookings/notifications" element={<BookingNotifications />} />
@@ -112,6 +130,21 @@ const AdminRoutes = () => {
           <Route path="banking-solutions/cdm-service" element={<CdmServices />} />
           <Route path="banking-solutions/pos-service" element={<PosServices />} />
           <Route path="banking-solutions/vsat-service" element={<VsatServices />} />
+          <Route path="banking-solutions/barcode-reader-service" element={<BarcodeReaderServices />} />
+
+          <Route path="energy-solutions/dg-services" element={<DgServices />} />
+          <Route path="energy-solutions/battery-services" element={<BatteryServices />} />
+          <Route path="energy-solutions/ups-battery-services" element={<UpsBatteryServices />} />
+          <Route path="energy-solutions/ev-services" element={<EvServices />} />
+          <Route path="energy-solutions/ac-power-services" element={<AcPowerServices />} />
+          <Route path="energy-solutions/dc-power-services" element={<DcPowerServices />} />
+          <Route path="energy-solutions/power-testing-services" element={<PowerTestingServices />} />
+
+          <Route path="healthcare-solutions/medical-equipment" element={<MedicalEquipmentEnquiries />} />
+          <Route path="healthcare-solutions/qc-test" element={<QualityControlTestEnquiries />} />
+          <Route path="healthcare-solutions/safety-test" element={<ElectricalSafetyTestEnquiries />} />
+          <Route path="healthcare-solutions/preventive-maintenance" element={<HcPreventiveMaintenanceEnquiries />} />
+          <Route path="healthcare-solutions/amc" element={<HcAmcEnquiries />} />
 
           <Route path="settlements/*" element={<Settlements />} />
           <Route path="settings/*" element={<Settings />} />
@@ -122,4 +155,5 @@ const AdminRoutes = () => {
 };
 
 export default AdminRoutes;
+
 

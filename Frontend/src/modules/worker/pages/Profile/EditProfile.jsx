@@ -6,7 +6,6 @@ import {
   FiChevronDown, FiX
 } from 'react-icons/fi';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import workerService from '../../../../services/workerService';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { toast } from 'react-hot-toast';
@@ -251,7 +250,7 @@ const EditProfile = () => {
         profilePhoto: payload.profilePhoto || currentWorker.profilePhoto
       }));
 
-      navigate('/worker/profile');
+      navigate('/engineer/profile');
     } catch (error) {
       console.error('Update failed:', error);
       toast.error(error.response?.data?.message || 'Update failed');
@@ -271,7 +270,7 @@ const EditProfile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 ">
       <Header title="Edit Profile" />
 
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
@@ -497,7 +496,7 @@ const EditProfile = () => {
           </button>
 
           <button
-            onClick={() => navigate('/worker/profile')}
+            onClick={() => navigate('/engineer/profile')}
             className="w-full py-3.5 bg-white text-gray-500 border border-gray-200 rounded-2xl font-bold text-sm uppercase tracking-wider active:scale-95 transition-all"
           >
             Cancel
@@ -517,7 +516,7 @@ const EditProfile = () => {
         onSave={handleAddressSave}
       />
 
-      <BottomNav />
+      
     </div >
   );
 };

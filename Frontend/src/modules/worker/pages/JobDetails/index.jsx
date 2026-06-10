@@ -1,16 +1,12 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiMapPin, FiPhone, FiClock, FiUser, FiCheck, FiX, FiArrowRight, FiNavigation, FiTool, FiCheckCircle, FiDollarSign, FiCamera, FiPlus, FiTrash, FiXCircle, FiAward, FiFileText } from 'react-icons/fi';
+import { FiMapPin, FiPhone, FiClock, FiUser, FiArrowLeft, FiImage, FiVideo, FiPlus, FiCheckCircle, FiFileText, FiDownload, FiInfo, FiMessageSquare } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
 import { workerTheme as themeColors } from '../../../../theme';
-import Header from '../../components/layout/Header';
 import { SkeletonCard } from '../../../../components/common/SkeletonLoaders';
 
-const CashCollectionModal = lazy(() => import('../../components/common/CashCollectionModal'));
 const VisitVerificationModal = lazy(() => import('../../components/common/VisitVerificationModal'));
-const WorkCompletionModal = lazy(() => import('../../components/common/WorkCompletionModal'));
-const OtpVerificationModal = lazy(() => import('../../components/common/OtpVerificationModal'));
 import workerService from '../../../../services/workerService';
-import api from '../../../../services/api';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { useLocationTracking } from '../../../../hooks/useLocationTracking';
@@ -19,22 +15,26 @@ const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
+  const [timeline, setTimeline] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [otpInput, setOtpInput] = useState(['', '', '', '']); // Array for 4 digit OTP
-  const [workPhotos, setWorkPhotos] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [collectionAmount, setCollectionAmount] = useState('');
-  const actionLoadingRef = useRef(false);
+
+  // Work Progress State
+  const [progressNotes, setProgressNotes] = useState('');
+  const [mediaFiles, setMediaFiles] = useState({ photos: [], videos: [] });
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+
+  // Materials State
+  const [materials, setMaterials] = useState([]);
+  const [newMaterial, setNewMaterial] = useState({ name: '', quantity: 1, cost: '' });
+  const [isAddingMaterial, setIsAddingMaterial] = useState(false);
 
   useLayoutEffect(() => {
     const html = document.documentElement;
     const body = document.body;
     const root = document.getElementById('root');
-    const bgStyle = themeColors.backgroundGradient;
+    const bgStyle = '#F8FCFC';
 
     if (html) html.style.background = bgStyle;
     if (body) body.style.background = bgStyle;
@@ -50,18 +50,20 @@ const JobDetails = () => {
   const fetchJobDetails = async () => {
     try {
       setLoading(true);
-      const response = await workerService.getJobById(id);
-      if (response.success) {
-        // Map items for consistency
-        const data = response.data;
-        setJob({
-          ...data,
-          items: data.bookedItems || []
-        });
+      const [jobRes, timelineRes] = await Promise.all([
+        workerService.getJobById(id),
+        workerService.getJobTimeline(id)
+      ]);
+      
+      if (jobRes.success) {
+        setJob(jobRes.data);
+        setMaterials(jobRes.data.materials || []);
+      }
+      if (timelineRes.success) {
+        setTimeline(timelineRes.data);
       }
       setLoading(false);
     } catch (error) {
-      // Error fetching job details
       toast.error('Failed to load job details');
       setLoading(false);
     }
@@ -71,198 +73,146 @@ const JobDetails = () => {
     fetchJobDetails();
   }, [id]);
 
-  // Socket for live location tracking
   const socket = useAppNotifications('worker');
-
-  // Optimized Live Location Tracking with distance filter and heading
   const isTrackingActive = job?.status === 'journey_started' || job?.status === 'visited' || job?.status === 'in_progress';
   useLocationTracking(socket, id, isTrackingActive, {
-    distanceFilter: 10, // Only emit when moved 10+ meters
-    interval: 3000,     // Minimum 3s between emissions
+    distanceFilter: 10,
+    interval: 3000,
     enableHighAccuracy: true
   });
 
-  // Listen for Real-Time Job Updates (e.g. Online Payment)
   useEffect(() => {
     if (socket && id) {
       const handleJobUpdate = (data) => {
         if (data.bookingId === id || data.relatedId === id || data._id === id) {
-          setJob(prev => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              ...data,
-              status: data.status || prev.status,
-              paymentStatus: data.paymentStatus || prev.paymentStatus
-            };
-          });
-
-          const isPaymentSuccess =
-            data.paymentStatus === 'SUCCESS' ||
-            data.paymentStatus === 'paid' ||
-            data.type === 'payment_success';
-
-          if (isPaymentSuccess) {
-            toast.success('Online Payment Received!');
-            setTimeout(() => fetchJobDetails(), 1500);
-          }
+          fetchJobDetails();
         }
       };
-
       socket.on('booking_updated', handleJobUpdate);
-      socket.on('payment_success', handleJobUpdate);
-
-      return () => {
-        socket.off('booking_updated', handleJobUpdate);
-        socket.off('payment_success', handleJobUpdate);
-      };
+      return () => socket.off('booking_updated', handleJobUpdate);
     }
   }, [socket, id]);
 
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    setIsUploading(true);
-    // Mimic upload process using FileReader (Converting to Base64 for now)
-    const uploadPromises = files.map(file => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(uploadPromises).then(urls => {
-      setWorkPhotos(prev => [...prev, ...urls]);
-      setIsUploading(false);
-    });
-  };
-
-  const handleRemovePhoto = (index) => {
-    setWorkPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleInitiateCashOTP = async (totalAmount, extraItems = []) => {
-    try {
-      setActionLoading(true);
-      const res = await workerService.initiateCashCollection(id, totalAmount, extraItems);
-      if (res.success) {
-        return res;
-      } else {
-        throw new Error(res.message || 'Failed to send OTP');
-      }
-    } catch (error) {
-      throw error;
-    } finally {
-      setActionLoading(false);
+  const getStatusConfig = (status, workerResponse) => {
+    if (!workerResponse || workerResponse === 'PENDING') return { label: 'Assigned', color: 'bg-blue-100 text-blue-700' };
+    
+    switch (status) {
+      case 'assigned':
+      case 'confirmed':
+        return { label: 'Accepted', color: 'bg-green-100 text-green-700' };
+      case 'journey_started':
+        return { label: 'On The Way', color: 'bg-blue-100 text-blue-700' };
+      case 'visited':
+      case 'in_progress':
+        return { label: 'In Progress', color: 'bg-orange-100 text-orange-700' };
+      case 'work_done':
+        return { label: 'Work Done', color: 'bg-teal-100 text-teal-700' };
+      case 'completed':
+        return { label: 'Completed', color: 'bg-teal-100 text-teal-700' };
+      case 'cancelled':
+        return { label: 'Cancelled', color: 'bg-red-100 text-red-700' };
+      default:
+        return { label: status, color: 'bg-gray-100 text-gray-700' };
     }
   };
 
-  const handleConfirmCash = async (totalAmount, extraItems, otp) => {
+  const handleAction = async (actionType) => {
+    setActionLoading(true);
     try {
-      setActionLoading(true);
-      const response = await workerService.collectCash(id, otp, totalAmount, extraItems);
-      if (response.success) {
-        toast.success('Payment collected & Job Completed!');
-        setIsPaymentModalOpen(false);
+      if (actionType === 'ACCEPT') {
+        await workerService.respondToJob(id, 'ACCEPTED');
+        toast.success('Job Accepted');
+        fetchJobDetails();
+      } else if (actionType === 'REJECT') {
+        await workerService.respondToJob(id, 'REJECTED');
+        toast.success('Job Rejected');
+        navigate('/engineer/jobs');
+      } else if (actionType === 'MARK_ARRIVED') {
+        await workerService.startJob(id);
+        toast.success('Journey Started! Please verify OTP with customer upon arrival.');
+        fetchJobDetails();
+      } else if (actionType === 'START_WORK') {
+        if (job.status === 'journey_started') {
+           setIsVisitModalOpen(true);
+        } else {
+           await workerService.updateJobStatus(id, 'in_progress');
+           toast.success('Work Started!');
+           fetchJobDetails();
+        }
+      } else if (actionType === 'COMPLETE_WORK') {
+        await workerService.completeJob(id, { workPhotos: mediaFiles.photos });
+        toast.success('Work Completed!');
         fetchJobDetails();
       }
     } catch (error) {
-      throw error;
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleJobResponse = async (status) => {
-    if (actionLoadingRef.current) return;
-    actionLoadingRef.current = true;
-    try {
-      setActionLoading(true);
-      const response = (await api.put(`/workers/jobs/${id}/respond`, { status })).data;
-      if (response.success) {
-        toast.success(status === 'ACCEPTED' ? 'Job Accepted' : 'Job Declined');
-        if (status === 'ACCEPTED') {
-          fetchJobDetails();
-        } else {
-          navigate('/worker/jobs');
-        }
-      } else {
-        toast.error(response.message || 'Failed');
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update status');
-    } finally {
-      setActionLoading(false);
-      setTimeout(() => { actionLoadingRef.current = false; }, 500);
-    }
-  };
-
-  const handleStatusUpdate = async (type) => {
-    if (type === 'visit' && !isVisitModalOpen) {
-      if (job.status === 'journey_started') {
-        try {
-          await workerService.workerReached(id);
-          toast.success('Customer notified that you reached');
-        } catch (e) {
-          // Reached notification failed
-        }
-      }
-      setIsVisitModalOpen(true);
-      return;
-    }
-
-    if (type === 'complete') {
-      setIsCompletionModalOpen(true);
-      return;
-    }
-
-    if (type === 'collect') {
-      const hasOTP = job?.customerConfirmationOTP || job?.paymentOtp;
-      if (hasOTP) {
-        setIsPaymentModalOpen(true);
-      } else {
-        navigate(`/worker/job/${id}/billing`);
-      }
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      let response;
-      if (type === 'start') {
-        response = await workerService.startJob(id);
-        navigate(`/worker/job/${id}/map`); // Navigate to map on start
-        return;
-      } else if (type === 'complete') {
-        if (workPhotos.length === 0) {
-          toast.error('Please upload at least one work photo');
-          setActionLoading(false);
-          return;
-        }
-        response = await workerService.completeJob(id, { workPhotos });
-      }
-
-      if (response && response.success) {
-        toast.success(response.message || 'Updated successfully');
-        setIsCompletionModalOpen(false);
-        // Navigate to billing immediately after work is done
-        navigate(`/worker/job/${id}/billing`);
-      }
-      setActionLoading(false);
-    } catch (error) {
       toast.error(error.response?.data?.message || 'Action failed');
+    } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleMediaUpload = async (e, type) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    
+    setIsUploadingMedia(true);
+    // Dummy base64 upload for demo purposes
+    const filePromises = files.map(f => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(f);
+    }));
+    
+    const base64Files = await Promise.all(filePromises);
+    
+    try {
+      const payload = type === 'photo' ? { workPhotos: base64Files } : { progressVideos: base64Files };
+      await workerService.uploadJobMedia(id, payload);
+      setMediaFiles(prev => ({
+        ...prev,
+        [type === 'photo' ? 'photos' : 'videos']: [...prev[type === 'photo' ? 'photos' : 'videos'], ...base64Files]
+      }));
+      toast.success('Media uploaded!');
+      fetchJobDetails();
+    } catch (e) {
+      toast.error('Upload failed');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handleAddNotes = async () => {
+    if (!progressNotes) return;
+    try {
+      await workerService.addJobNotes(id, progressNotes);
+      toast.success('Notes added');
+      setProgressNotes('');
+      fetchJobDetails();
+    } catch (e) {
+      toast.error('Failed to add notes');
+    }
+  };
+
+  const handleAddMaterial = async () => {
+    if (!newMaterial.name || !newMaterial.cost) return;
+    try {
+      setIsAddingMaterial(true);
+      await workerService.addJobMaterials(id, [newMaterial]);
+      toast.success('Material requested');
+      setNewMaterial({ name: '', quantity: 1, cost: '' });
+      fetchJobDetails();
+    } catch (e) {
+      toast.error('Failed to add material');
+    } finally {
+      setIsAddingMaterial(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-        <Header title="Job Details" />
-        <main className="px-4 py-6 space-y-4">
-          <div className="h-16 bg-white/50 rounded-2xl animate-pulse mb-6"></div>
+      <div className="min-h-screen bg-[#F8FCFC]">
+        <div className="h-16 bg-white shadow-sm" />
+        <main className="px-4 py-6 space-y-4 max-w-lg mx-auto">
           <SkeletonCard className="h-32 mb-6" />
           <SkeletonCard className="h-48 mb-6" />
           <SkeletonCard className="h-40" />
@@ -271,415 +221,312 @@ const JobDetails = () => {
     );
   }
 
-  if (!job) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6 text-center" style={{ background: themeColors.backgroundGradient }}>
-        <div>
-          <FiXCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600 font-bold text-xl mb-4">Job not found</p>
-          <button onClick={() => navigate('/worker/jobs')} className="px-6 py-3 bg-blue-600 text-white rounded-xl">Back to Jobs</button>
-        </div>
-      </div>
-    );
-  }
+  if (!job) return <div className="text-center mt-20 font-bold text-gray-500">Job Not Found</div>;
 
-  const getStatusLabel = (status) => {
-    const labels = {
-      'pending': 'Pending',
-      'confirmed': 'Assigned', // Legacy?
-      'assigned': 'Assigned',
-      'visited': 'Visited',
-      'journey_started': 'On The Way',
-      'in_progress': 'In Progress',
-      'work_done': 'Work Done',
-      'completed': 'Completed',
-      'cancelled': 'Cancelled',
-    };
-    return labels[status.toLowerCase()] || status;
-  };
-
-  const getStatusColor = (status) => {
-    const colors = {
-      'pending': '#F59E0B',
-      'confirmed': '#3B82F6',
-      'assigned': '#3B82F6',
-      'journey_started': '#3B82F6',
-      'visited': '#F59E0B',
-      'in_progress': '#F59E0B',
-      'work_done': '#10B981',
-      'completed': '#10B981',
-      'cancelled': '#EF4444',
-    };
-    return colors[status.toLowerCase()] || '#6B7280';
-  };
+  const statusConfig = getStatusConfig(job.status, job.workerResponse);
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="Job Details" />
+    <div className="min-h-screen bg-[#F8FCFC]  text-[#0F172A] font-sans">
+      {/* Header */}
+      <header className="bg-white px-4 py-3 sticky top-0 z-50 shadow-sm flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-700 active:scale-95 transition-transform">
+          <FiArrowLeft className="w-6 h-6" />
+        </button>
+        <h1 className="text-lg font-bold">Active Job</h1>
+        <div className="flex items-center gap-3">
+          {job.userId?.phone && (
+            <a href={`https://wa.me/${job.userId.phone}`} target="_blank" rel="noreferrer" className="p-2 rounded-full bg-green-50 text-green-600 active:scale-95">
+              <FaWhatsapp className="w-5 h-5" />
+            </a>
+          )}
+          {job.userId?.phone && (
+            <a href={`tel:${job.userId.phone}`} className="p-2 rounded-full bg-[#10AFA5]/10 text-[#10AFA5] active:scale-95">
+              <FiPhone className="w-5 h-5" />
+            </a>
+          )}
+        </div>
+      </header>
 
-      <main className="px-4 py-6">
-        {/* View Timeline Button */}
+      <main className="px-4 py-6 max-w-lg mx-auto">
+        {/* Top Job Summary Card */}
+        <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-50 mb-5">
+          <div className="flex justify-between items-start mb-3">
+            <h2 className="font-bold text-lg">{job.serviceName || 'Service'}</h2>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig.color}`}>
+              {statusConfig.label}
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 font-medium mb-4">Booking ID: <span className="text-gray-800">#{job.bookingNumber}</span></p>
+          <div className="flex justify-end border-t border-gray-100 pt-3 mt-1">
+            <span className="text-2xl font-black text-[#0F172A]">₹{job.finalAmount?.toFixed(2) || '0.00'}</span>
+          </div>
+        </div>
+
+        {/* Customer Details Section */}
         <div className="mb-6">
-          <button
-            onClick={() => navigate(`/worker/job/${id}/timeline`)}
-            className="w-full bg-white border border-gray-200 py-4 rounded-2xl font-bold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all text-lg mb-4"
-          >
-            <FiClock className="w-5 h-5 text-gray-500" />
-            View Job Timeline
-          </button>
-
-          {(!job.workerResponse || job.workerResponse === 'PENDING') && (job.status === 'confirmed' || job.status === 'assigned' || job.status === 'pending') && (
-            <div className="flex gap-3 mb-4 animate-in slide-in-from-top-2">
-              <button
-                onClick={() => handleJobResponse('REJECTED')}
-                disabled={actionLoading}
-                className="flex-1 py-4 rounded-2xl font-bold text-red-500 bg-red-50 border border-red-100 shadow-sm active:scale-95 transition-all"
+          <h3 className="text-sm font-bold text-gray-800 mb-3 px-1">Customer Details</h3>
+          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-50 space-y-4">
+            <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+              <FiUser className="text-[#10AFA5] w-5 h-5" /> {job.userId?.name || 'Customer Name'}
+            </div>
+            <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+              <FiPhone className="text-[#10AFA5] w-5 h-5" /> {job.userId?.phone || 'No Contact'}
+            </div>
+            <div className="flex items-start gap-3 text-sm font-medium text-gray-700">
+              <FiMapPin className="text-[#10AFA5] w-5 h-5 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p>{job.address?.addressLine1}</p>
+                <p className="text-gray-500">{job.address?.city}, {job.address?.state} - {job.address?.pincode}</p>
+              </div>
+              <button 
+                onClick={() => navigate(`/worker/job/${id}/map`)}
+                className="p-2 rounded-full bg-[#10AFA5]/10 text-[#10AFA5] shrink-0 active:scale-90"
               >
-                DECLINE
-              </button>
-              <button
-                onClick={() => handleJobResponse('ACCEPTED')}
-                disabled={actionLoading}
-                className="flex-1 py-4 rounded-2xl font-bold text-white shadow-xl active:scale-95 transition-all"
-                style={{ background: themeColors.button }}
-              >
-                ACCEPT JOB
+                <FiMapPin className="w-4 h-4" />
               </button>
             </div>
-          )}
+          </div>
+        </div>
 
-          {job.workerResponse === 'ACCEPTED' && (job.status === 'confirmed' || job.status === 'assigned') && (
-            <button
-              onClick={() => handleStatusUpdate('start')}
-              disabled={actionLoading}
-              className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all text-lg"
-              style={{ background: themeColors.button }}
-            >
-              {actionLoading ? 'Loading...' : <>START JOURNEY <FiNavigation className="w-5 h-5" /></>}
-            </button>
-          )}
-
-          {job.status === 'journey_started' && (
-            <button
-              onClick={() => navigate(`/worker/job/${id}/map`)}
-              disabled={actionLoading}
-              className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all text-lg"
-              style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}
-            >
-              <FiNavigation className="w-5 h-5" /> TRACK JOURNEY / REACHED
-            </button>
-          )}
-
-          {(job.status === 'visited' || job.status === 'in_progress') && (
-            <button
-              onClick={() => handleStatusUpdate('complete')}
-              disabled={actionLoading}
-              className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all text-lg"
-              style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}
-            >
-              {actionLoading ? 'Loading...' : <>COMPLETE WORK <FiCheckCircle className="w-5 h-5" /></>}
-            </button>
-          )}
-
-          {job.status === 'work_done' && (
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => navigate(`/worker/job/${id}/billing`)}
-                disabled={actionLoading}
-                className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all text-lg"
-                style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' }}
-              >
-                <FiFileText className="w-5 h-5" /> PREPARE BILL / EDIT
-              </button>
-
-              {(job?.customerConfirmationOTP || job?.paymentOtp) && (
-                <button
-                  onClick={() => setIsPaymentModalOpen(true)}
-                  disabled={actionLoading}
-                  className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all text-lg"
-                  style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}
-                >
-                  <FiKey className="w-5 h-5" /> ENTER OTP
-                </button>
+        {/* Job Details Section */}
+        <div className="mb-6">
+          <h3 className="text-sm font-bold text-gray-800 mb-3 px-1">Job Details</h3>
+          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-50">
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Service Type</span>
+                <span className="font-semibold text-right">{job.serviceName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Preferred Time</span>
+                <span className="font-semibold text-right">{new Date(job.scheduledDate).toLocaleDateString()}, {job.scheduledTime}</span>
+              </div>
+              {job.brandName && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Brand</span>
+                  <span className="font-semibold text-right">{job.brandName}</span>
+                </div>
               )}
-            </div>
-          )}
-
-          {job.status === 'completed' && (
-            <div className="bg-green-100 border-2 border-green-500 rounded-2xl p-4 text-center text-green-700 font-bold shadow-md">
-              <FiCheckCircle className="w-8 h-8 mx-auto mb-2" />
-              JOB COMPLETED & SETTLED
-            </div>
-          )}
-        </div>
-
-        {/* Customer Info Card */}
-        <div className="bg-white rounded-2xl p-5 mb-6 shadow-md">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 border-2 border-gray-50">
-              <FiUser className="w-7 h-7" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-gray-900 text-lg">{job.userId?.name || 'Customer'}</h3>
-              <p className="text-sm text-gray-500">{job.serviceName}</p>
-            </div>
-            {job.userId?.phone && (
-              <a href={`tel:${job.userId.phone}`} className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 active:scale-90 transition-transform">
-                <FiPhone className="w-5 h-5" />
-              </a>
-            )}
-          </div>
-
-          <div className="space-y-4 pt-4 border-t border-gray-50">
-            {/* Address Card with Map */}
-            <div className="mt-4 bg-blue-50 rounded-xl p-3 border border-blue-100">
-              <div className="flex items-start gap-3 mb-3">
-                <FiMapPin className="w-5 h-5 mt-0.5 text-blue-600" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase">Service Location</p>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {job.address?.addressLine1}, {job.address?.city}
-                  </p>
-                </div>
-              </div>
-
-              {/* Map Embed */}
-              <div
-                className="w-full h-40 rounded-lg overflow-hidden mb-3 bg-gray-200 border border-blue-100 relative group cursor-pointer"
-                onClick={() => navigate(`/worker/job/${id}/map`)}
-              >
-                {(() => {
-                  const fullAddress = `${job.address?.addressLine1 || ''}, ${job.address?.city || ''}`;
-                  const mapQuery = encodeURIComponent(fullAddress);
-
-                  return (
-                    <>
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0, pointerEvents: 'none' }}
-                        src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
-                        allowFullScreen
-                        loading="lazy"
-                        tabIndex="-1"
-                      ></iframe>
-                      {/* Overlay to intercept clicks */}
-                      <div className="absolute inset-0 bg-transparent group-hover:bg-black/5 transition-colors flex items-center justify-center">
-                        <span className="bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-gray-700 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                          View Route
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-
-              <button
-                onClick={() => navigate(`/worker/job/${id}/map`)}
-                className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                style={{ background: themeColors.button }}
-              >
-                <FiNavigation className="w-4 h-4" />
-                View Route
-              </button>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <FiClock className="w-5 h-5 text-gray-400 mt-1" />
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Scheduled Time</p>
-                <p className="text-sm text-gray-700 font-medium">
-                  {new Date(job.scheduledDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+              <div className="pt-3 border-t border-gray-100">
+                <span className="text-gray-500 block mb-1">Description</span>
+                <p className="font-medium text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  {job.description || 'No description provided.'}
                 </p>
-                <p className="text-sm font-bold text-blue-600 mt-0.5">{job.scheduledTime}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Booked Services List */}
-        {job.items && job.items.length > 0 && (
-          <div className="bg-white rounded-2xl p-5 mb-6 shadow-md">
-            <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <FiTool className="w-5 h-5 text-gray-500" /> Booked Services
-            </h4>
-            <div className="space-y-4">
-              {job.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-start border-b border-gray-50 pb-4 last:border-0 last:pb-0">
-                  <div>
-                    <p className="font-bold text-gray-800">{item.card?.title || 'Service Item'}</p>
-                    <p className="text-xs font-bold text-gray-400 uppercase">{item.sectionTitle || 'General'}</p>
-                    {item.card?.features && item.card.features.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.card.features.map((f, i) => (
-                          <span key={i} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{f}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-bold text-gray-900">Qty: {item.quantity}</span>
-                  </div>
+        {/* Work Progress Section (Visible when In Progress) */}
+        {(job.status === 'visited' || job.status === 'in_progress') && (
+          <div className="mb-6 animate-in fade-in slide-in-from-bottom-4">
+            <h3 className="text-sm font-bold text-gray-800 mb-3 px-1">Work Progress</h3>
+            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-50">
+              
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <label className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500 cursor-pointer hover:bg-gray-100 active:scale-95 transition-all">
+                  <FiImage className="w-6 h-6 mb-2 text-[#10AFA5]" />
+                  <span className="text-xs font-bold">Upload Photos</span>
+                  <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleMediaUpload(e, 'photo')} disabled={isUploadingMedia} />
+                </label>
+                <label className="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500 cursor-pointer hover:bg-gray-100 active:scale-95 transition-all">
+                  <FiVideo className="w-6 h-6 mb-2 text-[#10AFA5]" />
+                  <span className="text-xs font-bold">Upload Videos</span>
+                  <input type="file" multiple accept="video/*" className="hidden" onChange={(e) => handleMediaUpload(e, 'video')} disabled={isUploadingMedia} />
+                </label>
+              </div>
+
+              {(job.workPhotos?.length > 0 || job.progressVideos?.length > 0) && (
+                <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+                  {job.workPhotos?.map((p, i) => (
+                     <img key={i} src={p} alt="progress" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
+                  ))}
+                  {job.progressVideos?.map((v, i) => (
+                     <div key={`vid-${i}`} className="w-16 h-16 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+                       <FiVideo className="text-white w-6 h-6" />
+                     </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              <div className="flex flex-col gap-2">
+                {job.workerNotes && (
+                   <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-100">{job.workerNotes}</p>
+                )}
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={progressNotes}
+                    onChange={(e) => setProgressNotes(e.target.value)}
+                    placeholder="Add progress notes..." 
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#10AFA5] transition-colors"
+                  />
+                  <button 
+                    onClick={handleAddNotes}
+                    className="bg-[#10AFA5] text-white px-4 rounded-xl active:scale-95 transition-transform"
+                  >
+                    <FiPlus />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Payment Details - Professional Card (Matched with Vendor) */}
-        <div
-          className="bg-white rounded-xl p-5 mb-6 shadow-sm border border-gray-100"
-          style={{
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-          }}
-        >
-          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-            <div className={`p-2 rounded-lg ${job.paymentMethod === 'plan_benefit' ? 'bg-amber-100' : 'bg-gray-100'}`}>
-              <FiDollarSign className="w-5 h-5" style={{ color: job.paymentMethod === 'plan_benefit' ? '#d97706' : themeColors.button }} />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800">
-                {job.paymentMethod === 'plan_benefit' ? 'Plan Benefit Summary' : 'Payment Summary'}
-              </h3>
-              {job.paymentMethod === 'plan_benefit' && (
-                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                  Plan Membership Active
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            {/* Base Items */}
-            <div className="flex justify-between items-center text-gray-600">
-              <span>Base Price</span>
-              {job.paymentMethod === 'plan_benefit' ? (
-                <div className="flex items-center gap-2">
-                  <span className="line-through text-gray-400 text-xs">₹{(job.basePrice || 0).toFixed(2)}</span>
-                  <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                </div>
-              ) : (
-                <span>₹{(job.basePrice || 0).toFixed(2)}</span>
-              )}
-            </div>
-
-            {(job.tax > 0 || job.paymentMethod === 'plan_benefit') && (
-              <div className="flex justify-between items-center text-gray-600">
-                <span>Tax</span>
-                {job.paymentMethod === 'plan_benefit' ? (
-                  <div className="flex items-center gap-2">
-                    <span className="line-through text-gray-400 text-xs">₹{(job.tax || 0).toFixed(2)}</span>
-                    <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                  </div>
-                ) : (
-                  <span>+₹{(job.tax || 0).toFixed(2)}</span>
-                )}
-              </div>
-            )}
-
-            {(job.visitingCharges > 0 || job.paymentMethod === 'plan_benefit') && (
-              <div className="flex justify-between items-center text-gray-600">
-                <span>Convenience Fee</span>
-                {job.paymentMethod === 'plan_benefit' ? (
-                  <div className="flex items-center gap-2">
-                    <span className="line-through text-gray-400 text-xs">₹{(job.visitingCharges || 0).toFixed(2)}</span>
-                    <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                  </div>
-                ) : (
-                  <span>+₹{(job.visitingCharges || 0).toFixed(2)}</span>
-                )}
-              </div>
-            )}
-
-            {job.paymentMethod !== 'plan_benefit' && job.discount > 0 && (
-              <div className="flex justify-between text-green-600 font-medium">
-                <span>Discount</span>
-                <span>-₹{(job.discount || 0).toFixed(2)}</span>
-              </div>
-            )}
-
-            {/* Extra Charges Section */}
-            {job.extraCharges && job.extraCharges.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Extra Charges (User Pays)</p>
-                <div className="bg-gray-50 rounded-lg p-3 space-y-2 border border-gray-100">
-                  {job.extraCharges.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-gray-700 text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs font-bold bg-white border px-1.5 rounded text-gray-500">x{item.quantity || 1}</span>
-                        <span>{item.name}</span>
-                      </span>
-                      <span className="font-medium">+₹{(item.total || item.price || 0).toFixed(2)}</span>
+        {/* Material Section (Visible when In Progress) */}
+        {(job.status === 'visited' || job.status === 'in_progress') && (
+          <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 delay-75">
+            <h3 className="text-sm font-bold text-gray-800 mb-3 px-1">Material Requested</h3>
+            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-50">
+              
+              {materials.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  {materials.map((m, i) => (
+                    <div key={i} className="flex justify-between items-center p-3 rounded-xl border border-gray-100 bg-gray-50">
+                      <div>
+                        <p className="font-bold text-sm text-gray-800">{m.name} <span className="text-gray-400 text-xs font-normal">x{m.quantity}</span></p>
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${m.status === 'approved' ? 'bg-green-100 text-green-700' : m.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {m.status}
+                        </span>
+                      </div>
+                      <span className="font-black text-gray-800">₹{m.cost}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between font-bold text-blue-600 pt-2 mt-2 border-t border-gray-200">
-                    <span>Subtotal Extras</span>
-                    <span>+₹{(job.extraChargesTotal || 0).toFixed(2)}</span>
-                  </div>
                 </div>
+              )}
+
+              <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Name" 
+                  value={newMaterial.name}
+                  onChange={(e) => setNewMaterial({...newMaterial, name: e.target.value})}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#10AFA5] min-w-0"
+                />
+                <input 
+                  type="number" 
+                  placeholder="Qty" 
+                  value={newMaterial.quantity}
+                  onChange={(e) => setNewMaterial({...newMaterial, quantity: Number(e.target.value)})}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#10AFA5] min-w-0"
+                />
+                <input 
+                  type="number" 
+                  placeholder="₹ Cost" 
+                  value={newMaterial.cost}
+                  onChange={(e) => setNewMaterial({...newMaterial, cost: Number(e.target.value)})}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#10AFA5] min-w-0"
+                />
+                <button 
+                  onClick={handleAddMaterial}
+                  disabled={isAddingMaterial}
+                  className="bg-[#10AFA5] text-white p-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center"
+                >
+                  <FiPlus />
+                </button>
               </div>
-            )}
-
-            <div className="my-4 border-t border-gray-200"></div>
-
-            <div className="flex justify-between items-end mb-2">
-              <span className="text-gray-900 font-bold">Total Amount (User Pays)</span>
-              <span className="text-2xl font-bold text-gray-900">
-                ₹{(job.paymentMethod === 'plan_benefit' ? (job.extraChargesTotal || 0) : (job.finalAmount || 0)).toFixed(2)}
-              </span>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Booking Details Extra */}
-        <div className="bg-gray-50 rounded-2xl p-5 shadow-inner mb-6 border border-gray-100">
-          <div className="flex justify-between text-xs font-bold text-gray-400 uppercase mb-4">
-            <span>Booking Number</span>
-            <span className="text-gray-600">{job.bookingNumber}</span>
-          </div>
-
-          {job.status === 'completed' && (
-            <div className="mb-2">
-              <div className="flex justify-between text-xs font-bold text-gray-400 uppercase mb-1">
-                <span>Completed At</span>
-                <span className="text-gray-600">{new Date(job.completedAt).toLocaleString()}</span>
+        {/* Job Timeline */}
+        {timeline.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-gray-800 mb-3 px-1">Job Timeline</h3>
+            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-50">
+              <div className="relative pl-4 space-y-6">
+                <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-100"></div>
+                {timeline.map((event, idx) => (
+                  <div key={idx} className="relative flex items-start gap-4">
+                    <div className="absolute -left-[18px] top-1 w-3 h-3 rounded-full border-2 border-white bg-[#10AFA5] shadow-[0_0_0_3px_#E6F7F6]"></div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-800">{event.title}</p>
+                      <p className="text-xs text-gray-500">{new Date(event.time).toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] z-40">
+        <div className="max-w-lg mx-auto">
+          {/* Case 1: Assigned */}
+          {(!job.workerResponse || job.workerResponse === 'PENDING') && job.status !== 'cancelled' && (
+            <div className="flex gap-3">
+              <button 
+                onClick={() => handleAction('REJECT')}
+                disabled={actionLoading}
+                className="flex-1 py-4 rounded-xl font-bold text-red-500 bg-red-50 active:scale-95 transition-all text-sm"
+              >
+                Reject Job
+              </button>
+              <button 
+                onClick={() => handleAction('ACCEPT')}
+                disabled={actionLoading}
+                className="flex-1 py-4 rounded-xl font-bold text-white bg-[#10AFA5] shadow-lg shadow-[#10AFA5]/30 active:scale-95 transition-all text-sm"
+              >
+                Accept Job
+              </button>
+            </div>
+          )}
+
+          {/* Case 2: Accepted (Assigned/Confirmed) */}
+          {job.workerResponse === 'ACCEPTED' && (job.status === 'assigned' || job.status === 'confirmed') && (
+            <button 
+              onClick={() => handleAction('MARK_ARRIVED')}
+              disabled={actionLoading}
+              className="w-full py-4 rounded-xl font-bold text-[#10AFA5] border-2 border-[#10AFA5] bg-white active:scale-95 transition-all text-sm"
+            >
+              Mark as Arrived
+            </button>
+          )}
+
+          {/* Case 3: Arrived (Journey Started) -> Need to verify OTP to start work */}
+          {job.status === 'journey_started' && (
+            <button 
+              onClick={() => handleAction('START_WORK')}
+              disabled={actionLoading}
+              className="w-full py-4 rounded-xl font-bold text-white bg-[#10AFA5] shadow-lg shadow-[#10AFA5]/30 active:scale-95 transition-all text-sm"
+            >
+              Start Work
+            </button>
+          )}
+
+          {/* Case 4: In Progress (Visited / In Progress) */}
+          {(job.status === 'visited' || job.status === 'in_progress') && (
+            <button 
+              onClick={() => handleAction('COMPLETE_WORK')}
+              disabled={actionLoading}
+              className="w-full py-4 rounded-xl font-bold text-white bg-[#10AFA5] shadow-lg shadow-[#10AFA5]/30 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+            >
+              Complete Work <FiCheckCircle />
+            </button>
+          )}
+
+          {/* Case 5: Completed */}
+          {(job.status === 'work_done' || job.status === 'completed') && (
+            <div className="flex gap-3">
+               <button 
+                onClick={() => navigate(`/worker/job/${id}/billing`)}
+                className="flex-1 py-4 rounded-xl font-bold text-gray-700 bg-gray-100 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+              >
+                <FiFileText /> View Report
+              </button>
+              <button 
+                className="flex-1 py-4 rounded-xl font-bold text-white bg-[#10AFA5] shadow-lg shadow-[#10AFA5]/30 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+              >
+                <FiDownload /> Invoice
+              </button>
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {/* Unified Worker Completion Modal - REUSABLE COMPONENT */}
-      <Suspense fallback={null}>
-        <WorkCompletionModal
-          isOpen={isCompletionModalOpen}
-          onClose={() => setIsCompletionModalOpen(false)}
-          job={job}
-          onComplete={(photos) => {
-            // Pass photos to the handler
-            setWorkPhotos(photos);
-            (async () => {
-              try {
-                setActionLoading(true);
-                const response = await workerService.completeJob(id, { workPhotos: photos });
-                if (response && response.success) {
-                  toast.success(response.message || 'Updated successfully');
-                  setIsCompletionModalOpen(false);
-                  navigate(`/worker/job/${id}/billing`);
-                }
-                setActionLoading(false);
-              } catch (error) {
-                toast.error(error.response?.data?.message || 'Action failed');
-                setActionLoading(false);
-              }
-            })();
-          }}
-          loading={actionLoading}
-        />
-      </Suspense>
-
-      {/* Visit OTP Modal - REUSABLE COMPONENT */}
       <Suspense fallback={null}>
         <VisitVerificationModal
           isOpen={isVisitModalOpen}
@@ -692,19 +539,6 @@ const JobDetails = () => {
         />
       </Suspense>
 
-      {/* Verification OTP Modal */}
-      <Suspense fallback={null}>
-        <OtpVerificationModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onVerify={(otp) => {
-            const amount = job.finalAmount || 0;
-            const extraItems = job.extraCharges || [];
-            handleConfirmCash(amount, extraItems, otp);
-          }}
-          loading={actionLoading}
-        />
-      </Suspense>
     </div>
   );
 };

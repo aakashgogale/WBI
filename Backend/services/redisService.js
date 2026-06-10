@@ -307,6 +307,59 @@ const getLiveLocation = async (bookingId) => {
   }
 };
 
+// ==========================================
+// GENERIC CACHE (API RESPONSES)
+// ==========================================
+
+/**
+ * Set generic cache with TTL
+ */
+const setCache = async (key, data, ttlSeconds = 300) => {
+  if (!isRedisConnected()) return false;
+  try {
+    await redis.setex(key, ttlSeconds, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error('[Redis] setCache error:', error);
+    return false;
+  }
+};
+
+/**
+ * Get generic cache
+ */
+const getCache = async (key) => {
+  if (!isRedisConnected()) return null;
+  try {
+    const data = await redis.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('[Redis] getCache error:', error);
+    return null;
+  }
+};
+
+/**
+ * Delete generic cache (supports wildcard)
+ */
+const delCache = async (pattern) => {
+  if (!isRedisConnected()) return false;
+  try {
+    if (pattern.includes('*')) {
+      const keys = await redis.keys(pattern);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } else {
+      await redis.del(pattern);
+    }
+    return true;
+  } catch (error) {
+    console.error('[Redis] delCache error:', error);
+    return false;
+  }
+};
+
 module.exports = {
   initRedis,
   getRedis,
@@ -327,6 +380,9 @@ module.exports = {
   getBookingSearchCache,
   clearBookingSearchCache,
   // Live tracking
-  setLiveLocation,
-  getLiveLocation
+  getLiveLocation,
+  // Generic cache
+  setCache,
+  getCache,
+  delCache
 };

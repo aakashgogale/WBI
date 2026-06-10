@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import brandConfig from '../../config/brandConfig';
 
 /**
  * Centralized Logo Component
@@ -9,12 +10,12 @@ const Logo = forwardRef(({ className = "h-8 w-auto", ...props }, ref) => {
   return (
     <img
       ref={ref}
-      src="/Homster-logo.png"
-      alt="Homestr"
+      src={brandConfig.logoPath}
+      alt={brandConfig.brandName}
       className={`${className} object-contain`}
       onError={(e) => {
         // Fallback just in case
-        e.target.src = '/Homster xpert .png';
+        e.target.src = '/logo/WBILogo.jpg';
       }}
       {...props}
     />

@@ -425,7 +425,7 @@ const BillingPage = () => {
         localStorage.removeItem(`worker_billing_max_step_${id}`);
         localStorage.removeItem(`worker_billing_data_${id}`);
         fetchData();
-        navigate(`/worker/job/${id}`);
+        navigate(`/worker/job/${id}/success`);
       } else {
         toast.error(res.message || 'Invalid OTP');
       }
@@ -477,7 +477,7 @@ const BillingPage = () => {
         localStorage.removeItem(`worker_billing_max_step_${id}`);
         localStorage.removeItem(`worker_billing_data_${id}`);
         fetchData();
-        navigate(`/worker/job/${id}`);
+        navigate(`/worker/job/${id}/success`);
       } else {
         toast.error(res.message || 'Payment not yet confirmed');
       }
@@ -502,7 +502,7 @@ const BillingPage = () => {
             localStorage.removeItem(`worker_billing_step_${id}`);
             localStorage.removeItem(`worker_billing_max_step_${id}`);
             localStorage.removeItem(`worker_billing_data_${id}`);
-            setTimeout(() => navigate(`/worker/job/${id}`), 1000);
+            setTimeout(() => navigate(`/worker/job/${id}/success`), 1000);
           }
         }
       };

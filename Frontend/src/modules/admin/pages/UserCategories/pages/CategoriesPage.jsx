@@ -492,13 +492,13 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                       <div className="font-bold text-gray-900">{c.title || "Untitled"}</div>
                     </td>
                     <td className="py-4 px-4">
-                      <div className="text-sm text-gray-600">{c.slug || "—"}</div>
+                      <div className="text-sm text-gray-600">{c.slug || "â€”"}</div>
                     </td>
                     <td className="py-4 px-4">
                       {c.homeBadge ? (
                         <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded">{c.homeBadge}</span>
                       ) : (
-                        <span className="text-sm text-gray-400">—</span>
+                        <span className="text-sm text-gray-400">â€”</span>
                       )}
                     </td>
                     <td className="py-4 px-4 text-center">
@@ -587,7 +587,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                     setUploadingIcon(true);
                     try {
                       const categorySlug = form.slug || form.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                      const folder = `Homster/${categorySlug}/icons`;
+                      const folder = `WBI/${categorySlug}/icons`;
                       const response = await serviceService.uploadImage(file, folder);
                       if (response.success && response.imageUrl) {
                         setForm((p) => ({ ...p, homeIconUrl: response.imageUrl }));

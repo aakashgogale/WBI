@@ -13,7 +13,7 @@ const onboardingData = [
 
 const Onboarding = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const brandColor = themeColors?.brand?.teal || '#23b0a7'; // Homestr teal
+  const brandColor = themeColors?.brand?.teal || '#23b0a7'; // WBI teal
 
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);

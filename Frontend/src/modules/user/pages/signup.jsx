@@ -99,7 +99,7 @@ const Signup = () => {
 
           toast.success(
             <div className="flex flex-col">
-              <span className="font-bold">Welcome to Homestr!</span>
+              <span className="font-bold">Welcome to WBI!</span>
               <span className="text-xs">Your account has been created successfully.</span>
             </div>,
             { icon: <FiCheckCircle className="text-green-500" /> }
@@ -211,7 +211,7 @@ const Signup = () => {
 
         toast.success(
           <div className="flex flex-col">
-            <span className="font-bold">Welcome to Homestr!</span>
+            <span className="font-bold">Welcome to WBI!</span>
             <span className="text-xs">Account created successfully.</span>
           </div>,
           { icon: <FiCheckCircle className="text-green-500" /> }
@@ -236,7 +236,7 @@ const Signup = () => {
       <div className="w-full flex justify-center mb-10 h-16 items-center mt-2 shrink-0">
           <img 
             src="/logo/logo.webp" 
-            alt="Homestr Logo" 
+            alt="WBI Logo" 
             className="h-full w-auto max-w-[180px] object-contain"
             onError={(e) => {
               e.target.style.display = 'none';
@@ -245,7 +245,7 @@ const Signup = () => {
               }
             }}
           />
-          <span className="hidden text-3xl font-extrabold text-[#FF8A00] tracking-tight">Homestr</span>
+          <span className="hidden text-3xl font-extrabold text-[#FF8A00] tracking-tight">WBI</span>
       </div>
 
       {/* Heading Area */}
@@ -255,7 +255,7 @@ const Signup = () => {
         </h2>
         <p className="mt-3 text-sm text-gray-500 font-medium">
           {step === 'details' 
-            ? 'Join Homestr to start booking services' 
+            ? 'Join WBI to start booking services' 
             : `We've sent a 6-digit code to ${formData.phoneNumber}`}
         </p>
       </div>
@@ -445,7 +445,7 @@ const Signup = () => {
 
       {/* Footer */}
       <div className="w-full text-center text-xs text-gray-400 mt-4 shrink-0 pb-2">
-        &copy; {new Date().getFullYear()} Homestr. All rights reserved.
+        &copy; {new Date().getFullYear()} WBI. All rights reserved.
       </div>
     </div>
   );

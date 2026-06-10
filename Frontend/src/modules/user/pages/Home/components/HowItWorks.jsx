@@ -2,7 +2,7 @@ import React from 'react';
 import { FiSearch, FiCalendar, FiUser, FiShield } from 'react-icons/fi';
 import { themeColors } from '../../../../../theme';
 
-const steps = [
+const defaultSteps = [
   {
     id: 1,
     title: 'Search Service',
@@ -29,8 +29,15 @@ const steps = [
   }
 ];
 
-const HowItWorks = () => {
+const HowItWorks = ({ steps = [], isLoading = false }) => {
   const brandColor = themeColors?.brand?.teal || '#23b0a7';
+
+  // Use dynamic steps if provided and not empty, else fallback to default
+  const displaySteps = steps?.length > 0 ? steps : defaultSteps;
+
+  if (isLoading) {
+    return <div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />;
+  }
 
   return (
     <section className="py-2 px-4 mb-6 relative overflow-hidden">
@@ -62,11 +69,13 @@ const HowItWorks = () => {
 
         {/* Scrollable Container */}
         <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-hide snap-x relative z-10">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
+          {displaySteps.map((step, index) => {
+            // Icon fallback logic
+            const Icon = step.icon || defaultSteps[index % defaultSteps.length].icon;
+            
             return (
               <div 
-                key={step.id} 
+                key={step.id || index} 
                 className="min-w-[150px] w-[150px] flex-shrink-0 bg-white rounded-2xl p-4 flex flex-col items-center text-center shadow-sm border border-gray-50 snap-center relative"
               >
                 {/* Icon Circle */}
@@ -74,14 +83,18 @@ const HowItWorks = () => {
                   className="w-[60px] h-[60px] rounded-full flex items-center justify-center mb-5 relative"
                   style={{ backgroundColor: `${brandColor}0D` }} // very light teal
                 >
-                  <Icon className="w-7 h-7" style={{ color: brandColor }} strokeWidth={1.5} />
+                  {step.iconUrl ? (
+                    <img src={step.iconUrl} alt={step.title} className="w-7 h-7 object-contain" />
+                  ) : (
+                    <Icon className="w-7 h-7" style={{ color: brandColor }} strokeWidth={1.5} />
+                  )}
                   
                   {/* Number Badge */}
                   <div 
                     className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white border-2 border-white shadow-sm"
                     style={{ backgroundColor: brandColor }}
                   >
-                    {step.id}
+                    {index + 1}
                   </div>
                 </div>
 

@@ -1,4 +1,4 @@
-const AtmCassetteService = require('../../models/AtmCassetteService');
+const AtmCassetteService = require('../models/AtmCassetteService');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

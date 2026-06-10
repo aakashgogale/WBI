@@ -62,7 +62,7 @@ const BookingDetails = () => {
   });
 
   const [supportInfo, setSupportInfo] = useState({
-    email: 'support@homestr.com',
+    email: 'support@WBI.com',
     phone: ''
   });
 
@@ -76,14 +76,14 @@ const BookingDetails = () => {
         if (response.data?.success && response.data?.settings) {
           const { supportEmail, supportPhone } = response.data.settings;
           setSupportInfo({
-            email: supportEmail || 'help@homestr.in',
+            email: supportEmail || 'help@WBI.in',
             phone: supportPhone || '+919999999999'
           });
         }
       } catch (error) {
         console.error('Failed to fetch support settings:', error);
         setSupportInfo({
-          email: 'help@homestr.in',
+          email: 'help@WBI.in',
           phone: '+919999999999'
         });
       }
@@ -194,7 +194,7 @@ const BookingDetails = () => {
           loadBooking();
 
           if (data.message) {
-            toast(data.message, { icon: '🔔' });
+            toast(data.message, { icon: 'ðŸ””' });
           }
         }
       };
@@ -281,7 +281,7 @@ const BookingDetails = () => {
 
     const modalTitle = journeyStarted ? 'Cancellation Fee Applies' : 'Cancel Booking';
     const modalMessage = journeyStarted
-      ? `The service agent has already started their journey. Cancelling now will incur a fee of ₹${cancellationFee}, which will be deducted from your wallet or refund amount. Do you want to proceed?`
+      ? `The service agent has already started their journey. Cancelling now will incur a fee of â‚¹${cancellationFee}, which will be deducted from your wallet or refund amount. Do you want to proceed?`
       : 'Are you sure you want to cancel this booking? You will receive a full refund if applicable. This action cannot be undone.';
 
     setConfirmDialog({
@@ -316,7 +316,7 @@ const BookingDetails = () => {
         amount: Math.round((booking.finalAmount || 0) * 100),
         currency: 'INR',
         order_id: booking.razorpayOrderId,
-        name: 'Homestr',
+        name: 'WBI',
         description: `Payment for ${booking.serviceName}`,
         handler: async function (response) {
           toast.loading('Verifying payment...');
@@ -366,7 +366,7 @@ const BookingDetails = () => {
         amount: Math.round(orderResponse.data.amount * 100),
         currency: orderResponse.data.currency || 'INR',
         order_id: orderResponse.data.orderId,
-        name: 'Homestr',
+        name: 'WBI',
         description: `Payment for ${booking.serviceName}`,
         handler: async function (response) {
           toast.loading('Verifying payment...');
@@ -778,7 +778,7 @@ const BookingDetails = () => {
                           : 'New'}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 font-medium">• Verified</span>
+                    <span className="text-xs text-gray-400 font-medium">â€¢ Verified</span>
                   </div>
                 </div>
 
@@ -986,7 +986,7 @@ const BookingDetails = () => {
                             ? <p className="font-medium">Covered by your Membership Plan</p>
                             : <p className="font-medium">Booking completed successfully. Thank you for choosing us!</p>
                         )
-                        : <p className="font-medium">Total Amount: <span className="text-lg font-black ml-1">₹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}</span></p>
+                        : <p className="font-medium">Total Amount: <span className="text-lg font-black ml-1">â‚¹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}</span></p>
                       }
                       {booking.paymentStatus !== 'success' && <p className="text-[10px] text-orange-100 mt-0.5 opacity-80">Pay online above or prepare cash for the professional.</p>}
                     </div>
@@ -1139,13 +1139,13 @@ const BookingDetails = () => {
                     <div key={idx} className="flex justify-between items-start bg-gray-50 rounded-xl p-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">×{item.quantity}</span>
+                          <span className="text-xs font-bold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">Ã—{item.quantity}</span>
                           <span className="text-sm font-semibold text-gray-900 truncate">{item.card?.title || 'Service'}</span>
                         </div>
                         {item.card?.subtitle && <p className="text-xs text-gray-400 mt-0.5 ml-8 line-clamp-1">{item.card.subtitle}</p>}
-                        {item.card?.duration && <p className="text-xs text-gray-400 mt-0.5 ml-8">⏱ {item.card.duration}</p>}
+                        {item.card?.duration && <p className="text-xs text-gray-400 mt-0.5 ml-8">â± {item.card.duration}</p>}
                       </div>
-                      <span className="text-sm font-bold text-gray-900 ml-3 shrink-0">₹{((item.card?.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</span>
+                      <span className="text-sm font-bold text-gray-900 ml-3 shrink-0">â‚¹{((item.card?.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</span>
                     </div>
                   ))}
                 </div>
@@ -1187,11 +1187,11 @@ const BookingDetails = () => {
                           <span>Original Booking : {originalServiceFromBill?.name || booking.serviceName || 'Service'}</span>
                           {isPlanBenefit ? (
                             <div className="flex items-center gap-2">
-                              <span className="line-through text-gray-400 text-xs">₹{originalBase.toLocaleString('en-IN')}</span>
+                              <span className="line-through text-gray-400 text-xs">â‚¹{originalBase.toLocaleString('en-IN')}</span>
                               <span className="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">FREE</span>
                             </div>
                           ) : (
-                            <span className="font-medium text-gray-900">₹{originalBase.toLocaleString('en-IN')}</span>
+                            <span className="font-medium text-gray-900">â‚¹{originalBase.toLocaleString('en-IN')}</span>
                           )}
                         </div>
 
@@ -1199,20 +1199,20 @@ const BookingDetails = () => {
                         {services.map((s, i) => (
                           <div key={i} className="flex justify-between items-center text-gray-600">
                             <span>{s.name} <span className="text-gray-400 text-xs">x{s.quantity}</span></span>
-                            <span className="font-mono text-xs">₹{((parseFloat(s.price) || 0) * (parseFloat(s.quantity) || 1)).toFixed(2)}</span>
+                            <span className="font-mono text-xs">â‚¹{((parseFloat(s.price) || 0) * (parseFloat(s.quantity) || 1)).toFixed(2)}</span>
                           </div>
                         ))}
 
                         {/* Service GST */}
                         <div className="flex justify-between text-xs text-gray-500 border-t border-dashed border-gray-100 pt-1 mt-1">
                           <span>GST (18%)</span>
-                          <span className="font-mono">₹{(originalGST + extraServiceGST).toFixed(2)}</span>
+                          <span className="font-mono">â‚¹{(originalGST + extraServiceGST).toFixed(2)}</span>
                         </div>
 
                         {/* Service Subtotal */}
                         <div className="flex justify-between font-bold text-gray-800 pt-1">
                           <span>Total Service</span>
-                          <span>₹{(originalBase + extraServiceBase + originalGST + extraServiceGST).toFixed(2)}</span>
+                          <span>â‚¹{(originalBase + extraServiceBase + originalGST + extraServiceGST).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1227,7 +1227,7 @@ const BookingDetails = () => {
                           {parts.map((p, i) => (
                             <div key={`p-${i}`} className="flex justify-between items-center text-gray-600">
                               <span>{p.name} <span className="text-gray-400 text-xs">x{p.quantity}</span></span>
-                              <span className="font-mono text-xs">₹{(p.price * p.quantity).toFixed(2)}</span>
+                              <span className="font-mono text-xs">â‚¹{(p.price * p.quantity).toFixed(2)}</span>
                             </div>
                           ))}
                           {customItems.map((c, i) => (
@@ -1236,20 +1236,20 @@ const BookingDetails = () => {
                                 <span>{c.name} <span className="text-gray-400 text-xs">x{c.quantity}</span></span>
                                 {c.hsnCode && <span className="block text-[9px] text-gray-400">HSN: {c.hsnCode}</span>}
                               </div>
-                              <span className="font-mono text-xs">₹{(c.price * c.quantity).toFixed(2)}</span>
+                              <span className="font-mono text-xs">â‚¹{(c.price * c.quantity).toFixed(2)}</span>
                             </div>
                           ))}
 
                           {/* Parts GST */}
                           <div className="flex justify-between text-xs text-gray-500 border-t border-dashed border-gray-100 pt-1 mt-1">
                             <span>GST (18%)</span>
-                            <span className="font-mono">₹{partsGST.toFixed(2)}</span>
+                            <span className="font-mono">â‚¹{partsGST.toFixed(2)}</span>
                           </div>
 
                           {/* Parts Subtotal */}
                           <div className="flex justify-between font-bold text-gray-800 pt-1">
                             <span>Total Parts</span>
-                            <span>₹{(partsBase + partsGST).toFixed(2)}</span>
+                            <span>â‚¹{(partsBase + partsGST).toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -1262,7 +1262,7 @@ const BookingDetails = () => {
                           <span className="flex items-center gap-2 uppercase tracking-wide">
                             <FiClock className="w-3.5 h-3.5 text-blue-400" /> Visiting Charges
                           </span>
-                          <span className="font-mono">₹{(bill?.visitingCharges || booking.visitingCharges || 0).toFixed(2)}</span>
+                          <span className="font-mono">â‚¹{(bill?.visitingCharges || booking.visitingCharges || 0).toFixed(2)}</span>
                         </div>
                       </div>
                     )}
@@ -1274,7 +1274,7 @@ const BookingDetails = () => {
                           <span className="flex items-center gap-2 uppercase tracking-wide">
                             <FiPackage className="w-3.5 h-3.5 text-blue-400" /> Transport Charges
                           </span>
-                          <span className="font-mono">₹{(bill.transportCharges).toFixed(2)}</span>
+                          <span className="font-mono">â‚¹{(bill.transportCharges).toFixed(2)}</span>
                         </div>
                       </div>
                     )}
@@ -1300,7 +1300,7 @@ const BookingDetails = () => {
                     <div className="pt-4 mt-2 border-t-2 border-gray-100 flex justify-between items-center">
                       <span className="font-bold text-gray-900 text-lg">Grand Total</span>
                       <span className="font-black text-teal-700 text-2xl">
-                        ₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        â‚¹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
@@ -1312,11 +1312,11 @@ const BookingDetails = () => {
                       <span>Base Price</span>
                       {booking.paymentMethod === 'plan_benefit' ? (
                         <div className="flex items-center gap-2">
-                          <span className="line-through text-gray-400 text-xs">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-                          <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                          <span className="line-through text-gray-400 text-xs">â‚¹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
+                          <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE âœ“</span>
                         </div>
                       ) : (
-                        <span className="font-medium text-gray-900">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
+                        <span className="font-medium text-gray-900">â‚¹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
                       )}
                     </div>
 
@@ -1325,11 +1325,11 @@ const BookingDetails = () => {
                         <span>GST (18%)</span>
                         {booking.paymentMethod === 'plan_benefit' ? (
                           <div className="flex items-center gap-2">
-                            <span className="line-through text-gray-400 text-xs">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                            <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                            <span className="line-through text-gray-400 text-xs">â‚¹{(booking.tax || 0).toLocaleString('en-IN')}</span>
+                            <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE âœ“</span>
                           </div>
                         ) : (
-                          <span className="font-medium text-gray-900">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
+                          <span className="font-medium text-gray-900">â‚¹{(booking.tax || 0).toLocaleString('en-IN')}</span>
                         )}
                       </div>
                     )}
@@ -1339,11 +1339,11 @@ const BookingDetails = () => {
                         <span>Convenience Fee</span>
                         {booking.paymentMethod === 'plan_benefit' ? (
                           <div className="flex items-center gap-2">
-                            <span className="line-through text-gray-400 text-xs">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                            <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
+                            <span className="line-through text-gray-400 text-xs">â‚¹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
+                            <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE âœ“</span>
                           </div>
                         ) : (
-                          <span className="font-medium text-gray-900">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
+                          <span className="font-medium text-gray-900">â‚¹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
                         )}
                       </div>
                     )}
@@ -1351,7 +1351,7 @@ const BookingDetails = () => {
                     {booking.paymentMethod !== 'plan_benefit' && booking.discount > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-green-600">Discount</span>
-                        <span className="font-medium text-green-600">-₹{booking.discount.toLocaleString('en-IN')}</span>
+                        <span className="font-medium text-green-600">-â‚¹{booking.discount.toLocaleString('en-IN')}</span>
                       </div>
                     )}
 
@@ -1366,12 +1366,12 @@ const BookingDetails = () => {
                                 <span className="text-xs font-bold bg-white border px-1.5 rounded text-gray-500">x{item.quantity || 1}</span>
                                 <span>{item.name}</span>
                               </span>
-                              <span className="font-medium">+₹{(item.total || item.price || 0).toLocaleString('en-IN')}</span>
+                              <span className="font-medium">+â‚¹{(item.total || item.price || 0).toLocaleString('en-IN')}</span>
                             </div>
                           ))}
                           <div className="flex justify-between font-bold text-blue-600 pt-2 mt-2 border-t border-gray-200">
                             <span>Total Extras</span>
-                            <span>+₹{(booking.extraChargesTotal || 0).toLocaleString('en-IN')}</span>
+                            <span>+â‚¹{(booking.extraChargesTotal || 0).toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       </div>
@@ -1380,7 +1380,7 @@ const BookingDetails = () => {
                     <div className="pt-4 mt-2 border-t border-gray-100 flex justify-between items-center">
                       <span className="font-bold text-gray-900 text-lg">Total Payable</span>
                       <span className="font-black text-gray-900 text-xl">
-                        ₹{(booking.paymentMethod === 'plan_benefit'
+                        â‚¹{(booking.paymentMethod === 'plan_benefit'
                           ? (booking.userPayableAmount || booking.extraChargesTotal || 0)
                           : (booking.finalAmount || booking.totalAmount || 0)
                         ).toLocaleString('en-IN')}
@@ -1462,7 +1462,7 @@ const BookingDetails = () => {
             </button>
             <button
               onClick={() => {
-                const email = supportInfo.email || 'help@homestr.in';
+                const email = supportInfo.email || 'help@WBI.in';
                 const link = document.createElement('a');
                 link.href = `mailto:${email}`;
                 document.body.appendChild(link);

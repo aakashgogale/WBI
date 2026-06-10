@@ -7,6 +7,7 @@ const USER_ROLES = {
   USER: 'USER',
   VENDOR: 'VENDOR',
   WORKER: 'WORKER',
+  ENGINEER: 'ENGINEER',
   ADMIN: 'ADMIN'
 };
 
@@ -28,6 +29,15 @@ const VENDOR_STATUS = {
 
 // Worker Status
 const WORKER_STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  SUSPENDED: 'suspended',
+  ONLINE: 'ONLINE',
+  OFFLINE: 'OFFLINE'
+};
+
+// Engineer Status
+const ENGINEER_STATUS = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   SUSPENDED: 'suspended',
@@ -83,6 +93,7 @@ module.exports = {
   TOKEN_TYPES,
   VENDOR_STATUS,
   WORKER_STATUS,
+  ENGINEER_STATUS,
   BOOKING_STATUS,
   PAYMENT_STATUS,
   SERVICE_STATUS,

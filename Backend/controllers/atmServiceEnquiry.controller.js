@@ -1,4 +1,4 @@
-const AtmServiceEnquiry = require('../../models/AtmServiceEnquiry');
+const AtmServiceEnquiry = require('../models/AtmServiceEnquiry');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

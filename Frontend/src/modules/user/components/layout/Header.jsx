@@ -27,7 +27,11 @@ const Header = ({ location, onLocationClick }) => {
       <div className="px-4 flex items-center justify-between mt-2 mb-2">
         {/* Left: Logo */}
         <Link to="/user/account" className="cursor-pointer shrink-0 flex items-center">
-          <img src="/logo/logo.webp" alt="Homestr Logo" className="h-[46px] w-auto object-contain" />
+          <img 
+            src="/logo/WBILogo.jpg" 
+            alt="WBI Logo" 
+            className="h-[46px] w-[46px] md:w-auto object-cover object-left md:object-contain" 
+          />
         </Link>
         
         {/* Center/Right: Location Pill */}

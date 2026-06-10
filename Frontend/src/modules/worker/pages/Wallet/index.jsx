@@ -1,300 +1,255 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { FiDollarSign, FiArrowUp, FiArrowDown, FiClock, FiBell, FiX, FiImage, FiFileText, FiCreditCard, FiCalendar, FiInfo } from 'react-icons/fi';
-import { AnimatePresence, motion } from 'framer-motion';
-import { workerTheme as themeColors } from '../../../../theme';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiDollarSign, FiArrowUp, FiArrowDown, FiRefreshCw, FiX, FiFileText, FiClock, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import workerWalletService from '../../../../services/workerWalletService';
+import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { toast } from 'react-hot-toast';
-import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Wallet = () => {
   const [loading, setLoading] = useState(true);
-  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [wallet, setWallet] = useState({
-    balance: 0,
-    pendingPayout: 0
+    totalBalance: 0,
+    availableBalance: 0,
+    pendingBalance: 0,
+    withdrawnAmount: 0
   });
   const [transactions, setTransactions] = useState([]);
-  const [filter, setFilter] = useState('all');
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  
+  // Withdraw Modal State
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
 
-  useLayoutEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const root = document.getElementById('root');
-    const bgStyle = themeColors.backgroundGradient;
-
-    if (html) html.style.background = bgStyle;
-    if (body) body.style.background = bgStyle;
-    if (root) root.style.background = bgStyle;
-
-    return () => {
-      if (html) html.style.background = '';
-      if (body) body.style.background = '';
-      if (root) root.style.background = '';
-    };
-  }, []);
+  const socket = useAppNotifications('worker');
 
   useEffect(() => {
     loadWalletData();
   }, []);
 
-  const loadWalletData = async () => {
+  useEffect(() => {
+    if (socket) {
+      socket.on('wallet_update', handleSocketUpdate);
+      socket.on('transaction_updated', handleSocketUpdate);
+      return () => {
+        socket.off('wallet_update', handleSocketUpdate);
+        socket.off('transaction_updated', handleSocketUpdate);
+      };
+    }
+  }, [socket]);
+
+  const handleSocketUpdate = () => {
+    loadWalletData(false); // background sync
+  };
+
+  const loadWalletData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [walletRes, txnRes] = await Promise.all([
         workerWalletService.getWallet(),
         workerWalletService.getTransactions({ limit: 50 })
       ]);
 
-      if (walletRes.success) {
-        setWallet(walletRes.data);
-      }
-
-      if (txnRes.success) {
-        setTransactions(txnRes.data || []);
-      }
+      if (walletRes.success) setWallet(walletRes.data);
+      if (txnRes.success) setTransactions(txnRes.data || []);
     } catch (error) {
-      console.error('Error loading wallet:', error);
-      toast.error('Failed to load wallet data');
+      toast.error('Failed to sync wallet');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleRequestPayout = async (bookingId) => {
-    if (payoutLoading) return;
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadWalletData(false);
+  };
+
+  const handleWithdrawSubmit = async () => {
+    const amt = parseFloat(withdrawAmount);
+    if (!amt || amt <= 0) return toast.error('Enter a valid amount');
+    if (amt > wallet.availableBalance) return toast.error('Insufficient available balance');
+    if (!upiId.trim()) return toast.error('UPI ID is required');
+
+    setSubmittingWithdrawal(true);
     try {
-      setPayoutLoading(bookingId);
-      await workerWalletService.requestPayout(bookingId);
-      toast.success('Payout request sent to vendor');
+      const res = await workerWalletService.requestWithdraw({
+        amount: amt,
+        bankDetails: { upiId }
+      });
+      if (res.success) {
+        toast.success('Withdrawal requested successfully');
+        setWithdrawOpen(false);
+        setWithdrawAmount('');
+        setUpiId('');
+        loadWalletData(false);
+      }
     } catch (error) {
-      toast.error(error.message || 'Failed to request payout');
+      toast.error(error.message || 'Failed to request withdrawal');
     } finally {
-      setPayoutLoading(false);
-    }
-  };
-
-  const filteredTransactions = transactions.filter(txn => {
-    if (filter === 'all') return true;
-    return txn.type === filter;
-  });
-
-  const getTransactionIcon = (type) => {
-    switch (type) {
-      case 'worker_payment':
-        return <FiArrowDown className="w-5 h-5 text-green-500" />;
-      case 'cash_collected':
-        return <FiArrowUp className="w-5 h-5 text-red-500" />;
-      default:
-        return <FiDollarSign className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
-  const getTransactionLabel = (type) => {
-    switch (type) {
-      case 'worker_payment':
-        return 'Payment Received';
-      case 'cash_collected':
-        return 'Cash Collected';
-      default:
-        return type.replace('_', ' ');
+      setSubmittingWithdrawal(false);
     }
   };
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
+    const d = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (d.toDateString() === today.toDateString()) {
+      return `Today, ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      return `Yesterday, ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  const formatDateTime = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const handleTransactionClick = (txn) => {
-    // Only open details modal for worker_payment transactions
-    if (txn.type === 'worker_payment') {
-      setSelectedTransaction(txn);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+      case 'approved': return 'text-green-600 bg-green-50 border-green-200';
+      case 'pending':
+      case 'processing': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'failed':
+      case 'cancelled':
+      case 'rejected': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
-  const viewScreenshot = (imageUrl) => {
-    setSelectedImage(imageUrl);
-    setImageModalOpen(true);
-  };
-
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (selectedTransaction || imageModalOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+  const getTransactionIcon = (type) => {
+    switch (type) {
+      case 'worker_payment':
+      case 'earnings_credit':
+      case 'commission': return <FiArrowDown className="text-green-500 w-5 h-5" />;
+      case 'withdrawal': return <FiArrowUp className="text-red-500 w-5 h-5" />;
+      default: return <FiDollarSign className="text-gray-500 w-5 h-5" />;
     }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [selectedTransaction, imageModalOpen]);
+  };
 
   if (loading) {
-    return <LogoLoader />;
+    return (
+      <div className="min-h-screen bg-[#F8FCFC] p-4 space-y-4">
+        <div className="h-14 bg-white rounded animate-pulse w-full"></div>
+        <div className="h-48 bg-white rounded-2xl animate-pulse w-full"></div>
+        <div className="h-32 bg-white rounded-2xl animate-pulse w-full"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="My Wallet" />
-
-      <main className="px-4 py-6">
-        {/* Balance Card */}
-        <div className="rounded-2xl p-6 shadow-xl relative overflow-hidden mb-6 bg-gradient-to-br from-teal-600 to-teal-800">
-          <div className="relative z-10 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-white/80 text-sm font-medium mb-1">Available Balance</p>
-                <p className="text-3xl font-bold mb-4">₹{wallet.balance?.toLocaleString() || 0}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                <FiDollarSign className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <div className="w-full bg-white/10 text-white py-2 rounded-xl font-medium text-xs text-center border border-white/20">
-              Payments are managed by your Vendor
-            </div>
+    <div className="min-h-screen bg-[#F8FCFC]  font-sans text-[#0F172A]">
+      {/* Custom Header with Refresh */}
+      <div className="sticky top-0 z-40 bg-[#F8FCFC] border-b border-gray-100">
+        <div className="px-4 py-4 flex items-center justify-between">
+          <div className="w-10">
+             {/* Using standard WBI menu icon placeholder */}
+             <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           </div>
+          <h1 className="text-lg font-bold">Wallet</h1>
+          <button 
+            onClick={handleRefresh}
+            className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 transition-all ${refreshing ? 'animate-spin' : ''}`}
+          >
+            <FiRefreshCw className="w-5 h-5" />
+          </button>
         </div>
+      </div>
 
-        {/* Pending Payouts List */}
-        {wallet.pendingBookings?.length > 0 && (
-          <div className="mb-8">
-            <h3 className="font-bold text-gray-800 mb-4 px-1">Pending Payments</h3>
-            <div className="space-y-3">
-              {wallet.pendingBookings.map(booking => (
-                <div key={booking._id} className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 flex justify-between items-center">
-                  <div className="min-w-0">
-                    <p className="font-bold text-gray-900 text-sm mb-0.5">{booking.serviceName}</p>
-                    <p className="text-xs text-gray-500 font-medium mb-1">Booking #{booking.bookingNumber}</p>
-                    <p className="text-[10px] text-gray-400">
-                      Completed: {new Date(booking.completedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRequestPayout(booking._id)}
-                    disabled={payoutLoading === booking._id}
-                    className="flex-shrink-0 px-3 py-2 bg-orange-50 text-orange-600 border border-orange-200 text-xs font-bold rounded-xl active:scale-95 transition-all flex items-center gap-1.5 hover:bg-orange-100"
-                  >
-                    {payoutLoading === booking._id ? (
-                      <span className="w-3 h-3 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></span>
-                    ) : (
-                      <>
-                        <FiBell className="w-3.5 h-3.5" />
-                        Ask Vendor
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
+      <div className="px-4 py-6">
+        {/* Premium Balance Card */}
+        <div className="bg-gradient-to-br from-[#10AFA5] to-[#0A8F86] rounded-2xl p-6 text-white shadow-[0_10px_25px_rgba(16,175,165,0.3)] mb-8 relative overflow-hidden">
+          {/* Background Pattern Elements */}
+          <div className="absolute top-[-20px] right-[-20px] w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-[-10px] left-[-10px] w-24 h-24 bg-white opacity-5 rounded-full blur-xl"></div>
+          
+          <div className="relative z-10 flex justify-between items-start">
+            <div>
+              <p className="text-white/80 text-sm font-medium mb-1">Total Balance</p>
+              <h2 className="text-4xl font-black mb-1 tracking-tight">₹{wallet.availableBalance?.toLocaleString() || 0}</h2>
+              <p className="text-white/80 text-xs">Available for withdrawal</p>
+            </div>
+            <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md border border-white/20 shadow-inner">
+              <FiDollarSign className="w-8 h-8 text-white" />
             </div>
           </div>
-        )}
 
-        {/* Filter Buttons */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-          {[
-            { id: 'all', label: 'All' },
-            { id: 'worker_payment', label: 'Payments' },
-            { id: 'cash_collected', label: 'Cash Collected' },
-          ].map((filterOption) => (
-            <button
-              key={filterOption.id}
-              onClick={() => setFilter(filterOption.id)}
-              className={`px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${filter === filterOption.id
-                ? 'text-white'
-                : 'bg-white text-gray-700'
-                }`}
-              style={
-                filter === filterOption.id
-                  ? {
-                    background: themeColors.button,
-                    boxShadow: `0 2px 8px ${themeColors.button}40`,
-                  }
-                  : {
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                  }
-              }
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <button 
+              onClick={() => setWithdrawOpen(true)}
+              className="w-full bg-white text-[#10AFA5] font-bold py-3 rounded-xl shadow-sm hover:bg-gray-50 transition-colors active:scale-95"
             >
-              {filterOption.label}
+              Withdraw
             </button>
-          ))}
+            <button 
+              onClick={() => {
+                document.getElementById('transactions_section').scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-full bg-white/20 backdrop-blur-sm text-white border border-white/30 font-bold py-3 rounded-xl hover:bg-white/30 transition-colors active:scale-95"
+            >
+              Transaction History
+            </button>
+          </div>
         </div>
 
-        {/* Transactions/Ledger */}
-        <div>
-          <h3 className="font-bold text-gray-800 mb-4">Transaction History</h3>
-          {filteredTransactions.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center shadow-md">
-              <FiDollarSign className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-600 font-semibold mb-2">No transactions yet</p>
-              <p className="text-sm text-gray-500">Your payments will appear here</p>
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex flex-col items-center justify-center text-center">
+            <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Total Earned</p>
+            <p className="text-sm font-bold text-[#0F172A]">₹{wallet.totalBalance?.toLocaleString() || 0}</p>
+          </div>
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex flex-col items-center justify-center text-center">
+            <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Pending</p>
+            <p className="text-sm font-bold text-orange-500">₹{wallet.pendingBalance?.toLocaleString() || 0}</p>
+          </div>
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-50 flex flex-col items-center justify-center text-center">
+            <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Withdrawn</p>
+            <p className="text-sm font-bold text-teal-600">₹{wallet.withdrawnAmount?.toLocaleString() || 0}</p>
+          </div>
+        </div>
+
+        {/* Recent Transactions */}
+        <div id="transactions_section">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-[#0F172A] text-lg">Recent Transactions</h3>
+            <span className="text-[#10AFA5] text-sm font-bold">View All</span>
+          </div>
+
+          {transactions.length === 0 ? (
+            <div className="bg-white rounded-2xl p-10 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <FiFileText className="w-8 h-8 text-gray-300" />
+              </div>
+              <h4 className="font-bold text-gray-800 mb-1">No Transactions Yet</h4>
+              <p className="text-sm text-gray-500">Your completed jobs earnings will appear here.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredTransactions.map((txn) => (
-                <div
-                  key={txn._id}
-                  onClick={() => handleTransactionClick(txn)}
-                  className={`bg-white rounded-xl p-4 shadow-md border-l-4 ${txn.type === 'worker_payment' ? 'cursor-pointer hover:shadow-lg active:scale-[0.98] transition-all' : ''}`}
-                  style={{
-                    borderLeftColor: txn.type === 'cash_collected' ? '#DC2626' : '#10B981'
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: txn.type === 'cash_collected' ? '#FEE2E2' : '#D1FAE5'
-                      }}
-                    >
-                      {getTransactionIcon(txn.type)}
+              {transactions.map(txn => (
+                <div key={txn._id} className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex items-center gap-4 transition-all hover:shadow-md">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${txn.type === 'withdrawal' ? 'bg-red-50' : 'bg-green-50'}`}>
+                    {getTransactionIcon(txn.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-0.5">
+                      <p className="font-bold text-[#0F172A] text-sm truncate pr-2">
+                        {txn.description || txn.type.replace('_', ' ')}
+                      </p>
+                      <p className={`font-bold text-[15px] whitespace-nowrap ${txn.type === 'withdrawal' ? 'text-[#0F172A]' : 'text-[#10AFA5]'}`}>
+                        {txn.type === 'withdrawal' ? '-' : '+'}₹{Math.abs(txn.amount).toLocaleString()}
+                      </p>
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-bold text-gray-900 text-sm">
-                          {getTransactionLabel(txn.type)}
-                        </p>
-                        <p className={`text-lg font-bold ${txn.type === 'cash_collected' ? 'text-red-600' : 'text-green-600'
-                          }`}>
-                          {txn.type === 'cash_collected' ? 'Collected' : '+'} ₹{Math.abs(txn.amount).toLocaleString()}
-                        </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <div className="flex flex-col">
+                        {txn.bookingId && <p className="text-[11px] text-gray-400 font-medium mb-0.5">#WB{txn.bookingId.toString().substring(0,6).toUpperCase()}</p>}
+                        <p className="text-xs text-gray-500">{formatDate(txn.createdAt)}</p>
                       </div>
-
-                      <p className="text-xs text-gray-600 truncate mb-1">{txn.description}</p>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">{formatDate(txn.createdAt)}</span>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${txn.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          txn.status === 'pending' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                          {txn.status}
-                        </span>
-                        {txn.type === 'worker_payment' && (
-                          <span className="text-xs text-teal-600 font-medium">Tap for details →</span>
-                        )}
-                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-bold border ${getStatusColor(txn.status)}`}>
+                        {txn.status}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -302,188 +257,81 @@ const Wallet = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {/* Payment Details Modal */}
+      {/* Withdraw Modal */}
       <AnimatePresence>
-        {selectedTransaction && (
-          <motion.div
+        {withdrawOpen && (
+          <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000] flex items-end sm:items-center justify-center p-4"
-            onClick={() => setSelectedTransaction(null)}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setWithdrawOpen(false)}
           >
-            <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative"
             >
-              {/* Header */}
-              <div className="sticky top-0 bg-gradient-to-br from-teal-600 to-teal-700 text-white px-6 py-5 rounded-t-3xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <FiDollarSign className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg">Payment Details</h3>
-                    <p className="text-xs text-white/80">Transaction Information</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedTransaction(null)}
-                  className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-                >
-                  <FiX className="w-5 h-5" />
-                </button>
+              <button onClick={() => setWithdrawOpen(false)} className="absolute top-5 right-5 p-2 bg-gray-100 rounded-full text-gray-600 hover:bg-gray-200">
+                <FiX className="w-5 h-5" />
+              </button>
+              
+              <h2 className="text-xl font-bold text-[#0F172A] mb-1">Withdraw Funds</h2>
+              <p className="text-sm text-gray-500 mb-6">Transfer earnings to your bank account.</p>
+
+              <div className="bg-teal-50 rounded-xl p-4 mb-6 flex justify-between items-center border border-teal-100">
+                <span className="text-teal-800 text-sm font-bold">Available Balance</span>
+                <span className="text-teal-600 text-lg font-black">₹{wallet.availableBalance.toLocaleString()}</span>
               </div>
 
-              <div className="p-6 space-y-6">
-                {/* Amount Section */}
-                <div className="text-center pb-6 border-b border-gray-100">
-                  <p className="text-sm text-gray-500 mb-2">Amount Received</p>
-                  <p className="text-4xl font-black text-green-600">₹{selectedTransaction.amount?.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-2">{formatDateTime(selectedTransaction.createdAt)}</p>
-                </div>
-
-                {/* Screenshot */}
-                {selectedTransaction.metadata?.screenshot && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiImage className="w-5 h-5 text-teal-600" />
-                      <h4 className="font-bold text-gray-900">Payment Proof</h4>
+              <div className="space-y-4 mb-8">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">Withdrawal Amount (₹)</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <span className="text-gray-500 font-bold">₹</span>
                     </div>
-                    <div
-                      className="relative rounded-2xl overflow-hidden border-2 border-gray-100 cursor-pointer hover:border-teal-500 transition-colors group"
-                      onClick={() => viewScreenshot(selectedTransaction.metadata.screenshot)}
-                    >
-                      <img
-                        src={selectedTransaction.metadata.screenshot}
-                        alt="Payment Screenshot"
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="200"%3E%3Crect fill="%23f3f4f6" width="400" height="200"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="100" dx="120"%3EImage not available%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
-                          <p className="text-sm font-bold text-gray-900">Click to enlarge</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Payment Method */}
-                {selectedTransaction.metadata?.paymentMethod && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiCreditCard className="w-5 h-5 text-teal-600" />
-                      <h4 className="font-bold text-gray-900">Payment Method</h4>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-gray-700 font-semibold capitalize">
-                        {selectedTransaction.metadata.paymentMethod === 'hand_to_hand'
-                          ? 'Cash / Hand-to-Hand'
-                          : selectedTransaction.metadata.paymentMethod}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Transaction ID */}
-                {selectedTransaction.metadata?.transactionId && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiFileText className="w-5 h-5 text-teal-600" />
-                      <h4 className="font-bold text-gray-900">Transaction ID</h4>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-gray-700 font-mono text-sm break-all">{selectedTransaction.metadata.transactionId}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Notes */}
-                {selectedTransaction.metadata?.notes && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <FiInfo className="w-5 h-5 text-teal-600" />
-                      <h4 className="font-bold text-gray-900">Payment Notes</h4>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-gray-700 text-sm leading-relaxed">{selectedTransaction.metadata.notes}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Additional Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-teal-50 rounded-xl p-4">
-                    <p className="text-xs text-teal-600 font-semibold mb-1">Status</p>
-                    <p className="text-sm font-bold text-gray-900 capitalize">{selectedTransaction.status}</p>
-                  </div>
-                  <div className="bg-blue-50 rounded-xl p-4">
-                    <p className="text-xs text-blue-600 font-semibold mb-1">Type</p>
-                    <p className="text-sm font-bold text-gray-900">Payment Received</p>
+                    <input 
+                      type="number"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      placeholder="0.00"
+                      max={wallet.availableBalance}
+                      className="w-full pl-8 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#10AFA5]/20 focus:border-[#10AFA5] transition-all"
+                    />
                   </div>
                 </div>
 
-                {/* Description */}
-                {selectedTransaction.description && (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 font-semibold mb-2">Description</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{selectedTransaction.description}</p>
-                  </div>
-                )}
-
-                {/* Close Button */}
-                <button
-                  onClick={() => setSelectedTransaction(null)}
-                  className="w-full py-4 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg"
-                >
-                  Close
-                </button>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">UPI ID</label>
+                  <input 
+                    type="text"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="example@upi"
+                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#10AFA5]/20 focus:border-[#10AFA5] transition-all"
+                  />
+                </div>
               </div>
+
+              <button 
+                onClick={handleWithdrawSubmit}
+                disabled={submittingWithdrawal}
+                className={`w-full py-4 rounded-xl font-bold text-white shadow-[0_4px_15px_rgba(16,175,165,0.3)] transition-all active:scale-[0.98] ${submittingWithdrawal ? 'bg-gray-400 shadow-none' : 'bg-[#10AFA5] hover:bg-teal-600'}`}
+              >
+                {submittingWithdrawal ? 'Processing...' : 'Confirm Withdrawal'}
+              </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Image Fullscreen Modal */}
-      <AnimatePresence>
-        {imageModalOpen && selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 z-[10001] flex items-center justify-center p-4"
-            onClick={() => setImageModalOpen(false)}
-          >
-            <button
-              onClick={() => setImageModalOpen(false)}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white"
-            >
-              <FiX className="w-6 h-6" />
-            </button>
-            <motion.img
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              src={selectedImage}
-              alt="Payment Screenshot"
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Hide BottomNav when modal is open */}
-      {!selectedTransaction && !imageModalOpen && <BottomNav />}
+      
     </div>
   );
 };

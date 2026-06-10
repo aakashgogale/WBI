@@ -2,6 +2,7 @@ const Category = require('../../models/Category');
 const Brand = require('../../models/Brand');
 const Service = require('../../models/UserService');
 const HomeContent = require('../../models/HomeContent');
+const { getCache, setCache } = require('../../services/redisService');
 
 /**
  * Public Catalog Controllers
@@ -296,7 +297,8 @@ const getPublicHomeContent = async (req, res) => {
           curated: [],
           noteworthy: [],
           booked: [],
-          categorySections: []
+          categorySections: [],
+          howItWorks: []
         }
       });
     }
@@ -349,13 +351,18 @@ const getPublicHomeContent = async (req, res) => {
           targetServiceId: card.targetServiceId?.toString() || null,
         }))
       })),
+      howItWorks: (contentObj.howItWorks || []).map(item => ({
+        ...item,
+        id: item._id ? item._id.toString() : item.id
+      })),
       isBannersVisible: contentObj.isBannersVisible ?? true,
       isPromosVisible: contentObj.isPromosVisible ?? true,
       isCuratedVisible: contentObj.isCuratedVisible ?? true,
       isNoteworthyVisible: contentObj.isNoteworthyVisible ?? true,
       isBookedVisible: contentObj.isBookedVisible ?? true,
       isCategorySectionsVisible: contentObj.isCategorySectionsVisible ?? true,
-      isCategoriesVisible: contentObj.isCategoriesVisible ?? true
+      isCategoriesVisible: contentObj.isCategoriesVisible ?? true,
+      isHowItWorksVisible: contentObj.isHowItWorksVisible ?? true
     };
 
     res.status(200).json({
@@ -378,6 +385,14 @@ const getPublicHomeContent = async (req, res) => {
 const getPublicHomeData = async (req, res) => {
   try {
     const { cityId } = req.query;
+    
+    // Check cache first
+    const cacheKey = `home_data:${cityId || 'default'}`;
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return res.status(200).json(cachedData);
+    }
 
     // Fetch all in parallel
     const [categoriesRes, homeContent, popularBrandsRes] = await Promise.all([
@@ -454,13 +469,20 @@ const getPublicHomeData = async (req, res) => {
           })),
           order: section.order
         })),
+        howItWorks: (contentObj.howItWorks || []).map(item => ({
+          title: item.title,
+          description: item.description,
+          iconUrl: item.iconUrl,
+          order: item.order
+        })),
         isBannersVisible: contentObj.isBannersVisible ?? true,
         isPromosVisible: contentObj.isPromosVisible ?? true,
         isCuratedVisible: contentObj.isCuratedVisible ?? true,
         isNoteworthyVisible: contentObj.isNoteworthyVisible ?? true,
         isBookedVisible: contentObj.isBookedVisible ?? true,
         isCategorySectionsVisible: contentObj.isCategorySectionsVisible ?? true,
-        isCategoriesVisible: contentObj.isCategoriesVisible ?? true
+        isCategoriesVisible: contentObj.isCategoriesVisible ?? true,
+        isHowItWorksVisible: contentObj.isHowItWorksVisible ?? true
       };
     }
 
@@ -472,12 +494,17 @@ const getPublicHomeData = async (req, res) => {
       badge: brand.badge || ''
     }));
 
-    res.status(200).json({
+    const responseData = {
       success: true,
       categories: formattedCategories,
       homeContent: formattedContent,
       popularBrands: formattedPopularBrands
-    });
+    };
+
+    // Cache the response for 5 minutes (300 seconds)
+    await setCache(cacheKey, responseData, 300);
+
+    res.status(200).json(responseData);
   } catch (error) {
     console.error('Get public home data error:', error);
     res.status(500).json({

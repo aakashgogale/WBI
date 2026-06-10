@@ -298,6 +298,10 @@ const bookingSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  customerSignature: {
+    type: String,
+    default: null
+  },
 
   // ==========================================
   // 9. WORK COMPLETION
@@ -307,6 +311,26 @@ const bookingSchema = new mongoose.Schema({
   // ==========================================
   workPhotos: [{
     type: String
+  }],
+  progressVideos: [{
+    type: String
+  }],
+  materials: [{
+    name: { type: String, required: true },
+    quantity: { type: Number, default: 1 },
+    cost: { type: Number, required: true },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+  }],
+  completionReport: { 
+    type: String, 
+    default: null 
+  },
+  expenses: [{
+    expenseType: { type: String, required: true },
+    amount: { type: Number, required: true },
+    description: { type: String },
+    billImage: { type: String },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
   }],
   visitLocation: {
     lat: Number,
@@ -356,7 +380,12 @@ const bookingSchema = new mongoose.Schema({
   // 13. NOTES
   // ==========================================
   vendorNotes: { type: String, default: null },
-  workerNotes: { type: String, default: null }
+  workerNotes: { type: String, default: null },
+  structuredNotes: {
+    issueFound: { type: String, default: null },
+    resolutionDetails: { type: String, default: null },
+    additionalRemarks: { type: String, default: null }
+  }
 
 }, {
   timestamps: true

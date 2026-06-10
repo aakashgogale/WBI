@@ -73,6 +73,15 @@ const authenticate = async (req, res, next) => {
           return res.status(401).json({ success: false, message: 'Account logged in on another device. Please login again.' });
         }
         break;
+      case USER_ROLES.ENGINEER:
+      case 'engineer':
+        const Engineer = require('../models/Engineer');
+        user = await Engineer.findById(decoded.userId).select('-password').lean();
+        // SINGLE DEVICE LOGOUT Logic
+        if (user && user.loginSessionId && decoded.loginSessionId && user.loginSessionId !== decoded.loginSessionId) {
+          return res.status(401).json({ success: false, message: 'Account logged in on another device. Please login again.' });
+        }
+        break;
       case USER_ROLES.ADMIN:
       case 'super_admin':
       case 'admin':

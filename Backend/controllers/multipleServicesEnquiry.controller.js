@@ -1,4 +1,4 @@
-const MultipleServicesEnquiry = require('../../models/MultipleServicesEnquiry');
+const MultipleServicesEnquiry = require('../models/MultipleServicesEnquiry');
 
 // CREATE an enquiry (Public App)
 exports.createEnquiry = async (req, res) => {

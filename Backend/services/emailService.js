@@ -76,14 +76,14 @@ const emailWrapper = (content, title, preheader = '') => `
     <div class="main">
       <div class="header">
         <div class="logo-circle">H</div>
-        <h1>Homster</h1>
+        <h1>WBI</h1>
       </div>
       <div class="content">
         ${content}
       </div>
       <div class="footer">
-        <p>Premium Home Services • Delivered with Care</p>
-        <p>&copy; ${new Date().getFullYear()} Homster India. All rights reserved.</p>
+        <p>Premium Home Services â€¢ Delivered with Care</p>
+        <p>&copy; ${new Date().getFullYear()} WBI India. All rights reserved.</p>
         <div class="social-links">
           <a href="#">Help Center</a>
           <a href="#">Privacy Policy</a>
@@ -125,7 +125,7 @@ const sendOTPEmail = async (email, otp, purpose = 'verification') => {
       <div style="text-align: center;">
         <div class="badge badge-primary">Security</div>
         <h2>Verify your identity</h2>
-        <p>Your one-time password (OTP) for Homster is ready. Use this code to complete your ${purpose.replace('_', ' ')}.</p>
+        <p>Your one-time password (OTP) for WBI is ready. Use this code to complete your ${purpose.replace('_', ' ')}.</p>
         
         <div style="background: ${COLORS.bg}; border-radius: 20px; padding: 40px; margin: 40px 0; border: 2px dashed ${COLORS.primary};">
           <div style="font-size: 48px; font-weight: 900; letter-spacing: 12px; color: ${COLORS.primary}; margin-bottom: 8px;">${otp}</div>
@@ -137,9 +137,9 @@ const sendOTPEmail = async (email, otp, purpose = 'verification') => {
     `;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+      from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
       to: email,
-      subject: `${subjectPrefix} - Homster`,
+      subject: `${subjectPrefix} - WBI`,
       html: emailWrapper(content, subjectPrefix, `Your verification code is ${otp}`)
     });
     return { success: true };
@@ -160,20 +160,20 @@ const sendWelcomeEmail = async (email, name) => {
     const content = `
       <div style="text-align: center;">
         <div class="badge badge-success">Welcome</div>
-        <h2>Hello ${name}! 👋</h2>
-        <p>Welcome to the Homster family. We're excited to help you take care of your home with our premium services.</p>
+        <h2>Hello ${name}! ðŸ‘‹</h2>
+        <p>Welcome to the WBI family. We're excited to help you take care of your home with our premium services.</p>
         
         <div style="display: flex; justify-content: space-around; margin: 40px 0; flex-wrap: wrap;">
           <div style="width: 140px; margin: 10px;">
-             <div style="font-size: 32px; margin-bottom: 10px;">🛡️</div>
+             <div style="font-size: 32px; margin-bottom: 10px;">ðŸ›¡ï¸</div>
              <div style="font-size: 14px; font-weight: 700;">Verified Pros</div>
           </div>
           <div style="width: 140px; margin: 10px;">
-             <div style="font-size: 32px; margin-bottom: 10px;">⚡</div>
+             <div style="font-size: 32px; margin-bottom: 10px;">âš¡</div>
              <div style="font-size: 14px; font-weight: 700;">Fast Booking</div>
           </div>
           <div style="width: 140px; margin: 10px;">
-             <div style="font-size: 32px; margin-bottom: 10px;">💎</div>
+             <div style="font-size: 32px; margin-bottom: 10px;">ðŸ’Ž</div>
              <div style="font-size: 14px; font-weight: 700;">Secure Pay</div>
           </div>
         </div>
@@ -185,9 +185,9 @@ const sendWelcomeEmail = async (email, name) => {
     `;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+      from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
       to: email,
-      subject: 'Welcome to Homster!',
+      subject: 'Welcome to WBI!',
       html: emailWrapper(content, 'Welcome', 'Welcome to the future of home services')
     });
     return { success: true };
@@ -221,7 +221,7 @@ const sendBookingEmails = async (booking, user, vendor, service) => {
           
           <div class="total-row">
             <span class="total-label">Total Amount</span>
-            <span class="total-value">₹${booking.finalAmount}</span>
+            <span class="total-value">â‚¹${booking.finalAmount}</span>
           </div>
         </div>
 
@@ -231,9 +231,9 @@ const sendBookingEmails = async (booking, user, vendor, service) => {
       `;
 
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+        from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
         to: user.email,
-        subject: `Booking Confirmed #${bookingId} - Homster`,
+        subject: `Booking Confirmed #${bookingId} - WBI`,
         html: emailWrapper(content, 'Confirmed', 'Your booking is scheduled successfully')
       });
     }
@@ -250,7 +250,7 @@ const sendBookingEmails = async (booking, user, vendor, service) => {
           <div class="data-row"><span class="data-label">Service</span><span class="data-value">${service.title}</span></div>
           <div class="data-row"><span class="data-label">Customer</span><span class="data-value">${user.name}</span></div>
           <div class="data-row"><span class="data-label">Schedule</span><span class="data-value">${new Date(booking.scheduledDate).toLocaleDateString()} at ${booking.scheduledTime}</span></div>
-          <div class="data-row"><span class="data-label">Amount</span><span class="data-value">₹${booking.finalAmount}</span></div>
+          <div class="data-row"><span class="data-label">Amount</span><span class="data-value">â‚¹${booking.finalAmount}</span></div>
         </div>
 
         <div class="btn-container">
@@ -259,9 +259,9 @@ const sendBookingEmails = async (booking, user, vendor, service) => {
       `;
 
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+        from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
         to: vendor.email,
-        subject: `New Job Assigned #${bookingId} - Homster`,
+        subject: `New Job Assigned #${bookingId} - WBI`,
         html: emailWrapper(vContent, 'New Job', 'Action Required: New job assigned')
       });
     }
@@ -281,22 +281,22 @@ const sendBookingCompletionEmails = async (booking) => {
     if (user && user.email) {
       const content = `
         <div style="text-align: center; margin-bottom: 32px;">
-          <div style="font-size: 48px; margin-bottom: 16px;">⭐</div>
+          <div style="font-size: 48px; margin-bottom: 16px;">â­</div>
           <h2>Service Completed</h2>
-          <p>Thank you for choosing Homster. We hope the service for <strong>${booking.serviceId?.title || 'Home Service'}</strong> was to your satisfaction.</p>
+          <p>Thank you for choosing WBI. We hope the service for <strong>${booking.serviceId?.title || 'Home Service'}</strong> was to your satisfaction.</p>
         </div>
 
         <div class="card" style="background-color: white;">
           <div class="card-title">Official Receipt</div>
           <div class="data-row"><span class="data-label">Invoice No.</span><span class="data-value">INV-${bookingId}</span></div>
           <div class="data-row"><span class="data-label">Completed On</span><span class="data-value">${new Date().toLocaleDateString('en-IN')}</span></div>
-          <div class="data-row"><span class="data-label">Service Charge</span><span class="data-value">₹${booking.basePrice - booking.discount}</span></div>
-          <div class="data-row"><span class="data-label">Visiting Fee</span><span class="data-value">₹${booking.visitingCharges}</span></div>
-          <div class="data-row"><span class="data-label">HST (Tax)</span><span class="data-value">₹${booking.tax}</span></div>
+          <div class="data-row"><span class="data-label">Service Charge</span><span class="data-value">â‚¹${booking.basePrice - booking.discount}</span></div>
+          <div class="data-row"><span class="data-label">Visiting Fee</span><span class="data-value">â‚¹${booking.visitingCharges}</span></div>
+          <div class="data-row"><span class="data-label">HST (Tax)</span><span class="data-value">â‚¹${booking.tax}</span></div>
           
           <div class="total-row">
             <span class="total-label">Amount Paid</span>
-            <span class="total-value">₹${booking.finalAmount}</span>
+            <span class="total-value">â‚¹${booking.finalAmount}</span>
           </div>
         </div>
 
@@ -310,9 +310,9 @@ const sendBookingCompletionEmails = async (booking) => {
       `;
 
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+        from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
         to: user.email,
-        subject: `Service Invoice #${bookingId} - Homster`,
+        subject: `Service Invoice #${bookingId} - WBI`,
         html: emailWrapper(content, 'Invoice', 'Your service is complete. Here is the receipt.')
       });
     }
@@ -338,16 +338,16 @@ const sendWithdrawalApprovedEmail = async (vendor, amount, transactionId) => {
           <div class="data-row"><span class="data-label">Settlemet Date</span><span class="data-value">${new Date().toLocaleDateString()}</span></div>
           <div class="total-row">
             <span class="total-label">Amount Sent</span>
-            <span class="total-value" style="color: ${COLORS.success}">₹${amount}</span>
+            <span class="total-value" style="color: ${COLORS.success}">â‚¹${amount}</span>
           </div>
         </div>
       </div>
     `;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+      from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
       to: vendor.email,
-      subject: 'Withdrawal Success - Homster',
+      subject: 'Withdrawal Success - WBI',
       html: emailWrapper(content, 'Withdrawal', 'Your funds are on the way')
     });
   } catch (error) { console.error(error); }
@@ -368,19 +368,19 @@ const sendDuesPaymentApprovedEmail = async (vendor, amount, balanceAfter) => {
         <p>Hi ${vendor.name}, we've successfully verified your dues payment. Your wallet has been updated.</p>
         
         <div class="card">
-          <div class="data-row"><span class="data-label">Payment Amount</span><span class="data-value">₹${amount}</span></div>
+          <div class="data-row"><span class="data-label">Payment Amount</span><span class="data-value">â‚¹${amount}</span></div>
           <div class="total-row">
             <span class="total-label">Remaining Balance</span>
-            <span class="total-value">₹${balanceAfter}</span>
+            <span class="total-value">â‚¹${balanceAfter}</span>
           </div>
         </div>
       </div>
     `;
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'Homster <noreply@homster.com>',
+      from: process.env.EMAIL_FROM || 'WBI <noreply@WBI.com>',
       to: vendor.email,
-      subject: 'Dues Payment Verified - Homster',
+      subject: 'Dues Payment Verified - WBI',
       html: emailWrapper(content, 'Verified', 'We have received your payment')
     });
   } catch (error) { console.error(error); }

@@ -95,24 +95,24 @@ const uploadedImages = {};
 
 const uploadHomeContentImages = async () => {
   try {
-    console.log('🚀 Starting homepage content images upload to Cloudinary...\n');
+    console.log('ðŸš€ Starting homepage content images upload to Cloudinary...\n');
 
     for (const section of homeContentSections) {
-      console.log(`📁 Processing section: ${section.name} (${section.displayName})`);
+      console.log(`ðŸ“ Processing section: ${section.name} (${section.displayName})`);
       uploadedImages[section.name] = [];
 
       for (const imagePath of section.images) {
         if (!fs.existsSync(imagePath)) {
-          console.log(`    ⚠️  Image not found: ${path.basename(imagePath)}`);
+          console.log(`    âš ï¸  Image not found: ${path.basename(imagePath)}`);
           continue;
         }
 
         try {
-          console.log(`    📤 Uploading: ${path.basename(imagePath)}`);
+          console.log(`    ðŸ“¤ Uploading: ${path.basename(imagePath)}`);
 
           const imageBuffer = fs.readFileSync(imagePath);
           const result = await uploadFile(imageBuffer, {
-            folder: `Homster/HomeContent/${section.name}`,
+            folder: `WBI/HomeContent/${section.name}`,
             public_id: path.basename(imagePath, path.extname(imagePath)).replace(/[^a-zA-Z0-9-_]/g, '-')
           });
 
@@ -121,35 +121,35 @@ const uploadHomeContentImages = async () => {
               filename: path.basename(imagePath),
               url: result.url
             });
-            console.log(`    ✅ Uploaded: ${result.url}`);
+            console.log(`    âœ… Uploaded: ${result.url}`);
           } else {
-            console.log(`    ❌ Failed: ${path.basename(imagePath)} - ${result.error}`);
+            console.log(`    âŒ Failed: ${path.basename(imagePath)} - ${result.error}`);
           }
         } catch (error) {
-          console.log(`    ❌ Error uploading ${path.basename(imagePath)}:`, error.message);
+          console.log(`    âŒ Error uploading ${path.basename(imagePath)}:`, error.message);
         }
 
         // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 300));
       }
 
-      console.log(`✅ Completed section: ${section.name}\n`);
+      console.log(`âœ… Completed section: ${section.name}\n`);
     }
 
     // Save the uploaded URLs to a file for reference
-    const outputPath = path.join(process.cwd(), 'homster-home-content-urls.json');
+    const outputPath = path.join(process.cwd(), 'WBI-home-content-urls.json');
     fs.writeFileSync(outputPath, JSON.stringify(uploadedImages, null, 2));
-    console.log(`📄 Saved uploaded URLs to: ${outputPath}`);
+    console.log(`ðŸ“„ Saved uploaded URLs to: ${outputPath}`);
 
-    console.log('\n🎉 All homepage content images uploaded successfully!');
-    console.log('📋 Summary:');
+    console.log('\nðŸŽ‰ All homepage content images uploaded successfully!');
+    console.log('ðŸ“‹ Summary:');
     Object.keys(uploadedImages).forEach(section => {
       const count = uploadedImages[section].length;
       console.log(`  ${section}: ${count} images`);
     });
 
   } catch (error) {
-    console.error('❌ Error uploading images:', error);
+    console.error('âŒ Error uploading images:', error);
     throw error;
   }
 };
@@ -158,7 +158,7 @@ const uploadHomeContentImages = async () => {
 const runUpload = async () => {
   try {
     await uploadHomeContentImages();
-    console.log('\n🎯 Next step: Update seeding scripts with these Homster HomeContent URLs');
+    console.log('\nðŸŽ¯ Next step: Update seeding scripts with these WBI HomeContent URLs');
   } catch (error) {
     console.error('Upload failed:', error);
     process.exit(1);

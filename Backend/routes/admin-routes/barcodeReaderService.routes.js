@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const barcodeReaderServiceController = require('../../controllers/barcodeReaderService.controller');
-const { protect, authorize } = require('../../middlewares/auth');
+const { authenticate } = require('../../middleware/authMiddleware');
+const { isAdmin } = require('../../middleware/roleMiddleware');
 
-// Protect all routes and restrict to admin/super_admin
-router.use(protect);
-router.use(authorize('admin', 'super_admin'));
+// Protect all routes and restrict to admin
+router.use(authenticate);
+router.use(isAdmin);
 
 router.get('/', barcodeReaderServiceController.getEnquiries);
 router.get('/:id', barcodeReaderServiceController.getEnquiry);

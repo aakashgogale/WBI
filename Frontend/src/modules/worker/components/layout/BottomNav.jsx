@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, memo, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiBriefcase, FiUser, FiDollarSign } from 'react-icons/fi';
-import { HiHome, HiBriefcase, HiUser } from 'react-icons/hi';
+import { FiHome, FiBriefcase, FiUser, FiDollarSign, FiFolder } from 'react-icons/fi';
+import { HiHome, HiBriefcase, HiUser, HiFolder } from 'react-icons/hi';
 import { FiBell } from 'react-icons/fi';
 import { gsap } from 'gsap';
 import { workerTheme as themeColors } from '../../../../theme';
@@ -60,11 +60,11 @@ const BottomNav = memo(() => {
     return [
       { path: '/worker/dashboard', icon: FiHome, activeIcon: HiHome, label: 'Home' },
       { path: '/worker/jobs', icon: FiBriefcase, activeIcon: HiBriefcase, label: 'Jobs', badge: pendingJobsCount },
+      { path: '/worker/projects', icon: FiFolder, activeIcon: HiFolder, label: 'Projects' },
       { path: '/worker/wallet', icon: FiDollarSign, activeIcon: FiDollarSign, label: 'Wallet' },
-      { path: '/worker/notifications', icon: FiBell, activeIcon: FiBell, label: 'Alerts', badge: unreadNotificationsCount },
       { path: '/worker/profile', icon: FiUser, activeIcon: HiUser, label: 'Profile' },
     ];
-  }, [pendingJobsCount, unreadNotificationsCount]);
+  }, [pendingJobsCount]);
 
   const handleNavClick = (path) => {
     if (location.pathname !== path) {
@@ -76,23 +76,10 @@ const BottomNav = memo(() => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white"
+      className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.02)]"
       style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        width: '100%',
         zIndex: 40,
-        willChange: 'transform',
-        transform: 'translateZ(0)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        borderTop: '2px solid rgba(0, 0, 0, 0.35)',
-        borderTopLeftRadius: '20px',
-        borderTopRightRadius: '20px',
-        boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.15), 0 -4px 12px rgba(0, 0, 0, 0.1), 0 -2px 6px rgba(0, 0, 0, 0.08)',
-        background: 'linear-gradient(to top, #FFFFFF 0%, #FAFAFA 100%)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div className="flex items-center justify-around px-2 py-2">
