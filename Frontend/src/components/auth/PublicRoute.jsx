@@ -28,6 +28,11 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
           refreshTokenKey = 'workerRefreshToken';
           dataKey = 'workerData';
           break;
+        case 'engineer':
+          tokenKey = 'engineerAccessToken';
+          refreshTokenKey = 'engineerRefreshToken';
+          dataKey = 'engineerData';
+          break;
         case 'admin':
           tokenKey = 'adminAccessToken';
           refreshTokenKey = 'adminRefreshToken';
@@ -67,6 +72,7 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
               user: 'user',
               vendor: 'vendor',
               worker: 'worker',
+              engineer: 'engineer',
               admin: 'admin'
             };
 
@@ -109,18 +115,19 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
   if (isAuthenticated) {
     // Determine redirect path
     const defaultRedirects = {
-      user: '/user',
+      user: '/user/dashboard',
       vendor: '/vendor/dashboard',
       worker: '/worker/dashboard',
+      engineer: '/engineer/dashboard',
       admin: '/admin/dashboard'
     };
 
-    const redirectPath = redirectTo || defaultRedirects[userType] || '/user';
-    return <Navigate to={redirectPath} replace />;
+    const redirectPath = redirectTo || defaultRedirects[userType] || '/user/dashboard';
+
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
   return children;
 };
 
 export default PublicRoute;
-

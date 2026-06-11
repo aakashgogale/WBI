@@ -28,6 +28,11 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
           refreshTokenKey = 'workerRefreshToken';
           dataKey = 'workerData';
           break;
+        case 'engineer':
+          tokenKey = 'engineerAccessToken';
+          refreshTokenKey = 'engineerRefreshToken';
+          dataKey = 'engineerData';
+          break;
         case 'admin':
           tokenKey = 'adminAccessToken';
           refreshTokenKey = 'adminRefreshToken';
@@ -117,6 +122,7 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
       user: '/user/login',
       vendor: '/vendor/login',
       worker: '/worker/login',
+      engineer: '/engineer/login',
       admin: '/admin/login'
     };
 
