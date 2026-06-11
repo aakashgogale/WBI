@@ -7,6 +7,8 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
+import LogoLoader from '../../../components/common/LogoLoader';
+import GlobalWorkerJobAlert from '../components/common/GlobalWorkerJobAlert';
 
 // Lazy load wrapper with error handling
 const lazyLoad = (importFunc) => {
@@ -64,14 +66,9 @@ const ProjectUnderReview = lazyLoad(() => import('../pages/ProjectUnderReview'))
 const Wallet = lazyLoad(() => import('../pages/Wallet'));
 const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
 
-// Loading fallback component
-import LogoLoader from '../../../components/common/LogoLoader';
-
 const LoadingFallback = () => (
   <LogoLoader />
 );
-
-import GlobalWorkerJobAlert from '../components/common/GlobalWorkerJobAlert';
 
 const EngineerRoutes = () => {
   const location = useLocation();

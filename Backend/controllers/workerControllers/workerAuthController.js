@@ -166,7 +166,12 @@ const register = async (req, res) => {
     } = req.body;
 
     // Check existing
-    const existingWorker = await Worker.findOne({ $or: [{ phone }, { email }] });
+    let orConditions = [{ phone }];
+    if (email && email.trim() !== '') {
+      orConditions.push({ email });
+    }
+    const existingWorker = await Worker.findOne({ $or: orConditions });
+    
     if (existingWorker) {
       return res.status(400).json({
         success: false,
@@ -204,7 +209,7 @@ const register = async (req, res) => {
 
     // Create worker
     const worker = await Worker.create({
-      name, email, phone, password,
+      name, email: email && email.trim() !== '' ? email : undefined, phone, password,
       serviceCategories: serviceCategories || [],
       skills: skills || [],
       availability: availability || 'Full Time',

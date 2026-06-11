@@ -25,7 +25,7 @@ const WorkerLogin = () => {
   useEffect(() => {
     // Redirect if already logged in
     if (localStorage.getItem('workerAccessToken')) {
-      navigate('/engineer', { replace: true });
+      navigate('/worker/dashboard', { replace: true });
     }
   }, [navigate]);
 
@@ -53,7 +53,7 @@ const WorkerLogin = () => {
       const response = await workerAuthService.login(formData);
       if (response.success) {
         toast.success('Welcome Back!');
-        navigate('/engineer', { replace: true });
+        navigate('/worker/dashboard', { replace: true });
       } else {
         toast.error(response.message || 'Login failed');
       }

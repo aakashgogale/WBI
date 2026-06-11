@@ -3,6 +3,10 @@ const VendorBill = require('../../models/VendorBill');
 const Worker = require('../../models/Worker');
 const Service = require('../../models/UserService');
 const Settings = require('../../models/Settings');
+const WorkOrder = require('../../models/WorkOrder');
+const Project = require('../../models/Project');
+const AmcContract = require('../../models/AmcContract');
+const Invoice = require('../../models/Invoice');
 const { BOOKING_STATUS, PAYMENT_STATUS, WORKER_STATUS } = require('../../utils/constants');
 
 /**
@@ -129,7 +133,12 @@ const getDashboardStats = async (req, res) => {
       VendorBill.aggregate([
         { $match: { vendorId: vId, status: 'paid' } },
         { $group: { _id: null, total: { $sum: '$vendorTotalEarning' } } }
-      ])
+      ]),
+      // 4. New Models Stats
+      WorkOrder.countDocuments({ vendorId: vId, status: 'Pending' }),
+      Project.countDocuments({ vendorId: vId }),
+      AmcContract.countDocuments({ vendorId: vId, status: 'Active' }),
+      WorkOrder.find({ vendorId: vId }).sort({ createdAt: -1 }).limit(5).populate('userId', 'name').lean()
     ]);
 
     // ─── UNPACK & POPULATE ──────────────────────────────────────────────────
@@ -138,6 +147,11 @@ const getDashboardStats = async (req, res) => {
     const recentBookings = facet.recent || [];
     const rating = facet.rating?.[0]?.avg || req.user.rating || 0;
     const vendorEarnings = earningsResult[0]?.total || 0;
+
+    const pendingWorkOrdersCount = bookingData[3] || 0;
+    const totalProjectsCount = bookingData[4] || 0;
+    const activeAmcCount = bookingData[5] || 0;
+    const recentWorkOrders = bookingData[6] || [];
 
     // Minimal population for recent bookings (Lean)
     await Booking.populate(recentBookings, [
@@ -169,9 +183,15 @@ const getDashboardStats = async (req, res) => {
           totalRevenue: vendorEarnings, // UI shows totalEarnings as sum
           vendorEarnings: vendorEarnings,
           workersOnline,
-          rating: parseFloat(rating.toFixed(1))
+          rating: parseFloat(rating.toFixed(1)),
+          // New UI Fields
+          totalProjects: totalProjectsCount,
+          activeAMC: activeAmcCount,
+          pendingWorkOrders: pendingWorkOrdersCount,
+          totalEarnings: vendorEarnings
         },
-        recentBookings
+        recentBookings,
+        recentWorkOrders
       }
     });
   } catch (error) {

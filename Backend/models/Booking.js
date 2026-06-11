@@ -59,6 +59,31 @@ const bookingSchema = new mongoose.Schema({
   },
 
   // ==========================================
+  // 1.5 URGENCY & AUTO-ASSIGN SYSTEM
+  // ==========================================
+  urgencyLevel: {
+    type: String,
+    enum: ['normal', 'urgent', 'emergency'],
+    default: 'normal',
+    index: true
+  },
+  adminApprovalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'auto_assigned', 'bypassed'],
+    default: 'pending',
+    index: true
+  },
+  urgencyTimerStartedAt: {
+    type: Date,
+    default: Date.now
+  },
+  adminLog: [{
+    action: { type: String },
+    reason: { type: String },
+    timestamp: { type: Date, default: Date.now }
+  }],
+
+  // ==========================================
   // 2. SERVICE INFORMATION
   // ==========================================
   serviceId: {

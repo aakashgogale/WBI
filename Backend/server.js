@@ -214,6 +214,9 @@ app.use('/api/vendors/workers', require('./routes/vendor-routes/worker.routes'))
 app.use('/api/vendors/fcm-tokens', require('./routes/vendor-routes/fcmToken.routes'));
 app.use('/api/vendors', require('./routes/vendor-routes/vendorBill.routes'));
 app.use('/api/vendors/catalog', require('./routes/vendor-routes/catalog.routes'));
+app.use('/api/vendors/enquiries', require('./routes/vendor-routes/vendorEnquiry.routes'));
+app.use('/api/vendors/assignments', require('./routes/vendor-routes/engineerAssignment.routes'));
+app.use('/api/vendors/team', require('./routes/vendor-routes/team.routes'));
 
 // Worker routes
 app.use('/api/workers/auth', require('./routes/worker-routes/auth.routes'));
@@ -232,6 +235,7 @@ app.use('/api/engineers', require('./routes/engineer-routes/dashboard.routes'));
 app.use('/api/engineers/wallet', require('./routes/engineer-routes/wallet.routes'));
 app.use('/api/engineers/fcm-tokens', require('./routes/engineer-routes/fcmToken.routes'));
 app.use('/api/engineers/projects', require('./routes/engineer-routes/project.routes'));
+app.use('/api/engineers/execution', require('./routes/engineer-routes/engineerJobExecution.routes'));
 
 // Admin routes
 app.use('/api/admin/auth', require('./routes/admin-routes/adminAuth.routes'));
@@ -243,6 +247,8 @@ app.use('/api/admin', require('./routes/admin-routes/workerManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/engineerManagement.routes'));
 app.use('/api/admin/service-categories', require('./routes/admin-routes/serviceCategoryManagement.routes'));
 app.use('/api/admin/sub-services', require('./routes/admin-routes/subServiceManagement.routes'));
+app.use('/api/admin/dynamic-form-configs', require('./routes/admin-routes/dynamicFormConfig.routes'));
+app.use('/api/admin/job-checklist-configs', require('./routes/admin-routes/jobChecklistConfig.routes'));
 app.use('/api/admin', require('./routes/admin-routes/categoryManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/brandManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/serviceManagement.routes'));
@@ -321,6 +327,8 @@ app.use('/api/public', require('./routes/public-routes/plan.routes'));
 app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
 app.use('/api/public/app-enquiries', require('./routes/public-routes/appEnquiry.routes'));
 app.use('/api/public', require('./routes/public-routes/config.routes'));
+app.use('/api/public/dynamic-enquiries', require('./routes/public-routes/dynamicEnquiry.routes'));
+app.use('/api/public/dynamic-payments', require('./routes/public-routes/dynamicPayment.routes'));
 app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
 app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
@@ -334,7 +342,7 @@ app.use('/api/public/multiple-services-enquiries', require('./routes/public-rout
 app.use('/api/public/power-monitoring-enquiries', require('./routes/public-routes/automatedPowerMonitoringEnquiry.routes'));
 
 // Contact and Core Service Enquiries
-// app.use('/api/public/contact', require('./routes/public-routes/contact.routes'));
+app.use('/api/public/service-categories', require('./routes/public-routes/serviceCategory.routes'));
 app.use('/api/public/installation-enquiries', require('./routes/public-routes/installationEnquiry.routes'));
 app.use('/api/public/marketing-enquiries', require('./routes/public-routes/marketingEnquiry.routes'));
 app.use('/api/public/design-enquiries', require('./routes/public-routes/designEnquiry.routes'));
@@ -406,6 +414,17 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
   const { initializeScheduler } = require('./services/bookingScheduler');
   initializeScheduler(getIO());
   console.log('[Server] Booking Scheduler initialized for wave-based alerting');
+
+  // Initialize Urgency Scheduler for 3-tier booking timeouts
+  const { startUrgencyScheduler } = require('./services/urgencyScheduler');
+  startUrgencyScheduler();
+  console.log('[Server] Urgency Scheduler initialized');
+
+  // Initialize BullMQ Workers for Security Solutions Flow
+  require('./jobs/vendorMatchingJob');
+  require('./jobs/engineerAssignmentJob');
+  require('./jobs/slaMonitorJob');
+  console.log('[Server] BullMQ Workers initialized');
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (err) => {

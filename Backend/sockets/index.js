@@ -44,16 +44,20 @@ const initializeSocket = (server) => {
     // Join user-specific room for notifications
     if (socket.userRole === 'USER') {
       socket.join(`user_${socket.userId.toString()}`);
+      socket.join(`client:${socket.userId.toString()}`); // New format
     } else if (socket.userRole === 'VENDOR') {
       socket.join(`vendor_${socket.userId.toString()}`);
+      socket.join(`vendor:${socket.userId.toString()}`); // New format
       // Update vendor online status
       updateVendorOnlineStatus(socket.userId, true, socket.id);
-    } else if (socket.userRole === 'WORKER') {
+    } else if (socket.userRole === 'WORKER' || socket.userRole === 'ENGINEER') {
       socket.join(`worker_${socket.userId.toString()}`);
+      socket.join(`engineer:${socket.userId.toString()}`); // New format
       // Update worker online status
       updateWorkerOnlineStatus(socket.userId, true, socket.id);
     } else if (socket.userRole === 'ADMIN') {
       socket.join(`admin_${socket.userId.toString()}`);
+      socket.join('admin:wbi'); // New format
     }
 
     // Explicit Room Join Events (Fallback/Frontend Initiated)
@@ -96,6 +100,12 @@ const initializeSocket = (server) => {
       } catch (error) {
         console.error('[Socket] Error fetching cached location:', error);
       }
+    });
+
+    // New Flow: Join Job Room
+    socket.on('join_job', (jobId) => {
+      socket.join(`job:${jobId}`);
+      console.log(`Socket ${socket.userId} joined room job:${jobId}`);
     });
 
     // Vendor acknowledges receiving booking alert

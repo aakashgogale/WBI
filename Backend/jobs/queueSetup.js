@@ -1,0 +1,23 @@
+const { Queue, Worker, QueueEvents } = require('bullmq');
+const Redis = require('ioredis');
+
+// Ensure we have a valid Redis connection for BullMQ
+const redisConnection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
+  maxRetriesPerRequest: null,
+});
+
+// Queue Definitions
+const vendorMatchingQueue = new Queue('vendor-matching', { connection: redisConnection });
+const engineerAssignmentQueue = new Queue('engineer-assignment', { connection: redisConnection });
+const slaMonitorQueue = new Queue('sla-monitor', { connection: redisConnection });
+const notificationQueue = new Queue('notification-queue', { connection: redisConnection });
+
+console.log('[BullMQ] Queues initialized');
+
+module.exports = {
+  vendorMatchingQueue,
+  engineerAssignmentQueue,
+  slaMonitorQueue,
+  notificationQueue,
+  redisConnection
+};

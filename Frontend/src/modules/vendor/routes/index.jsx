@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import PageTransition from '../components/common/PageTransition';
-import BottomNav from '../components/layout/BottomNav';
+import VendorLayout from '../components/layout/VendorLayout';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PublicRoute from '../../../components/auth/PublicRoute';
@@ -63,6 +63,9 @@ const SettlementHistory = lazyLoad(() => import('../pages/Wallet/SettlementHisto
 const MyRatings = lazyLoad(() => import('../pages/MyRatings'));
 const AboutWBI = lazyLoad(() => import('../pages/AboutWBI'));
 const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
+const Projects = lazyLoad(() => import('../pages/Projects'));
+const WorkOrders = lazyLoad(() => import('../pages/WorkOrders'));
+const AmcContracts = lazyLoad(() => import('../pages/AmcContracts'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -72,68 +75,57 @@ const LoadingFallback = () => (
 );
 
 const VendorRoutes = () => {
-  const location = useLocation();
-
-  // Check if current route should hide bottom nav (auth routes or map)
-  // Check if current route should hide bottom nav (auth routes or map or booking alert)
-  const shouldHideBottomNav = location.pathname === '/vendor/login' ||
-    location.pathname === '/vendor/signup' ||
-    location.pathname.endsWith('/map') ||
-    location.pathname.includes('/booking-alert/');
-
-  const shouldShowBottomNav = !shouldHideBottomNav;
-
   return (
     <ErrorBoundary>
-      {/* Main content area - leaves space for bottom nav when needed */}
-      <div className={shouldShowBottomNav ? "pb-24" : ""}>
-        <Suspense fallback={<LoadingFallback />}>
-          <PageTransition>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<PublicRoute userType="vendor"><Login /></PublicRoute>} />
-              <Route path="/signup" element={<PublicRoute userType="vendor"><Signup /></PublicRoute>} />
+      <Suspense fallback={<LoadingFallback />}>
+        <PageTransition>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<PublicRoute userType="vendor"><Login /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute userType="vendor"><Signup /></PublicRoute>} />
 
-              {/* Protected routes (auth required) */}
-              <Route path="/" element={<ProtectedRoute userType="vendor"><Navigate to="dashboard" replace /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute userType="vendor"><Dashboard /></ProtectedRoute>} />
-              <Route path="/booking-alerts" element={<ProtectedRoute userType="vendor"><BookingAlerts /></ProtectedRoute>} />
-              <Route path="/booking-alert/:id" element={<ProtectedRoute userType="vendor"><BookingAlert /></ProtectedRoute>} />
-              <Route path="/booking/:id" element={<ProtectedRoute userType="vendor"><BookingDetails /></ProtectedRoute>} />
-              <Route path="/booking/:id/map" element={<ProtectedRoute userType="vendor"><BookingMap /></ProtectedRoute>} />
-              <Route path="/booking/:id/billing" element={<ProtectedRoute userType="vendor"><BillingPage /></ProtectedRoute>} />
-              <Route path="/booking/:id/timeline" element={<ProtectedRoute userType="vendor"><BookingTimeline /></ProtectedRoute>} />
-              <Route path="/jobs" element={<ProtectedRoute userType="vendor"><ActiveJobs /></ProtectedRoute>} />
-              <Route path="/workers" element={<ProtectedRoute userType="vendor"><WorkersList /></ProtectedRoute>} />
-              <Route path="/workers/add" element={<ProtectedRoute userType="vendor"><AddEditWorker /></ProtectedRoute>} />
-              <Route path="/workers/:id/edit" element={<ProtectedRoute userType="vendor"><AddEditWorker /></ProtectedRoute>} />
-              <Route path="/booking/:id/assign-worker" element={<ProtectedRoute userType="vendor"><AssignWorker /></ProtectedRoute>} />
-              <Route path="/earnings" element={<ProtectedRoute userType="vendor"><Earnings /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute userType="vendor"><Wallet /></ProtectedRoute>} />
-              <Route path="/wallet/withdraw" element={<ProtectedRoute userType="vendor"><WithdrawalRequest /></ProtectedRoute>} />
-              <Route path="/wallet/settle" element={<ProtectedRoute userType="vendor"><SettlementRequest /></ProtectedRoute>} />
-              <Route path="/wallet/settlements" element={<ProtectedRoute userType="vendor"><SettlementHistory /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute userType="vendor"><Profile /></ProtectedRoute>} />
-              <Route path="/profile/details" element={<ProtectedRoute userType="vendor"><ProfileDetails /></ProtectedRoute>} />
-              <Route path="/profile/edit" element={<ProtectedRoute userType="vendor"><EditProfile /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute userType="vendor"><Settings /></ProtectedRoute>} />
-              <Route path="/address-management" element={<ProtectedRoute userType="vendor"><AddressManagement /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute userType="vendor"><Notifications /></ProtectedRoute>} />
-              <Route path="/my-ratings" element={<ProtectedRoute userType="vendor"><MyRatings /></ProtectedRoute>} />
-              <Route path="/about-wbi" element={<ProtectedRoute userType="vendor"><AboutWBI /></ProtectedRoute>} />
-            </Routes>
-          </PageTransition>
-        </Suspense>
-      </div>
+            {/* Protected routes wrapped in VendorLayout */}
+            <Route element={<ProtectedRoute userType="vendor"><VendorLayout /></ProtectedRoute>}>
+              <Route path="/" element={<Navigate to="dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/booking-alerts" element={<BookingAlerts />} />
+              <Route path="/booking-alert/:id" element={<BookingAlert />} />
+              <Route path="/booking/:id" element={<BookingDetails />} />
+              <Route path="/booking/:id/map" element={<BookingMap />} />
+              <Route path="/booking/:id/billing" element={<BillingPage />} />
+              <Route path="/booking/:id/timeline" element={<BookingTimeline />} />
+              <Route path="/jobs" element={<ActiveJobs />} />
+              <Route path="/engineers" element={<WorkersList />} />
+              <Route path="/workers" element={<WorkersList />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/work-orders" element={<WorkOrders />} />
+              <Route path="/amc" element={<AmcContracts />} />
+              <Route path="/workers/add" element={<AddEditWorker />} />
+              <Route path="/workers/:id/edit" element={<AddEditWorker />} />
+              <Route path="/booking/:id/assign-worker" element={<AssignWorker />} />
+              <Route path="/earnings" element={<Earnings />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/wallet/withdraw" element={<WithdrawalRequest />} />
+              <Route path="/wallet/settle" element={<SettlementRequest />} />
+              <Route path="/wallet/settlements" element={<SettlementHistory />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/details" element={<ProfileDetails />} />
+              <Route path="/profile/edit" element={<EditProfile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/address-management" element={<AddressManagement />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/my-ratings" element={<MyRatings />} />
+              <Route path="/reviews" element={<MyRatings />} />
+              <Route path="/support" element={<AboutWBI />} />
+              <Route path="/about-wbi" element={<AboutWBI />} />
+            </Route>
+          </Routes>
+        </PageTransition>
+      </Suspense>
 
-      {/* BottomNav is OUTSIDE Suspense so it persists during page loads */}
-      {shouldShowBottomNav && <BottomNav />}
-
-      {/* Global Alert for Cash Limit */}
-      {!shouldHideBottomNav && <CashLimitModal />}
-
-      {/* Global New Booking Alert Modal */}
-      {!shouldHideBottomNav && <GlobalBookingAlert />}
+      {/* Global Alerts inside Vendor boundary but outside specific page routes */}
+      <CashLimitModal />
+      <GlobalBookingAlert />
     </ErrorBoundary>
   );
 };

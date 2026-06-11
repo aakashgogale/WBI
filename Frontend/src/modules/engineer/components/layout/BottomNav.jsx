@@ -32,7 +32,7 @@ const BottomNav = memo(() => {
 
     const fetchUnreadCount = async () => {
       try {
-        const res = await api.get('/notifications/worker');
+        const res = await api.get('/notifications/engineer');
         if (res.data.success && typeof res.data.unreadCount === 'number') {
           setUnreadNotificationsCount(res.data.unreadCount);
         }

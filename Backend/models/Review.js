@@ -31,12 +31,17 @@ const reviewSchema = new mongoose.Schema({
     index: true
   },
   rating: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 5
+    overall: { type: Number, required: true, min: 1, max: 5 },
+    professionalism: { type: Number, min: 1, max: 5 },
+    timeliness: { type: Number, min: 1, max: 5 },
+    valueForMoney: { type: Number, min: 1, max: 5 }
   },
+  wouldRecommend: { type: Boolean, default: true },
   review: {
+    type: String,
+    trim: true
+  },
+  vendorReply: {
     type: String,
     trim: true
   },

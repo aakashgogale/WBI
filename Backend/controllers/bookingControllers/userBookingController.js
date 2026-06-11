@@ -49,7 +49,8 @@ const createBooking = async (req, res) => {
       categoryIcon: reqCategoryIcon,
       brandName: reqBrandName,
       brandIcon: reqBrandIcon,
-      bookingType // Extract bookingType
+      bookingType, // Extract bookingType
+      urgencyLevel = 'normal' // default to normal
     } = req.body;
 
     let visitingCharges = reqVisitingCharges !== undefined ? reqVisitingCharges : (reqVisitationFee || 0);
@@ -303,6 +304,10 @@ const createBooking = async (req, res) => {
       brandName: reqBrandName || brandName,
       brandIcon: reqBrandIcon || brandIcon,
       bookingType: bookingType || 'scheduled',
+      urgencyLevel,
+      adminApprovalStatus: urgencyLevel === 'emergency' ? 'bypassed' : 'pending',
+      adminLog: urgencyLevel === 'emergency' ? [{ action: 'Bypassed Admin', reason: 'Emergency request triggered immediate worker matching', timestamp: new Date() }] : [],
+      urgencyTimerStartedAt: new Date(),
 
       description: service.description,
       serviceImages: service.images || [],
@@ -437,7 +442,55 @@ const createBooking = async (req, res) => {
           await bookingForBackground.save();
         }
 
-        // Send notifications to Wave 1 vendors ONLY
+        // =========================================================================
+        // URGENCY LEVEL ROUTING
+        // =========================================================================
+        if (urgencyLevel === 'emergency') {
+          console.log(`[CreateBooking] EMERGENCY: Bypassing admin and alerting top 3 workers directly!`);
+          
+          // Find Top 3 Nearest Workers using 2dsphere index
+          const Engineer = require('../../models/Engineer');
+          const nearestEngineers = await Engineer.find({
+            geoLocation: {
+              $near: {
+                $geometry: { type: 'Point', coordinates: [address.lng || bookingLocation?.lng || 0, address.lat || bookingLocation?.lat || 0] },
+                $maxDistance: 20000 // 20km radius
+              }
+            },
+            status: 'ONLINE',
+            isOnline: true
+          }).limit(3).lean();
+
+          if (nearestEngineers.length > 0) {
+            // Notify them via FCM / Socket
+            const { getIO } = require('../../sockets');
+            const io = getIO();
+            if (io) {
+              nearestEngineers.forEach(worker => {
+                io.to(`worker_${worker._id}`).emit('emergency_job_alert', {
+                  bookingId: bookingForBackground._id,
+                  message: 'EMERGENCY: Immediate job request near you!'
+                });
+              });
+            }
+            // Add Firebase push here if needed
+          }
+        } else if (urgencyLevel === 'urgent') {
+          console.log(`[CreateBooking] URGENT: Sending instant notification to Admin! (10 min timer started)`);
+          // Notify admin immediately (via socket/FCM)
+          const { getIO } = require('../../sockets');
+          const io = getIO();
+          if (io) {
+            io.to('admin_room').emit('urgent_booking_alert', {
+              bookingId: bookingForBackground._id,
+              message: 'URGENT Booking requires immediate approval!'
+            });
+          }
+        } else {
+          console.log(`[CreateBooking] NORMAL: Added to admin queue. (30 min timer started)`);
+        }
+
+        // Send notifications to Wave 1 vendors ONLY (if standard flow)
         // 1. Emit Socket.IO event FIRST (Instant & Reliable)
         const { getIO } = require('../../sockets');
         const io = getIO();

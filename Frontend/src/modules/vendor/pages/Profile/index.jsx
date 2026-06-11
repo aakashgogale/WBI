@@ -8,6 +8,7 @@ import { vendorAuthService } from '../../../../services/authService';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import DigitalProfile from './DigitalProfile';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDigitalVendor, setIsDigitalVendor] = useState(false);
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -105,6 +107,15 @@ const Profile = () => {
             isEmailVerified: vendorData.isEmailVerified || false
           });
           localStorage.setItem('vendorData', JSON.stringify(vendorData));
+          
+          // Check for digital solutions category
+          const DIGITAL_CATEGORY_ID = '6a23fd15f2513e09a97eeb7f';
+          if (vendorData.categories && vendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
+            setIsDigitalVendor(true);
+          } else if (storedVendorData && storedVendorData.categories && storedVendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
+             setIsDigitalVendor(true);
+          }
+
         } else {
           // If API fails but we have local data, stick with it?
           if (!storedVendorData || Object.keys(storedVendorData).length === 0) {
@@ -157,6 +168,11 @@ const Profile = () => {
 
   if (!profile) {
     return null;
+  }
+
+  // Render highly-specialized Digital Profile if applicable
+  if (isDigitalVendor) {
+    return <DigitalProfile />;
   }
 
   return (

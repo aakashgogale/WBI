@@ -34,6 +34,28 @@ const vendorSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  gstin: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    default: null
+  },
+  incorporationType: {
+    type: String,
+    enum: ['Proprietorship', 'Partnership', 'LLP', 'Private Limited', 'Public Limited', 'Other'],
+    default: 'Proprietorship'
+  },
+  incorporationCertificate: {
+    type: String, // Cloudinary URL
+    default: null
+  },
+  teamSize: {
+    type: Number,
+    default: 1
+  },
+  operatingCities: [{
+    type: String
+  }],
   service: {
     type: [String], // Changed to array for multiple categories
     default: [],
@@ -47,6 +69,10 @@ const vendorSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  teamEngineers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Engineer'
+  }],
   aadhar: {
     number: {
       type: String,
@@ -179,6 +205,14 @@ const vendorSchema = new mongoose.Schema({
       min: 1
     }
   },
+  // Bank Details
+  bankDetails: {
+    accountName: String,
+    accountNumber: String,
+    ifscCode: String,
+    bankName: String,
+    upiId: String
+  },
   // Real-time Location
   location: {
     lat: Number,
@@ -219,6 +253,14 @@ const vendorSchema = new mongoose.Schema({
     max: 5
   },
   totalJobs: {
+    type: Number,
+    default: 0
+  },
+  totalProjects: {
+    type: Number,
+    default: 0
+  },
+  activeAmc: {
     type: Number,
     default: 0
   },

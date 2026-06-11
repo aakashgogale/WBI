@@ -88,6 +88,7 @@ const verifyLogin = async (req, res) => {
 
     // 1. Verify OTP
     const verification = await verifyOTP(phone, otp);
+
     if (!verification.success) {
       return res.status(400).json({
         success: false,
@@ -144,6 +145,7 @@ const verifyLogin = async (req, res) => {
           email: vendor.email,
           phone: vendor.phone,
           businessName: vendor.businessName,
+          categories: vendor.categories,
           service: vendor.service,
           approvalStatus: vendor.approvalStatus
         },
@@ -240,9 +242,24 @@ const register = async (req, res) => {
       otherUrls = uploadedOthers;
     }
 
+    // Prepare account type mapping
+    let incorporationType = 'Proprietorship';
+    let businessNameVal = null;
+    let gstinVal = null;
+    if (req.body.accountType === 'Company/Firm') {
+      incorporationType = 'Private Limited';
+      businessNameVal = req.body.businessName || name;
+      gstinVal = req.body.gstin || null;
+    } else {
+      businessNameVal = name;
+    }
+
     const vendor = await Vendor.create({
-      name, email, phone,
-      service: [], // Default empty as requested
+      name, email, phone, password: req.body.password,
+      incorporationType, businessName: businessNameVal, gstin: gstinVal,
+      service: req.body.service || req.body.categories || [],
+      categories: req.body.categories || [],
+      skills: req.body.skills || [],
       aadhar: {
         number: aadhar,
         document: aadharUrl,
@@ -308,23 +325,26 @@ const login = async (req, res) => {
       });
     }
 
-    const { phone, otp } = req.body;
+    const { identifier, password } = req.body;
 
-    // Verify OTP (checks Redis first, falls back to MongoDB)
-    const verification = await verifyOTP(phone, otp);
-    if (!verification.success) {
-      return res.status(400).json({
-        success: false,
-        message: verification.message
-      });
-    }
+    // Find vendor by email or phone
+    const vendor = await Vendor.findOne({
+      $or: [{ email: identifier }, { phone: identifier }]
+    }).select('+password');
 
-    // Find vendor
-    const vendor = await Vendor.findOne({ phone });
     if (!vendor) {
       return res.status(404).json({
         success: false,
-        message: 'Vendor not found. Please sign up first.'
+        message: 'Invalid credentials. Vendor not found.'
+      });
+    }
+
+    // Verify password
+    const isMatch = await vendor.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email/phone or password'
       });
     }
 
@@ -380,6 +400,7 @@ const login = async (req, res) => {
         email: vendor.email,
         phone: vendor.phone,
         businessName: vendor.businessName,
+        categories: vendor.categories,
         service: vendor.service
       },
       ...tokens

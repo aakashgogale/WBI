@@ -8,9 +8,13 @@ const {
   getWorkerPerformance,
   getServicePerformance
 } = require('../../controllers/vendorControllers/vendorDashboardController');
+const {
+  getDigitalDashboardStats
+} = require('../../controllers/vendorControllers/digitalDashboardController');
 
 // Routes
 router.get('/dashboard/stats', authenticate, isVendor, getDashboardStats);
+router.get('/dashboard/digital-stats', authenticate, isVendor, getDigitalDashboardStats);
 router.get('/dashboard/revenue', authenticate, isVendor, getRevenueAnalytics);
 router.get('/dashboard/workers', authenticate, isVendor, getWorkerPerformance);
 router.get('/dashboard/services', authenticate, isVendor, getServicePerformance);

@@ -11,10 +11,9 @@ const workerSchema = new mongoose.Schema({
   email: {
     type: String,
     unique: true,
-    sparse: true, // Allow multiple nulls
+    sparse: true, // Allow multiple undefined values
     trim: true,
-    lowercase: true,
-    default: null
+    lowercase: true
   },
   phone: {
     type: String,

@@ -80,6 +80,15 @@ export const login = async (credentials) => {
       localStorage.setItem('vendorAccessToken', response.data.accessToken);
       localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
       localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+
+      // Notify Flutter about the login for mobile app FCM token handling
+      notifyFlutterLogin(response.data);
+
+      // Register FCM token after successful login
+      console.log('[VENDOR AUTH] Vendor login successful via password, registering FCM token...');
+      registerFCMToken('vendor', true).catch(err => {
+        console.error('[VENDOR AUTH] FCM token registration failed:', err);
+      });
     }
 
     return response.data;

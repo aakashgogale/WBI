@@ -30,7 +30,7 @@ export default function EngineerSignup() {
   // === ENGINEER STATE ===
   const [engData, setEngData] = useState({
     name: '', profilePhoto: null, dob: '', gender: '',
-    phone: '', isPhoneVerified: false, whatsappNumber: '',
+    phone: '', isPhoneVerified: false, whatsappNumber: '', emergencyContactNumber: '',
     email: '', isEmailVerified: false,
     city: '', state: '', pincode: '',
     registrationType: 'Individual Engineer / Technician',
@@ -136,7 +136,7 @@ export default function EngineerSignup() {
   // Validation
   const validateStep = (step) => {
     if (step === 1) {
-      if (!engData.name || !engData.dob || !engData.phone || !engData.email || !engData.city) return false;
+      if (!engData.name || !engData.dob || !engData.phone || !engData.email || !engData.city || !engData.emergencyContactNumber) return false;
       if (!engData.isPhoneVerified || !engData.isEmailVerified) {
         toast.error("Please verify Phone and Email first");
         return false;
@@ -176,6 +176,7 @@ export default function EngineerSignup() {
         registrationType: engData.registrationType,
         companyDetails: engData.companyDetails,
         whatsappNumber: engData.whatsappNumber,
+        emergencyContactNumber: engData.emergencyContactNumber,
         address: { city: engData.city, state: engData.state, pincode: engData.pincode },
         primarySkill: engData.primarySkill,
         secondarySkills: engData.secondarySkills,
@@ -315,6 +316,10 @@ export default function EngineerSignup() {
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">WhatsApp Number</label>
                     <input name="whatsappNumber" value={engData.whatsappNumber} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" placeholder="Same as primary if empty" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Emergency Contact Number *</label>
+                    <input name="emergencyContactNumber" value={engData.emergencyContactNumber} onChange={handleEngChange} type="tel" className="w-full border rounded-lg p-2 text-sm" placeholder="For field emergencies" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Gender *</label>

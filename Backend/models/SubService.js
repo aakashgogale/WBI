@@ -53,6 +53,16 @@ const subServiceSchema = new mongoose.Schema({
     default: 0,
     index: true
   },
+  requiredSkills: [{
+    type: String,
+    trim: true
+  }],
+  slaTargets: {
+    responseTimeMins: { type: Number, default: 30 },
+    assignmentTimeMins: { type: Number, default: 60 },
+    arrivalTimeMins: { type: Number, default: 120 },
+    completionTimeMins: { type: Number, default: 240 }
+  },
   isActive: {
     type: Boolean,
     default: true,

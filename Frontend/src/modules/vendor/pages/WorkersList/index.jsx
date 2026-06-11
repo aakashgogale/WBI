@@ -7,6 +7,7 @@ import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import { getWorkers, deleteWorker } from '../../services/workerService';
+import DigitalTeamEngineers from './DigitalTeamEngineers';
 
 const WorkersList = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const WorkersList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [isDigitalVendor, setIsDigitalVendor] = useState(false);
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -33,6 +35,16 @@ const WorkersList = () => {
   }, []);
 
   useEffect(() => {
+    try {
+      const vendorData = JSON.parse(localStorage.getItem('vendorData'));
+      const DIGITAL_CATEGORY_ID = '6a23fd15f2513e09a97eeb7f';
+      if (vendorData && vendorData.categories && vendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
+        setIsDigitalVendor(true);
+      }
+    } catch (e) {
+      console.error('Failed to parse vendor data', e);
+    }
+
     const loadWorkers = async () => {
       try {
         const response = await getWorkers();
@@ -41,6 +53,7 @@ const WorkersList = () => {
           id: w._id || w.id
         }));
         setWorkers(mapped || []);
+
       } catch (error) {
         console.error('Error loading workers:', error);
       } finally {
@@ -84,6 +97,10 @@ const WorkersList = () => {
 
     return matchesFilter && matchesSearch;
   });
+
+  if (isDigitalVendor) {
+    return <DigitalTeamEngineers />;
+  }
 
   return (
     <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>

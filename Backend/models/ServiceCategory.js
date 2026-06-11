@@ -39,6 +39,12 @@ const serviceCategorySchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  baseCommissionPercentage: {
+    type: Number,
+    default: 10,
+    min: 0,
+    max: 100
+  },
   displayOrder: {
     type: Number,
     default: 0,

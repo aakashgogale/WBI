@@ -1,836 +1,357 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, memo, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight } from 'react-icons/fi';
-import { FaWallet } from 'react-icons/fa';
-import { vendorTheme as themeColors } from '../../../../theme';
-import Header from '../../components/layout/Header';
+import React, { useState, useEffect, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FiBriefcase, FiShield, FiClipboard, FiCalendar, 
+  FiArrowUpRight, FiArrowDownRight 
+} from 'react-icons/fi';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 import { vendorDashboardService } from '../../services/dashboardService';
-import { acceptBooking, rejectBooking, assignWorker } from '../../services/bookingService';
-// Booking alert handled globally
-import { toast } from 'react-hot-toast';
-import { io } from 'socket.io-client';
-
-import { registerFCMToken } from '../../../../services/pushNotificationService';
 import LogoLoader from '../../../../components/common/LogoLoader';
-import StatsCards from './components/StatsCards';
-import PendingBookings from './components/PendingBookings';
-
-
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+import DigitalDashboard from './DigitalDashboard';
+import toast from 'react-hot-toast';
 
 const Dashboard = memo(() => {
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Helper function to convert hex to rgba
-  const hexToRgba = (hex, alpha) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
-
-  const [stats, setStats] = useState({
-    todayEarnings: 0,
-    activeJobs: 0,
-    pendingAlerts: 0,
-    workersOnline: 0,
-    totalEarnings: 0,
-    completedJobs: 0,
-    rating: 0,
-  });
-  const [vendorProfile, setVendorProfile] = useState({
-    name: 'Vendor Name',
-    businessName: 'Business Name',
-    photo: null,
-    service: []
-  });
-  const [recentJobs, setRecentJobs] = useState([]);
-  const [pendingBookings, setPendingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [globalConfig, setGlobalConfig] = useState({ maxSearchTime: 5, waveDuration: 60 });
+  const [stats, setStats] = useState({
+    totalProjects: 0,
+    activeAMC: 0,
+    pendingWorkOrders: 0,
+    totalEarnings: 0
+  });
+  const [recentWorkOrders, setRecentWorkOrders] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
+  const [projectStatusData, setProjectStatusData] = useState([
+    { name: 'Completed', value: 0 },
+    { name: 'In Progress', value: 0 },
+    { name: 'Pending', value: 0 }
+  ]);
+  const [isDigitalVendor, setIsDigitalVendor] = useState(false);
 
-  const ignoredBookingIds = useRef(new Set());
-
-  // Set background gradient
-  useLayoutEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const root = document.getElementById('root');
-    const bgStyle = themeColors.backgroundGradient;
-
-    if (html) html.style.background = bgStyle;
-    if (body) body.style.background = bgStyle;
-    if (root) root.style.background = bgStyle;
-
-    return () => {
-      if (html) html.style.background = '';
-      if (body) body.style.background = '';
-      if (root) root.style.background = '';
-
-    };
-  }, []);
-
-
-
-  // Process API response - extracted to avoid duplication
-  const processApiResponse = useCallback((response) => {
-    if (!response.success) return;
-
-    const { stats: apiStats, recentBookings, config } = response.data;
-    if (config) setGlobalConfig(config);
-
-    // Separate requested/searching bookings from other bookings
-    const requestedBookings = (recentBookings || []).filter(booking => {
-      const status = booking.status?.toLowerCase();
-      return status === 'requested' || status === 'searching';
-    });
-    const otherBookings = (recentBookings || []).filter(booking => {
-      const status = booking.status?.toLowerCase();
-      return status !== 'requested' && status !== 'searching';
-    });
-
-    // Build pending bookings map
-    const mergedMap = new Map();
-    const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
-    const vendorId = vendorData._id || vendorData.id;
-
-    requestedBookings.forEach(b => {
-      const id = String(b._id || b.id);
-
-      // Find distance for this vendor if available
-      let distance = 'N/A';
-      if (b.potentialVendors && vendorId) {
-        const potentialVendor = b.potentialVendors.find(pv =>
-          String(pv.vendorId?._id || pv.vendorId) === String(vendorId)
-        );
-        if (potentialVendor && potentialVendor.distance) {
-          distance = `${potentialVendor.distance.toFixed(1)} km`;
+  useEffect(() => {
+    // Check if the vendor belongs to the Digital Solutions category
+    try {
+      const vendorData = JSON.parse(localStorage.getItem('vendorData'));
+      // ID for 'Digital Solutions' category from DB
+      const DIGITAL_CATEGORY_ID = '6a23fd15f2513e09a97eeb7f';
+      
+      if (vendorData && vendorData.categories) {
+        if (vendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
+          setIsDigitalVendor(true);
         }
       }
+    } catch (e) {
+      console.error('Failed to parse vendor data', e);
+    }
 
-      mergedMap.set(id, {
-        ...b, // Spread first!
-        id,
-        serviceName: b.serviceName || b.serviceId?.title || 'New Booking Request',
-        serviceCategory: b.serviceCategory || b.serviceId?.categoryId?.title || 'General Service',
-        customerName: b.userId?.name || 'Customer',
-        location: {
-          address: b.address?.addressLine1 || 'Address not available',
-          distance: distance
-        },
-        // Prioritize vendorEarnings, fallback to 90% of finalAmount if it's not a free plan (finalAmount > 0)
-        price: (b.vendorEarnings > 0 ? b.vendorEarnings : (b.finalAmount > 0 ? b.finalAmount * 0.9 : 0)).toFixed(2),
-        vendorEarnings: b.vendorEarnings, // Ensure it's explicitly passed
-        timeSlot: {
-          date: new Date(b.scheduledDate).toLocaleDateString(),
-          time: b.scheduledTime || 'Time not set'
-        },
-        status: b.status,
-        expiresAt: b.expiresAt || (b.createdAt && config ? new Date(new Date(b.createdAt).getTime() + (config.maxSearchTime || 5) * 60000).toISOString() : null)
-      });
-    });
-
-    // Filter out locally ignored bookings
-    const finalMap = new Map();
-    mergedMap.forEach((value, key) => {
-      if (!ignoredBookingIds.current.has(key)) {
-        finalMap.set(key, value);
-      }
-    });
-
-    // Merge with local storage to avoid losing real-time updates that haven't hit API yet
-    const localPending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-    const apiPending = Array.from(finalMap.values());
-    const mergedPending = [...apiPending];
-
-    localPending.forEach(localJob => {
-      const id = String(localJob.id || localJob._id);
-      if (!mergedPending.find(job => String(job.id || job._id) === id) && !ignoredBookingIds.current.has(id)) {
-
-        const createdAt = localJob.createdAt ? new Date(localJob.createdAt).getTime() : Date.now();
-        const expiresAt = localJob.expiresAt || (localJob.createdAt && config ? new Date(createdAt + (config.maxSearchTime || 5) * 60000).toISOString() : null);
-        const isExpired = (expiresAt && new Date(expiresAt) <= new Date()) || (Date.now() - createdAt > 300000);
-
-        const lowerStatus = String(localJob.status || '').toLowerCase();
-
-        if (!isExpired && (lowerStatus === 'requested' || lowerStatus === 'searching')) {
-          mergedPending.push({
-            ...localJob,
-            id,
-            serviceName: localJob.serviceName || localJob.serviceId?.title || 'New Booking Request',
-            serviceCategory: localJob.serviceCategory || localJob.serviceId?.categoryId?.title || 'General Service',
-            customerName: localJob.customerName || localJob.userId?.name || 'Customer',
-            expiresAt
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const res = await vendorDashboardService.getDashboardStats();
+        if (res.success) {
+          const { stats: apiStats, recentWorkOrders: apiRecentWOs } = res.data;
+          
+          setStats({
+            totalProjects: apiStats?.totalProjects || 0,
+            activeAMC: apiStats?.activeAMC || 0,
+            pendingWorkOrders: apiStats?.pendingWorkOrders || 0,
+            totalEarnings: apiStats?.totalEarnings || 0
           });
+
+          setRecentWorkOrders(apiRecentWOs || []);
+
+          // Static data for charts for now, until real endpoints are populated with real history
+          setRevenueData([
+            { name: '20 May', revenue: 45000 },
+            { name: '21 May', revenue: 120000 },
+            { name: '22 May', revenue: 80000 },
+            { name: '23 May', revenue: 170000 },
+            { name: '24 May', revenue: 110000 },
+            { name: '25 May', revenue: 200000 },
+            { name: '26 May', revenue: 250000 }
+          ]);
+
+          setProjectStatusData([
+            { name: 'Completed', value: Math.floor(Math.random() * 10) + 5 },
+            { name: 'In Progress', value: Math.floor(Math.random() * 10) + 2 },
+            { name: 'Pending', value: Math.floor(Math.random() * 10) + 1 }
+          ]);
         }
+      } catch (error) {
+        console.error('Error fetching dashboard:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    setPendingBookings(mergedPending);
-    localStorage.setItem('vendorPendingJobs', JSON.stringify(mergedPending));
-
-    // Update stats
-    setStats({
-      todayEarnings: apiStats.vendorEarnings || 0,
-      activeJobs: apiStats.inProgressBookings || 0,
-      pendingAlerts: mergedPending.length,
-      workersOnline: apiStats.workersOnline || 0,
-      totalEarnings: apiStats.vendorEarnings || 0,
-      completedJobs: apiStats.completedBookings || 0,
-      rating: apiStats.rating || 0,
-    });
-
-    // Recent jobs (non-requested)
-    const recentJobsData = otherBookings.slice(0, 3).map(booking => ({
-      id: booking._id,
-      serviceType: booking.serviceId?.title || 'Service',
-      customerName: booking.userId?.name || 'Customer',
-      location: booking.address?.addressLine1 || 'Address not available',
-      price: (booking.vendorEarnings > 0 ? booking.vendorEarnings : (booking.finalAmount ? booking.finalAmount * 0.9 : 0)).toFixed(2),
-      vendorEarnings: booking.vendorEarnings,
-      timeSlot: {
-        date: new Date(booking.scheduledDate).toLocaleDateString(),
-        time: booking.scheduledTime || 'Time not set'
-      },
-      status: booking.status,
-      assignedTo: booking.workerId ? { name: booking.workerId.name } : null,
-    }));
-    setRecentJobs(recentJobsData);
-
-    // Load vendor profile from localStorage (once)
-    const profile = JSON.parse(localStorage.getItem('vendorData') || '{}');
-    setVendorProfile({
-      name: profile.name || 'Vendor Name',
-      businessName: profile.businessName || 'Business Name',
-      photo: profile.profilePhoto || null,
-      service: profile.service || []
-    });
+    fetchDashboardData();
   }, []);
 
-  // Main data loader - useCallback to prevent recreation
-  const loadDashboardData = useCallback(async (showSpinner = true) => {
-    try {
-      if (showSpinner) setLoading(true);
-      setError(null);
-
-      const response = await vendorDashboardService.getDashboardStats();
-      processApiResponse(response);
-    } catch (err) {
-      console.error('Error loading dashboard data:', err);
-      setError(String(err.message || 'Failed to load dashboard data'));
-    } finally {
-      setLoading(false);
-    }
-  }, [processApiResponse]);
-
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
-
-  // Check for redirected state (to open a specific alert modal)
-  useEffect(() => {
-    if (location.state?.openBookingId && pendingBookings.length > 0) {
-      const bId = String(location.state.openBookingId);
-      const booking = pendingBookings.find(b => String(b.id || b._id) === bId);
-      if (booking) {
-        setActiveAlertBookings(prev => {
-          if (prev.find(p => String(p.id || p._id) === bId)) return prev;
-          return [...prev, booking];
-        });
-        // Clear state to avoid reopening on refresh
-        navigate(location.pathname, { replace: true, state: {} });
-      }
-    }
-  }, [location.state, pendingBookings, navigate]);
-
-  // Listen for real-time updates via window events (dispatched by useAppNotifications)
-  useEffect(() => {
-    const handleUpdate = () => {
-      loadDashboardData(false); // false = don't show spinner for background refresh
-    };
-
-    // Ask for notification permission and register FCM
-    registerFCMToken('vendor', true).catch(err => console.error('FCM registration failed:', err));
-
-    // Listen for custom dashboard events from SocketContext
-    const handleShowAlert = (e) => {
-      // e.detail contains the new booking job
-      if (e.detail) {
-        // Also add to pending if not present
-        setPendingBookings(prev => {
-          if (prev.find(b => b.id === e.detail.id)) return prev;
-          return [e.detail, ...prev];
-        });
-      }
-    };
-
-    const handleRemoveBooking = (e) => {
-      if (e.detail?.id) {
-        const idToRemove = String(e.detail.id);
-
-        // Add to ignored list so it doesn't come back on next fetch
-        ignoredBookingIds.current.add(idToRemove);
-
-        // Remove from pending bookings state immediately
-        setPendingBookings(prev => prev.filter(b => String(b.id || b._id) !== idToRemove));
-
-        // Remove from recent jobs state
-        setRecentJobs(prev => prev.filter(b => String(b.id || b._id) !== idToRemove));
-
-        // Remove from localStorage
-        const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-        const updatedPending = pendingJobs.filter(job => String(job.id || job._id) !== idToRemove);
-        localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
-      }
-    };
-
-    window.addEventListener('vendorJobsUpdated', handleUpdate);
-    window.addEventListener('vendorStatsUpdated', handleUpdate);
-    window.addEventListener('showDashboardBookingAlert', handleShowAlert);
-    window.addEventListener('removeVendorBooking', handleRemoveBooking);
-
-    return () => {
-      window.removeEventListener('vendorJobsUpdated', handleUpdate);
-      window.removeEventListener('vendorStatsUpdated', handleUpdate);
-      window.removeEventListener('showDashboardBookingAlert', handleShowAlert);
-      window.removeEventListener('removeVendorBooking', handleRemoveBooking);
-    };
-  }, [loadDashboardData]);
-
-
-  // Alert Action Handlers
-  const handleAcceptAlert = async (bookingId) => {
-    try {
-      const response = await acceptBooking(bookingId);
-      if (response.success) {
-        toast.success('Booking accepted successfully!');
-        setPendingBookings(prev => prev.filter(b => String(b.id || b._id) !== String(bookingId)));
-
-        // Sync localStorage
-        const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-        const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(bookingId));
-        localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
-
-        window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bookingId } }));
-        window.dispatchEvent(new Event('vendorStatsUpdated'));
-      }
-    } catch (error) {
-      console.error('Error accepting:', error);
-      toast.error('Failed to accept booking');
-    }
-  };
-
-  const handleRejectAlert = async (bookingId) => {
-    try {
-      const response = await rejectBooking(bookingId);
-      if (response.success) {
-        toast.success('Booking rejected');
-        setPendingBookings(prev => prev.filter(b => String(b.id || b._id) !== String(bookingId)));
-
-        // Sync localStorage
-        const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-        const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(bookingId));
-        localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
-
-        window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bookingId } }));
-      }
-    } catch (error) {
-      console.error('Error rejecting:', error);
-      toast.error('Failed to reject booking');
-    }
-  };
-
-  const handleAssignAlert = async (bookingId) => {
-    navigate('/vendor/workers', { state: { bookingId } });
-  };
-
-  // Memoize quickActions to prevent recreation on every render
-  const quickActions = useMemo(() => [
-    {
-      title: 'Active Jobs',
-      icon: FiBriefcase,
-      color: '#00a6a6',
-      path: '/vendor/jobs',
-      count: stats.activeJobs,
-      subtitle: `${stats.activeJobs} running`,
-    },
-    {
-      title: 'Manage Workers',
-      icon: FiUsers,
-      color: '#29ad81',
-      path: '/vendor/workers',
-      count: stats.workersOnline,
-      subtitle: `${stats.workersOnline} online`,
-    },
-    {
-      title: 'Wallet',
-      icon: FaWallet,
-      color: '#F59E0B',
-      path: '/vendor/wallet',
-      subtitle: `₹${stats.totalEarnings.toLocaleString()} total`,
-    },
-  ], [stats.activeJobs, stats.workersOnline, stats.totalEarnings]);
-
-  const getStatusColor = (status) => {
-    const s = String(status).toLowerCase();
-    const statusColors = {
-      'accepted': '#3B82F6',
-      'confirmed': '#10B981',
-      'assigned': '#8B5CF6',
-      'journey_started': '#F59E0B',
-      'visited': '#F59E0B',
-      'in_progress': '#F59E0B',
-      'work_done': '#10B981',
-      'completed': '#10B981',
-      'worker_paid': '#06B6D4',
-      'settlement_pending': '#F97316',
-    };
-    return statusColors[s] || '#6B7280';
-  };
-
-  const getStatusLabel = (status) => {
-    const s = String(status).toLowerCase();
-    const labels = {
-      'requested': 'Requested',
-      'searching': 'Searching',
-      'accepted': 'Accepted',
-      'confirmed': 'Confirmed',
-      'assigned': 'Assigned',
-      'journey_started': 'On the way',
-      'visited': 'Visited',
-      'in_progress': 'In Progress',
-      'work_done': 'Work Done',
-      'completed': 'Completed',
-      'worker_paid': 'Payment Done',
-      'settlement_pending': 'Settlement',
-      'cancelled': 'Cancelled',
-      'rejected': 'Rejected'
-    };
-    return labels[s] || status;
-  };
-
-  // Show loading state
   if (loading) {
     return <LogoLoader />;
   }
 
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen pb-20 flex items-center justify-center" style={{ background: themeColors.backgroundGradient }}>
-        <div className="text-center px-6">
-          <div className="text-red-400 text-6xl mb-4">⚠️</div>
-          <h2 className="text-white text-xl font-semibold mb-2">Failed to Load Dashboard</h2>
-          <p className="text-gray-300 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
+  // Render highly-specialized Digital Dashboard if applicable
+  if (isDigitalVendor) {
+    return <DigitalDashboard />;
   }
 
-  // Show error state
-  if (error && error.length > 0 && !loading) {
-    return (
-      <div className="min-h-screen pb-20 flex items-center justify-center" style={{ background: themeColors.backgroundGradient }}>
-        <div className="text-center px-6">
-          <div className="text-red-400 text-6xl mb-4">⚠️</div>
-          <h2 className="text-white text-xl font-semibold mb-2">Failed to Load Dashboard</h2>
-          <p className="text-gray-300 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const PIE_COLORS = ['#10B981', '#3B82F6', '#F59E0B'];
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="Dashboard" showBack={false} notificationCount={stats.pendingAlerts} />
+    <div className="max-w-7xl mx-auto space-y-6">
+      
+      {/* Header Info */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p className="text-gray-500">Welcome back to your Vendor Panel 👋</p>
+      </div>
 
-      <main className="pt-0">
-        {/* Profile Card Section */}
-        <div className="px-4 pt-4 pb-2">
-          <div
-            className="rounded-2xl p-4 cursor-pointer active:scale-98 transition-all duration-200 relative overflow-hidden"
-            onClick={() => navigate('/vendor/profile')}
-            style={{
-              background: themeColors.button,
-              border: `2px solid ${themeColors.button}`,
-            }}
-          >
-            {/* Decorative Pattern */}
-            <div
-              className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
-              style={{
-                background: `radial-gradient(circle, ${themeColors.button} 0%, transparent 70%)`,
-                transform: 'translate(20px, -20px)',
-              }}
-            />
-
-            <div className="relative z-10 flex items-center gap-3">
-              {/* Profile Photo */}
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.button}dd 100%)`,
-                  border: `2.5px solid #FFFFFF`,
-                }}
-              >
-                {vendorProfile.photo ? (
-                  <img
-                    src={vendorProfile.photo}
-                    alt={vendorProfile.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <FiUser className="w-7 h-7" style={{ color: '#FFFFFF' }} />
-                )}
-              </div>
-
-              {/* Profile Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-lg font-bold uppercase tracking-wider mb-0.5" style={{
-                  color: '#FFFFFF',
-                  textShadow: `1px 1px 0px rgba(0, 0, 0, 0.2)`,
-                  letterSpacing: '0.12em',
-                }}>
-                  WELCOME !
-                </p>
-                <h2 className="text-base font-bold text-white truncate mb-0.5">{vendorProfile.name}</h2>
-                <p className="text-xs text-white truncate font-medium opacity-90">{vendorProfile.businessName}</p>
-              </div>
-
-              {/* Arrow Icon */}
-              <div
-                className="p-2.5 rounded-lg flex-shrink-0"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.35)',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                }}
-              >
-                <FiChevronRight className="w-6 h-6" style={{ color: '#FFFFFF', fontWeight: 'bold' }} />
-              </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Total Projects */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Total Projects</p>
+              <h3 className="text-2xl font-bold text-gray-800">{stats.totalProjects}</h3>
             </div>
+            <div className="p-2.5 bg-[#10AFA5]/10 rounded-lg">
+              <FiBriefcase className="w-5 h-5 text-[#10AFA5]" />
+            </div>
+          </div>
+          <div className="flex items-center text-sm">
+            <FiArrowUpRight className="text-green-500 mr-1" />
+            <span className="text-green-500 font-medium">+12%</span>
+            <span className="text-gray-400 ml-1">vs last week</span>
           </div>
         </div>
 
-        {/* Incomplete Profile Prompt */}
-        {(!vendorProfile.service || vendorProfile.service.length === 0) && (
-          <div className="px-4 pt-2 -mb-2">
-            <div
-              onClick={() => navigate('/vendor/profile')}
-              className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r shadow-sm cursor-pointer hover:bg-orange-100 transition-colors"
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <FiClock className="h-5 w-5 text-orange-500" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-bold text-orange-700">Profile Incomplete</p>
-                  <p className="text-sm text-orange-600">
-                    Add services to your profile to start receiving bookings.
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <FiArrowRight className="h-4 w-4 text-orange-500" />
-                </div>
-              </div>
+        {/* Active AMC */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Active AMC</p>
+              <h3 className="text-2xl font-bold text-gray-800">{stats.activeAMC}</h3>
+            </div>
+            <div className="p-2.5 bg-indigo-100 rounded-lg">
+              <FiShield className="w-5 h-5 text-indigo-600" />
             </div>
           </div>
-        )}
+          <div className="flex items-center text-sm">
+            <FiArrowUpRight className="text-green-500 mr-1" />
+            <span className="text-green-500 font-medium">+8%</span>
+            <span className="text-gray-400 ml-1">vs last week</span>
+          </div>
+        </div>
 
-        {/* Stats Cards - Optimized Component */}
-        <StatsCards stats={stats} />
-
-        {/* Content Section (below gradient) */}
-        <div className="px-4 py-4 space-y-4">
-          {/* Pending Booking Alerts - Optimized Component */}
-          <PendingBookings
-            bookings={pendingBookings}
-            maxSearchTimeMins={globalConfig.maxSearchTime}
-            setPendingBookings={setPendingBookings}
-            setActiveAlertBooking={(booking) => {
-              // Dispatch to global alert via CustomEvent
-              window.dispatchEvent(new CustomEvent('showDashboardBookingAlert', { detail: booking }));
-            }}
-          />
-
-          {/* Performance Metrics */}
-          <div>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Performance</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Completed Jobs Card */}
-              <div
-                className="rounded-2xl shadow-lg relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%)',
-                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(16, 185, 129, 0.1), 0 0 0 2px rgba(16, 185, 129, 0.2)',
-                  border: '2px solid rgba(16, 185, 129, 0.3)',
-                }}
-              >
-                {/* Left border accent */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
-                  style={{
-                    background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)',
-                  }}
-                />
-                {/* Top Border with Heading */}
-                <div
-                  className="w-full py-3 px-4 rounded-t-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
-                  }}
-                >
-                  <p className="text-base font-bold text-white text-center">Completed</p>
-                </div>
-                {/* Icon at top left - just below heading */}
-                <div
-                  className="absolute top-14 left-4 p-3 rounded-xl z-10"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.2) 100%)',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2)',
-                    border: '2px solid rgba(16, 185, 129, 0.4)',
-                  }}
-                >
-                  <FiCheckCircle className="w-7 h-7" style={{ color: '#10B981' }} />
-                </div>
-                {/* Content */}
-                <div className="p-5 pt-16">
-                  <p className="text-4xl font-bold mb-2 text-center" style={{ color: '#10B981' }}>
-                    {stats.completedJobs}
-                  </p>
-                  <p className="text-sm text-gray-600 font-semibold text-center">Total jobs</p>
-                </div>
-              </div>
-
-              {/* Rating Card */}
-              <div
-                className="rounded-2xl shadow-lg relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #FFFBEB 100%)',
-                  boxShadow: '0 8px 24px rgba(245, 158, 11, 0.15), 0 4px 12px rgba(245, 158, 11, 0.1), 0 0 0 2px rgba(245, 158, 11, 0.2)',
-                  border: '2px solid rgba(245, 158, 11, 0.3)',
-                }}
-              >
-                {/* Left border accent */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
-                  style={{
-                    background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)',
-                  }}
-                />
-                {/* Top Border with Heading */}
-                <div
-                  className="w-full py-3 px-4 rounded-t-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-                    boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
-                  }}
-                >
-                  <p className="text-base font-bold text-white text-center">Rating</p>
-                </div>
-                {/* Icon at top left - just below heading */}
-                <div
-                  className="absolute top-14 left-4 p-3 rounded-xl z-10"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.2) 100%)',
-                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2)',
-                    border: '2px solid rgba(245, 158, 11, 0.4)',
-                  }}
-                >
-                  <FiTrendingUp className="w-7 h-7" style={{ color: '#F59E0B' }} />
-                </div>
-                {/* Content */}
-                <div className="p-5 pt-16">
-                  <p className="text-4xl font-bold mb-2 text-center" style={{ color: '#F59E0B' }}>
-                    {stats.rating > 0 ? stats.rating.toFixed(1) : 'N/A'}
-                  </p>
-                  <p className="text-sm text-gray-600 font-semibold text-center">Average rating</p>
-                </div>
-              </div>
+        {/* Pending Work Orders */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Pending Work Orders</p>
+              <h3 className="text-2xl font-bold text-gray-800">{stats.pendingWorkOrders}</h3>
+            </div>
+            <div className="p-2.5 bg-orange-100 rounded-lg">
+              <FiClipboard className="w-5 h-5 text-orange-500" />
             </div>
           </div>
+          <div className="flex items-center text-sm">
+            <FiArrowUpRight className="text-green-500 mr-1" />
+            <span className="text-green-500 font-medium">+15%</span>
+            <span className="text-gray-400 ml-1">vs last week</span>
+          </div>
+        </div>
 
-          {/* Recent Jobs - List View */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800">Active Jobs</h2>
-              {recentJobs.length > 0 && (
-                <button
-                  onClick={() => navigate('/vendor/jobs')}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 active:scale-95"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.button}dd 100%)`,
-                    color: '#FFFFFF',
-                    boxShadow: `0 4px 12px ${hexToRgba(themeColors.button, 0.3)}, 0 2px 6px ${hexToRgba(themeColors.button, 0.2)}`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = `0 6px 16px ${hexToRgba(themeColors.button, 0.4)}, 0 3px 8px ${hexToRgba(themeColors.button, 0.3)}`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = `0 4px 12px ${hexToRgba(themeColors.button, 0.3)}, 0 2px 6px ${hexToRgba(themeColors.button, 0.2)}`;
-                  }}
-                >
-                  View All
-                </button>
-              )}
+        {/* Total Earnings */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Total Earnings</p>
+              <h3 className="text-2xl font-bold text-gray-800">₹{stats.totalEarnings.toLocaleString()}</h3>
             </div>
-            {recentJobs.length > 0 ? (
-              <div className="space-y-3">
-                {recentJobs.map((job, index) => {
-                  // Alternating colors
-                  const isDarkBlue = index % 2 === 0;
-                  const accentColor = isDarkBlue ? '#001947' : '#406788';
+            <div className="p-2.5 bg-green-100 rounded-lg">
+              <span className="text-green-600 font-bold text-lg">₹</span>
+            </div>
+          </div>
+          <div className="flex items-center text-sm">
+            <FiArrowUpRight className="text-green-500 mr-1" />
+            <span className="text-green-500 font-medium">+18%</span>
+            <span className="text-gray-400 ml-1">vs last week</span>
+          </div>
+        </div>
 
-                  return (
-                    <div
-                      key={job.id}
-                      onClick={() => navigate(`/vendor/booking/${job.id}`)}
-                      className="bg-white rounded-xl shadow-lg cursor-pointer active:scale-98 transition-all duration-200 relative overflow-hidden"
-                      style={{
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08)',
-                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                      }}
-                    >
-                      {/* Left accent border */}
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl"
-                        style={{
-                          background: `linear-gradient(180deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
-                        }}
-                      />
+      </div>
 
-                      {/* Compact Content - All in one row */}
-                      <div className="px-3 py-2.5">
-                        <div className="flex items-center gap-3">
-                          {/* Profile Image Circle */}
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                            style={{
-                              border: `2.5px solid ${accentColor}40`,
-                              boxShadow: `0 2px 8px ${hexToRgba(accentColor, 0.25)}, inset 0 1px 0 rgba(255, 255, 255, 0.4)`,
-                              background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}10 100%)`,
-                            }}
-                          >
-                            <FiUser className="w-5 h-5" style={{ color: accentColor }} />
-                          </div>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Earnings Overview Chart */}
+        <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Earnings Overview</h3>
+            <select className="bg-gray-50 border border-gray-200 text-gray-600 text-sm rounded-lg focus:ring-[#10AFA5] focus:border-[#10AFA5] px-3 py-1.5 outline-none">
+              <option>This Week</option>
+              <option>Last Week</option>
+              <option>This Month</option>
+            </select>
+          </div>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10AFA5" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10AFA5" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => val >= 100000 ? `${(val/100000).toFixed(1)}L` : `${val/1000}k`} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  formatter={(value) => [`₹${value.toLocaleString()}`, 'Earnings']}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="#10AFA5" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-                          {/* Main Content */}
-                          <div className="flex-1 min-w-0">
-                            {/* Name and Service in one line */}
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <p className="text-sm font-bold text-gray-800 truncate">{job.customerName}</p>
-                              <span
-                                className="text-xs font-bold px-2 py-0.5 rounded-lg flex-shrink-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
-                                  color: '#FFFFFF',
-                                  boxShadow: `0 2px 5px ${hexToRgba(accentColor, 0.3)}`,
-                                }}
-                              >
-                                {job.serviceType || 'Service'}
-                              </span>
-                            </div>
-
-                            {/* Address, Time, Status in one line */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <div
-                                className="flex items-center gap-1 px-2 py-0.5 rounded"
-                                style={{
-                                  background: 'rgba(0, 166, 166, 0.1)',
-                                  border: '1px solid rgba(0, 166, 166, 0.2)',
-                                }}
-                              >
-                                <FiMapPin className="w-3 h-3" style={{ color: themeColors.button }} />
-                                <span className="text-xs font-semibold text-gray-700 truncate max-w-[100px]">{job.location}</span>
-                              </div>
-                              <div
-                                className="flex items-center gap-1 px-2 py-0.5 rounded"
-                                style={{
-                                  background: 'rgba(245, 158, 11, 0.1)',
-                                  border: '1px solid rgba(245, 158, 11, 0.2)',
-                                }}
-                              >
-                                <FiClock className="w-3 h-3" style={{ color: '#F59E0B' }} />
-                                <span className="text-xs font-semibold text-gray-700">{job.time}</span>
-                              </div>
-                              <span
-                                className="text-xs font-bold px-2 py-0.5 rounded-full"
-                                style={{
-                                  background: `${accentColor}15`,
-                                  color: accentColor,
-                                  border: `1px solid ${accentColor}30`,
-                                }}
-                              >
-                                {getStatusLabel(job.status)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Navigate Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/vendor/booking/${job.id}`);
-                            }}
-                            className="p-2 rounded-lg flex-shrink-0 transition-all duration-300 active:scale-95"
-                            style={{
-                              background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
-                              boxShadow: `0 3px 10px ${hexToRgba(accentColor, 0.3)}, 0 2px 5px ${hexToRgba(accentColor, 0.2)}`,
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'scale(1.1)';
-                              e.currentTarget.style.boxShadow = `0 5px 14px ${hexToRgba(accentColor, 0.4)}, 0 3px 7px ${hexToRgba(accentColor, 0.3)}`;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
-                              e.currentTarget.style.boxShadow = `0 3px 10px ${hexToRgba(accentColor, 0.3)}, 0 2px 5px ${hexToRgba(accentColor, 0.2)}`;
-                            }}
-                          >
-                            <FiArrowRight className="w-4 h-4" style={{ color: '#FFFFFF' }} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* Project Status Pie Chart */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Project Status</h3>
+          <div className="h-[200px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={projectStatusData}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {projectStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* Center Text */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-bold text-gray-800">
+                {projectStatusData.reduce((acc, curr) => acc + curr.value, 0)}
+              </span>
+              <span className="text-xs text-gray-500 font-medium">Total</span>
+            </div>
+          </div>
+          {/* Custom Legend */}
+          <div className="mt-6 space-y-3">
+            {projectStatusData.map((entry, index) => (
+              <div key={entry.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></span>
+                  <span className="text-sm font-medium text-gray-600">{entry.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gray-800">{entry.value}</span>
+                  <span className="text-xs text-gray-400 w-8 text-right">
+                    {Math.round((entry.value / projectStatusData.reduce((acc, curr) => acc + curr.value, 0)) * 100)}%
+                  </span>
+                </div>
               </div>
-            ) : (
-              <div
-                className="bg-white rounded-xl p-6 shadow-md text-center"
-                style={{
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                }}
-              >
-                <FiBriefcase className="w-12 h-12 mx-auto mb-3" style={{ color: '#D1D5DB' }} />
-                <p className="text-sm text-gray-600 mb-1">No active jobs</p>
-                <p className="text-xs text-gray-500">New bookings will appear here</p>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Lists Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Recent Work Orders */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Recent Work Orders</h3>
+            <button onClick={() => navigate('/vendor/work-orders')} className="text-[#10AFA5] text-sm font-medium hover:underline">
+              View All
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {recentWorkOrders.length > 0 ? recentWorkOrders.map((wo, i) => (
+              <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100 cursor-pointer" onClick={() => navigate(`/vendor/work-orders/${wo._id}`)}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                    <FiClipboard className="text-indigo-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-800">{wo.workOrderId || 'WO-Unknown'}</h4>
+                    <p className="text-xs text-gray-500">{wo.userId?.name || 'Customer'} • {wo.type || 'Maintenance'}</p>
+                  </div>
+                </div>
+                <div>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                    wo.status === 'Pending' ? 'bg-orange-100 text-orange-600' :
+                    wo.status === 'In Progress' ? 'bg-blue-100 text-blue-600' :
+                    wo.status === 'Assigned' ? 'bg-indigo-100 text-indigo-600' :
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {wo.status}
+                  </span>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                No recent work orders found.
               </div>
             )}
           </div>
         </div>
-      </main>
 
+        {/* Upcoming Schedules */}
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Upcoming Schedules</h3>
+            <button className="text-[#10AFA5] text-sm font-medium hover:underline">
+              View Calendar
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {[1, 2, 3].map((item, i) => (
+              <div key={i} className="flex items-start gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100 cursor-pointer">
+                <div className="flex flex-col items-center justify-center w-12 pt-1">
+                  <span className="text-[#10AFA5] font-bold text-lg leading-none">{27 + i}</span>
+                  <span className="text-[#10AFA5] text-xs font-medium">May</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold text-gray-800">Axis Bank - Connaught Place</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">Preventive Maintenance</p>
+                </div>
+                <div className="text-right pt-1">
+                  <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                    10:00 AM
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 });
 
+Dashboard.displayName = 'VendorDashboard';
 export default Dashboard;

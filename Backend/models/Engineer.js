@@ -22,6 +22,11 @@ const engineerSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  emergencyContactNumber: {
+    type: String,
+    trim: true,
+    default: null
+  },
   role: {
     type: String,
     enum: ['engineer'],
@@ -112,6 +117,15 @@ const engineerSchema = new mongoose.Schema({
       type: String, // Cloudinary URL (Back)
     }
   },
+  policeVerification: {
+    status: {
+      type: String,
+      enum: ['Pending', 'Verified', 'Rejected', 'Not Submitted'],
+      default: 'Not Submitted'
+    },
+    document: { type: String, default: null },
+    verifiedAt: { type: Date, default: null }
+  },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
@@ -125,6 +139,10 @@ const engineerSchema = new mongoose.Schema({
   serviceCategories: [{
     type: String
   }],
+  primaryCategory: {
+    type: String,
+    default: null
+  },
   primarySkill: {
     type: String,
     default: ''
@@ -232,6 +250,11 @@ const engineerSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
     updatedAt: Date
+  },
+  // GeoJSON for ultra-fast $near queries (Emergency matching)
+  geoLocation: {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]
   },
   // Bank Details
   bankDetails: {
@@ -371,6 +394,7 @@ const engineerSchema = new mongoose.Schema({
 engineerSchema.index({ status: 1 });
 engineerSchema.index({ serviceCategories: 1 });
 engineerSchema.index({ vendorId: 1 });
+engineerSchema.index({ geoLocation: '2dsphere' });
 
 // Hash password before saving
 engineerSchema.pre('save', async function (next) {
