@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import LogoLoader from '../components/common/LogoLoader';
 
 
 // Lazy loaded module routes
@@ -28,7 +29,7 @@ const AppRoutes = () => {
   return (
     <Routes location={location}>
       <Route path="/Home" element={
-        <Suspense fallback={null}>
+        <Suspense fallback={<LogoLoader fullScreen={true} />}>
           <LandingPage />
         </Suspense>
       } />
@@ -36,31 +37,31 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/user" replace />} />
 
       <Route path="/user/*" element={
-        <Suspense fallback={null}>
+        <Suspense fallback={<LogoLoader fullScreen={true} />}>
           <UserRoutes />
         </Suspense>
       } />
 
       <Route path="/vendor/*" element={
-        <Suspense fallback={null}>
+        <Suspense fallback={<LogoLoader fullScreen={true} />}>
           <VendorRoutes />
         </Suspense>
       } />
 
       <Route path="/worker/*" element={
-        <Suspense fallback={null}>
+        <Suspense fallback={<LogoLoader fullScreen={true} />}>
           <WorkerRoutes />
         </Suspense>
       } />
       
       <Route path="/engineer/*" element={
-        <Suspense fallback={null}>
+        <Suspense fallback={<LogoLoader fullScreen={true} />}>
           <EngineerRoutes />
         </Suspense>
       } />
 
       <Route path="/admin/*" element={
-        <Suspense fallback={null}>
+        <Suspense fallback={<LogoLoader fullScreen={true} />}>
           <AdminRoutes />
         </Suspense>
       } />

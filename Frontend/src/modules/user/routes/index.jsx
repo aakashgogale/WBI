@@ -118,8 +118,11 @@ const ElectricalSafetyTestEnquiry = lazyLoad(() => import('../pages/ElectricalSa
 const HcPreventiveMaintenanceEnquiry = lazyLoad(() => import('../pages/HcPreventiveMaintenanceEnquiry'));
 const HcAmcEnquiry = lazyLoad(() => import('../pages/HcAmcEnquiry'));
 
+import LogoLoader from '../../../components/common/LogoLoader';
 const LoadingFallback = () => (
-  <div className="min-h-screen"></div>
+  <div className="min-h-screen flex items-center justify-center">
+    <LogoLoader inline={true} />
+  </div>
 );
 
 // Import Live Booking Card

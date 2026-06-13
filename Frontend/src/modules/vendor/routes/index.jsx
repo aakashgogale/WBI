@@ -70,8 +70,11 @@ const DigitalProfile = lazyLoad(() => import('../pages/Profile/DigitalProfile'))
 const DigitalTeamEngineers = lazyLoad(() => import('../pages/WorkersList/DigitalTeamEngineers'));
 const DigitalServices = lazyLoad(() => import('../pages/DigitalServices/DigitalServices'));
 
+import LogoLoader from '../../../components/common/LogoLoader';
 const LoadingFallback = () => (
-  <div className="min-h-screen"></div>
+  <div className="min-h-screen flex items-center justify-center">
+    <LogoLoader inline={true} />
+  </div>
 );
 
 const VendorRoutes = () => {

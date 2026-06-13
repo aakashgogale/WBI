@@ -65,7 +65,9 @@ const Wallet = lazyLoad(() => import('../pages/Wallet'));
 const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
 
 const LoadingFallback = () => (
-  <div className="min-h-screen"></div>
+  <div className="min-h-screen flex items-center justify-center">
+    <LogoLoader inline={true} />
+  </div>
 );
 
 const WorkerRoutes = () => {

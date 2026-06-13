@@ -69,7 +69,9 @@ const Schedule = lazyLoad(() => import('../pages/Schedule'));
 const Proposals = lazyLoad(() => import('../pages/Proposals'));
 
 const LoadingFallback = () => (
-  <div className="min-h-screen"></div>
+  <div className="min-h-screen flex items-center justify-center">
+    <LogoLoader inline={true} />
+  </div>
 );
 
 const EngineerRoutes = () => {
