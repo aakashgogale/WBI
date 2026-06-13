@@ -9,7 +9,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { vendorDashboardService } from '../../services/dashboardService';
-import LogoLoader from '../../../../components/common/LogoLoader';
+import { SkeletonDashboardStats, SkeletonList, SkeletonLine } from '../../../../components/common/SkeletonLoaders';
 import DigitalDashboard from './DigitalDashboard';
 import toast from 'react-hot-toast';
 
@@ -92,7 +92,19 @@ const Dashboard = memo(() => {
   }, []);
 
   if (loading) {
-    return <LogoLoader />;
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div>
+          <SkeletonLine width="150px" height="2rem" className="mb-2" />
+          <SkeletonLine width="250px" height="1rem" />
+        </div>
+        <SkeletonDashboardStats />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4">
+          <SkeletonList count={3} />
+          <SkeletonList count={3} />
+        </div>
+      </div>
+    );
   }
 
   // Render highly-specialized Digital Dashboard if applicable

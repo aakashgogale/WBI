@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle, FiInfo } from 'react-icons/fi';
 import { MdStar } from 'react-icons/md';
@@ -28,6 +29,7 @@ const toAssetUrl = (url) => {
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const category = location.state?.category || null;
   const plan = location.state?.plan || null;
   const { fetchCart: fetchCartGlobal, clearCart: clearCartGlobal, removeCategoryItems: removeCategoryGlobal } = useCart();
@@ -451,13 +453,21 @@ const Checkout = () => {
         const handleAutoCancel = async () => {
           try {
             await bookingService.cancel(bookingRequest._id, 'No vendors found after search timeout');
-            setTimeout(() => {
-              window.location.href = window.location.href;
+            setTimeout(async () => {
+              await queryClient.invalidateQueries();
+              setCurrentStep('details');
+              setBookingRequest(null);
+              setSearchingVendors(false);
+              setShowVendorModal(false);
             }, 3000); // 3 second delay to let the user see the error
           } catch (err) {
             console.error('Auto-cancel failed:', err);
-            setTimeout(() => {
-              window.location.href = window.location.href;
+            setTimeout(async () => {
+              await queryClient.invalidateQueries();
+              setCurrentStep('details');
+              setBookingRequest(null);
+              setSearchingVendors(false);
+              setShowVendorModal(false);
             }, 3000);
           }
         };
@@ -638,12 +648,20 @@ const Checkout = () => {
           const cancelAndRefresh = async () => {
             try {
               await bookingService.cancel(bookingId, 'Initial search found no available vendors');
-              setTimeout(() => {
-                window.location.href = window.location.href;
+              setTimeout(async () => {
+                await queryClient.invalidateQueries();
+                setCurrentStep('details');
+                setBookingRequest(null);
+                setSearchingVendors(false);
+                setShowVendorModal(false);
               }, 2000);
             } catch (err) {
               console.error('Auto-cancel failed:', err);
-              window.location.href = window.location.href;
+              await queryClient.invalidateQueries();
+              setCurrentStep('details');
+              setBookingRequest(null);
+              setSearchingVendors(false);
+              setShowVendorModal(false);
             }
           };
           cancelAndRefresh();
@@ -651,7 +669,12 @@ const Checkout = () => {
           // Fallback if ID is missing for some reason
           setCurrentStep('details');
           toast.error('Search failed. Please try again.');
-          setTimeout(() => window.location.href = window.location.href, 2000);
+          setTimeout(async () => {
+            await queryClient.invalidateQueries();
+            setBookingRequest(null);
+            setSearchingVendors(false);
+            setShowVendorModal(false);
+          }, 2000);
         }
       } else {
         // Move to waiting state - alerts sent to nearby vendors

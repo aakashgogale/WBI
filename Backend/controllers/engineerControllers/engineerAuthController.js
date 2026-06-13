@@ -164,7 +164,7 @@ const register = async (req, res) => {
       ...customFields // Capture all other dynamic fields here
     } = req.body;
 
-    const currentRole = (role || roleType || '').toLowerCase();
+    const currentRole = (roleType || role || '').toLowerCase();
     if (currentRole !== 'engineer') {
       return res.status(400).json({
         success: false,

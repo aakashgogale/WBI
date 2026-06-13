@@ -31,6 +31,7 @@ import SearchOverlay from './components/SearchOverlay';
 import PopularBrandsWeService from './components/PopularBrandsWeService';
 import InstantBookingBanner from './components/InstantBookingBanner';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import { SkeletonLine, SkeletonCircle, SkeletonCard } from '../../../../components/common/SkeletonLoaders';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
 import ScrapPromotionCard from './components/ScrapPromotionCard';
 import DebugConsole from '../../components/common/DebugConsole';
@@ -438,7 +439,48 @@ const Home = () => {
   };
 
   if (loading) {
-    return <LogoLoader />;
+    return (
+      <div className="min-h-screen bg-[#F8FCFC] pt-4 px-4 space-y-6 max-w-lg lg:max-w-2xl mx-auto pb-20">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <SkeletonCircle size="2.5rem" />
+            <div className="space-y-2">
+              <SkeletonLine width="60px" height="12px" />
+              <SkeletonLine width="120px" height="16px" />
+            </div>
+          </div>
+          <SkeletonCircle size="2.5rem" />
+        </div>
+        
+        {/* Search Bar Skeleton */}
+        <SkeletonLine width="100%" height="3.5rem" className="rounded-xl" />
+
+        {/* Categories Skeleton */}
+        <div className="grid grid-cols-4 gap-4 mt-6">
+          {[1,2,3,4,5,6,7,8].map(i => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <SkeletonCircle size="4rem" />
+              <SkeletonLine width="60px" height="10px" />
+            </div>
+          ))}
+        </div>
+
+        {/* Banner Skeleton */}
+        <SkeletonLine width="100%" height="160px" className="rounded-2xl mt-6" />
+
+        {/* Horizontal Cards Skeleton */}
+        <div className="mt-8 space-y-4">
+          <SkeletonLine width="180px" height="24px" className="mb-2" />
+          <div className="flex gap-4 overflow-hidden">
+             <SkeletonCard className="w-64 h-40 flex-shrink-0" />
+             <SkeletonCard className="w-64 h-40 flex-shrink-0" />
+          </div>
+        </div>
+        
+        {/* Bottom Nav Skeleton space */}
+      </div>
+    );
   }
 
   return (
