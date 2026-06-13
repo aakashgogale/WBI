@@ -48,6 +48,13 @@ const categorySchema = new mongoose.Schema({
     ref: 'City',
     index: true
   }],
+  // Provider Routing
+  providerType: {
+    type: String,
+    enum: ['vendor', 'worker', 'both'],
+    default: 'vendor',
+    index: true
+  },
   // Additional backend fields
   description: {
     type: String,

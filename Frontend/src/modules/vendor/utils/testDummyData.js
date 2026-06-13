@@ -37,8 +37,8 @@ if (typeof window !== 'undefined') {
 
     // Reload page after a delay
     setTimeout(() => {
-      window.location.reload();
-    }, 500);
+      window.location.href = window.location.href;
+    }, 1500);
   };
 
   // Check vendor data in localStorage

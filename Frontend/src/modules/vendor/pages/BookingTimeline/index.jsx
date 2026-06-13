@@ -46,66 +46,65 @@ const BookingTimeline = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const loadBooking = async () => {
-      try {
-        const response = await getBookingById(id);
-        const apiData = response.data || response;
+  const loadBooking = async () => {
+    try {
+      const response = await getBookingById(id);
+      const apiData = response.data || response;
 
-        const isSelfJob = apiData.assignedAt && !apiData.workerId;
-        const mappedBooking = {
-          ...apiData,
-          id: apiData._id || apiData.id,
-          isSelfJob,
-          assignedTo: apiData.workerId ? { name: apiData.workerId.name } : (apiData.assignedAt ? { name: 'You (Self)' } : null),
-          location: {
-            address: apiData.address?.addressLine1 || apiData.location?.address || 'Address not available',
-            lat: apiData.address?.lat || apiData.location?.lat,
-            lng: apiData.address?.lng || apiData.location?.lng
-          },
-          status: apiData.status,
-          // Timeline mapping if backend supports it, otherwise derived from status/timestamps
-          timeline: [
-            { stage: 1, timestamp: apiData.createdAt },
-            { stage: 2, timestamp: apiData.acceptedAt },
-            { stage: 3, timestamp: apiData.assignedAt },
-            { stage: 4, timestamp: apiData.startedAt }, // Assuming started means visited for now? Or keep null
-            { stage: 5, timestamp: apiData.completedAt }, // Simplified mapping
-          ]
-        };
-        setBooking(mappedBooking);
+      const isSelfJob = apiData.assignedAt && !apiData.workerId;
+      const mappedBooking = {
+        ...apiData,
+        id: apiData._id || apiData.id,
+        isSelfJob,
+        assignedTo: apiData.workerId ? { name: apiData.workerId.name } : (apiData.assignedAt ? { name: 'You (Self)' } : null),
+        location: {
+          address: apiData.address?.addressLine1 || apiData.location?.address || 'Address not available',
+          lat: apiData.address?.lat || apiData.location?.lat,
+          lng: apiData.address?.lng || apiData.location?.lng
+        },
+        status: apiData.status,
+        // Timeline mapping if backend supports it, otherwise derived from status/timestamps
+        timeline: [
+          { stage: 1, timestamp: apiData.createdAt },
+          { stage: 2, timestamp: apiData.acceptedAt },
+          { stage: 3, timestamp: apiData.assignedAt },
+          { stage: 4, timestamp: apiData.startedAt }, // Assuming started means visited for now? Or keep null
+          { stage: 5, timestamp: apiData.completedAt }, // Simplified mapping
+        ]
+      };
+      setBooking(mappedBooking);
 
-        // Determine current stage based on status
-        // Determine current stage based on status
-        const statusMap = {
-          'requested': 1,
-          'searching': 1,
-          'confirmed': 2,
-          'assigned': 3,
-          'journey_started': 4,
-          'visited': 5,
-          'in_progress': 5,
-          'work_done': 7,
-          'completed': 8,
-        };
+      // Determine current stage based on status
+      const statusMap = {
+        'requested': 1,
+        'searching': 1,
+        'confirmed': 2,
+        'assigned': 3,
+        'journey_started': 4,
+        'visited': 5,
+        'in_progress': 5,
+        'work_done': 7,
+        'completed': 8,
+      };
 
-        const isActuallyPaid = apiData.isWorkerPaid || apiData.workerPaymentStatus === 'PAID' || apiData.workerPaymentStatus === 'SUCCESS';
-        const isSettled = apiData.finalSettlementStatus === 'DONE';
+      const isActuallyPaid = apiData.isWorkerPaid || apiData.workerPaymentStatus === 'PAID' || apiData.workerPaymentStatus === 'SUCCESS';
+      const isSettled = apiData.finalSettlementStatus === 'DONE';
 
-        // Custom logic for later stages
-        let stage = statusMap[apiData.status] || 2;
-        if (apiData.status === 'completed') {
-          if (isSettled) stage = 10; // Booking Complete
-          else if (isActuallyPaid || isSelfJob) stage = 9; // Final Settlement (Skip Pay Worker for self)
-          else stage = 8; // Pay Worker
-        }
-
-        setCurrentStage(stage);
-      } catch (error) {
-        console.error('Error loading booking:', error);
+      // Custom logic for later stages
+      let stage = statusMap[apiData.status] || 2;
+      if (apiData.status === 'completed') {
+        if (isSettled) stage = 10; // Booking Complete
+        else if (isActuallyPaid || isSelfJob) stage = 9; // Final Settlement (Skip Pay Worker for self)
+        else stage = 8; // Pay Worker
       }
-    };
 
+      setCurrentStage(stage);
+    } catch (error) {
+      console.error('Error loading booking:', error);
+    }
+  };
+
+  useEffect(() => {
     loadBooking();
 
     const handleUpdate = () => {
@@ -140,7 +139,7 @@ const BookingTimeline = () => {
           setActionLoading(true);
           await payWorker(id);
           toast.success('Worker payment processed successfully');
-          window.location.reload();
+          loadBooking();
         } catch (e) {
           toast.error(e.response?.data?.message || 'Payment failed');
         } finally {
@@ -161,7 +160,7 @@ const BookingTimeline = () => {
           setActionLoading(true);
           await updateBookingStatus(id, 'completed');
           toast.success('Work approved successfully');
-          window.location.reload();
+          loadBooking();
         } catch (e) {
           toast.error(e.response?.data?.message || 'Approval failed');
         } finally {
@@ -183,7 +182,7 @@ const BookingTimeline = () => {
           // Using existing updateBookingStatus to mark settlement
           await updateBookingStatus(id, booking.status, { finalSettlementStatus: 'DONE' });
           toast.success('Final settlement completed!');
-          window.location.reload();
+          loadBooking();
         } catch (e) {
           toast.error(e.response?.data?.message || 'Final settlement failed');
         } finally {
@@ -223,7 +222,7 @@ const BookingTimeline = () => {
         await verifySelfVisit(id, otp, location);
         toast.success('Visit Verified');
         setIsVisitModalOpen(false);
-        window.location.reload();
+        loadBooking();
       } catch (err) {
         toast.error(err.response?.data?.message || 'Verification failed');
       } finally {
@@ -238,7 +237,7 @@ const BookingTimeline = () => {
       await completeSelfJob(id, { workPhotos: photos });
       toast.success('Work marked done');
       setIsWorkDoneModalOpen(false);
-      window.location.reload();
+      loadBooking();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed');
     } finally {
@@ -371,7 +370,7 @@ const BookingTimeline = () => {
       // Try to mark as completed or work_done if backend supports it
       await updateBookingStatus(id, 'work_done');
       setCurrentStage(5); // Update to stage 5
-      window.location.reload();
+      loadBooking();
     } catch (error) {
       console.error('Error updating status to work done:', error);
       toast.error('Failed to update status. Please follow valid status flow.');

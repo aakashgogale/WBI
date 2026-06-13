@@ -59,7 +59,12 @@ const serviceCategorySchema = new mongoose.Schema({
     type: Boolean,
     default: true,
     index: true
-  }
+  },
+  roles: [{
+    type: String,
+    enum: ['worker', 'engineer'],
+    default: 'worker'
+  }]
 }, {
   timestamps: true
 });

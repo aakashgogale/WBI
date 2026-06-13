@@ -41,8 +41,11 @@ const vendorMatchingWorker = new Worker('vendor-matching', async (job) => {
     return { matchedVendors: vendors.map(v => v._id) };
   } catch (error) {
     console.error('[Worker Error] vendorMatchingWorker:', error);
-    throw error;
   }
 }, { connection: redisConnection });
+
+vendorMatchingWorker.on('error', (err) => {
+  console.error('[vendorMatchingWorker] ❌ Redis/Internal Error:', err.message);
+});
 
 module.exports = vendorMatchingWorker;

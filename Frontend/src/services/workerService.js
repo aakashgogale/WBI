@@ -106,6 +106,11 @@ const workerService = {
     return response.data;
   },
 
+  acceptBroadcastJob: async (id) => {
+    const response = await api.put(`/workers/jobs/${id}/accept-broadcast`);
+    return response.data;
+  },
+
   uploadJobMedia: async (id, data) => {
     const response = await api.post(`/workers/jobs/${id}/upload`, data);
     return response.data;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiSave, FiMapPin, FiNavigation } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import Header from '../../components/layout/Header';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import AddressSelectionModal from '../../../user/pages/Checkout/components/AddressSelectionModal';
 
 const WorkLocations = () => {
@@ -24,9 +24,9 @@ const WorkLocations = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await workerService.getProfile();
-        if (res.success && res.worker) {
-          const w = res.worker;
+        const res = await engineerService.getProfile();
+        if (res.success && (res.engineer || res.worker)) {
+          const w = res.engineer || res.worker;
           setFormData({
             addressLine1: w.address?.addressLine1 || '',
             city: w.address?.city || '',
@@ -77,7 +77,7 @@ const WorkLocations = () => {
     
     setSaving(true);
     try {
-      await workerService.updateProfile({
+      await engineerService.updateProfile({
         address: {
           addressLine1: formData.addressLine1,
           city: formData.city,
@@ -101,7 +101,7 @@ const WorkLocations = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FCFC] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -113,9 +113,9 @@ const WorkLocations = () => {
       <main className="px-5 pt-6 max-w-md mx-auto space-y-6">
         
         {/* Banner */}
-        <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-start gap-3">
-          <FiNavigation className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-800 font-medium leading-relaxed">
+        <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl flex items-start gap-3">
+          <FiNavigation className="w-5 h-5 text-gray-700 shrink-0 mt-0.5" />
+          <p className="text-xs text-gray-700 font-medium leading-relaxed">
             Set your primary working location. You will receive one-time job requests based on this location and your chosen service radius.
           </p>
         </div>
@@ -124,11 +124,11 @@ const WorkLocations = () => {
             
           {/* Primary Location */}
           <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-              <FiMapPin className="text-blue-500" /> Primary Work Area
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+              <FiMapPin className="text-slate-400 text-sm" /> Primary Work Area
             </label>
             
-            <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl mb-3">
+            <div className="p-4 bg-[#F8F9FA] rounded-2xl mb-3">
               <p className="text-sm font-medium text-gray-700 leading-relaxed">
                 {formData.fullAddress || 
                   (formData.addressLine1 ? `${formData.addressLine1}, ${formData.city}` : 'No location set')}
@@ -140,7 +140,7 @@ const WorkLocations = () => {
 
             <button
               onClick={() => setIsAddressModalOpen(true)}
-              className="w-full py-3.5 bg-blue-50 text-blue-600 rounded-2xl font-bold text-sm border border-blue-100 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-gray-100 text-gray-700 rounded-2xl font-bold text-sm border border-gray-200 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
             >
               <FiMapPin className="w-4 h-4" />
               {formData.fullAddress ? 'Change Location on Map' : 'Set Location on Map'}
@@ -151,9 +151,9 @@ const WorkLocations = () => {
 
           {/* Service Radius */}
           <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center justify-between">
+            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1 flex items-center justify-between">
               <span>Service Radius</span>
-              <span className="text-blue-600 font-black text-sm">{formData.serviceRadius} km</span>
+              <span className="text-gray-900 font-black text-sm">{formData.serviceRadius} km</span>
             </label>
             <input
               type="range"
@@ -161,7 +161,7 @@ const WorkLocations = () => {
               max="50"
               value={formData.serviceRadius}
               onChange={(e) => setFormData({...formData, serviceRadius: Number(e.target.value)})}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-900"
             />
             <div className="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1">
               <span>1 km</span>
@@ -174,7 +174,7 @@ const WorkLocations = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(37,99,235,0.3)] disabled:opacity-70 disabled:active:scale-100"
+          className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.15)] disabled:opacity-70 disabled:active:scale-100"
         >
           {saving ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

@@ -80,7 +80,7 @@ const workerSchema = new mongoose.Schema({
   }],
   skills: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'WorkerSkill'
+    ref: 'Skill'
   }],
   availability: {
     type: String,
@@ -113,7 +113,8 @@ const workerSchema = new mongoose.Schema({
     city: String,
     state: String,
     pincode: String,
-    landmark: String
+    landmark: String,
+    fullAddress: String
   },
   rating: {
     type: Number,
@@ -191,6 +192,8 @@ const workerSchema = new mongoose.Schema({
     aadhaar: String,
     pan: String,
     certificates: [String],
+    aadhaarFrontUrl: String,
+    aadhaarBackUrl: String,
     status: {
       type: String,
       enum: ['Pending', 'Approved', 'Rejected'],

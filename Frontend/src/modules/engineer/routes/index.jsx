@@ -1,7 +1,6 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-import PageTransition from '../components/common/PageTransition';
 import BottomNav from '../components/layout/BottomNav';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
@@ -24,7 +23,7 @@ const lazyLoad = (importFunc) => {
               <p className="text-gray-600 mb-4">Please refresh the page or try again later.</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
+                className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90 shadow-md"
                 style={{ backgroundColor: '#3B82F6' }}
               >
                 Refresh Page
@@ -50,7 +49,8 @@ const PersonalInfo = lazyLoad(() => import('../pages/Profile/PersonalInfo'));
 const BankDetails = lazyLoad(() => import('../pages/Profile/BankDetails'));
 const Documents = lazyLoad(() => import('../pages/Profile/Documents'));
 const WorkLocations = lazyLoad(() => import('../pages/Profile/WorkLocations'));
-const CustomDetails = lazyLoad(() => import('../pages/Profile/CustomDetails'));
+const Skills = lazyLoad(() => import('../pages/Profile/Skills'));
+const SubServices = lazyLoad(() => import('../pages/Profile/SubServices'));
 const NotificationSettings = lazyLoad(() => import('../pages/Profile/NotificationSettings'));
 const Support = lazyLoad(() => import('../pages/Profile/Support'));
 const Settings = lazyLoad(() => import('../pages/Settings'));
@@ -65,9 +65,11 @@ const SubmitMilestone = lazyLoad(() => import('../pages/SubmitMilestone'));
 const ProjectUnderReview = lazyLoad(() => import('../pages/ProjectUnderReview'));
 const Wallet = lazyLoad(() => import('../pages/Wallet'));
 const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
+const Schedule = lazyLoad(() => import('../pages/Schedule'));
+const Proposals = lazyLoad(() => import('../pages/Proposals'));
 
 const LoadingFallback = () => (
-  <LogoLoader />
+  <div className="min-h-screen"></div>
 );
 
 const EngineerRoutes = () => {
@@ -93,7 +95,6 @@ const EngineerRoutes = () => {
       {/* Main content area - leaves space for bottom nav when needed */}
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
         <Suspense fallback={<LoadingFallback />}>
-          <PageTransition>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<PublicRoute userType="engineer"><Login /></PublicRoute>} />
@@ -120,14 +121,17 @@ const EngineerRoutes = () => {
               <Route path="/profile/bank-details" element={<ProtectedRoute userType="engineer"><BankDetails /></ProtectedRoute>} />
               <Route path="/profile/documents" element={<ProtectedRoute userType="engineer"><Documents /></ProtectedRoute>} />
               <Route path="/profile/work-locations" element={<ProtectedRoute userType="engineer"><WorkLocations /></ProtectedRoute>} />
-              <Route path="/profile/custom-details" element={<ProtectedRoute userType="engineer"><CustomDetails /></ProtectedRoute>} />
+              <Route path="/profile/skills" element={<ProtectedRoute userType="engineer"><Skills /></ProtectedRoute>} />
+              <Route path="/profile/sub-services" element={<ProtectedRoute userType="engineer"><SubServices /></ProtectedRoute>} />
+
               <Route path="/profile/notifications" element={<ProtectedRoute userType="engineer"><NotificationSettings /></ProtectedRoute>} />
               <Route path="/profile/support" element={<ProtectedRoute userType="engineer"><Support /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute userType="engineer"><Settings /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="engineer"><Notifications /></ProtectedRoute>} />
               <Route path="/wallet" element={<ProtectedRoute userType="engineer"><Wallet /></ProtectedRoute>} />
+              <Route path="/schedule" element={<ProtectedRoute userType="engineer"><Schedule /></ProtectedRoute>} />
+              <Route path="/proposals" element={<ProtectedRoute userType="engineer"><Proposals /></ProtectedRoute>} />
             </Routes>
-          </PageTransition>
         </Suspense>
       </div>
 

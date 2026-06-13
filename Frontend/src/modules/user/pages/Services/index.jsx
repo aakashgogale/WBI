@@ -31,40 +31,39 @@ const Services = () => {
   const [services, setServices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Fetch from new isolated premium backend
+      const response = await publicCatalogService.getServiceCategories();
+      
+      if (response.success && response.categories && response.categories.length > 0) {
+        const mapped = response.categories.map((cat) => ({
+          id: cat._id,
+          title: cat.name,
+          description: cat.description || 'Professional service for your needs',
+          iconUrl: cat.image, // Admin might upload image or SVG
+          iconName: cat.icon, // Fallback for hardcoded string icons like 'FiMonitor'
+          slug: cat.slug
+        }));
+        setServices(mapped);
+      } else {
+        // If DB is completely empty (not seeded yet), show the default 8 categories
+        setServices(defaultCategories);
+      }
+    } catch (err) {
+      console.error('Failed to fetch services:', err);
+      setServices(defaultCategories); // Gracefully degrade if API crashes
+    } finally {
+      // Small delay to show off the beautiful skeleton loader
+      setTimeout(() => setLoading(false), 400);
+    }
+  };
+
   useEffect(() => {
     // Scroll to top on mount
     window.scrollTo({ top: 0, behavior: 'instant' });
-
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Fetch from new isolated premium backend
-        const response = await publicCatalogService.getServiceCategories();
-        
-        if (response.success && response.categories && response.categories.length > 0) {
-          const mapped = response.categories.map((cat) => ({
-            id: cat._id,
-            title: cat.name,
-            description: cat.description || 'Professional service for your needs',
-            iconUrl: cat.image, // Admin might upload image or SVG
-            iconName: cat.icon, // Fallback for hardcoded string icons like 'FiMonitor'
-            slug: cat.slug
-          }));
-          setServices(mapped);
-        } else {
-          // If DB is completely empty (not seeded yet), show the default 8 categories
-          setServices(defaultCategories);
-        }
-      } catch (err) {
-        console.error('Failed to fetch services:', err);
-        setServices(defaultCategories); // Gracefully degrade if API crashes
-      } finally {
-        // Small delay to show off the beautiful skeleton loader
-        setTimeout(() => setLoading(false), 400);
-      }
-    };
-
     fetchCategories();
   }, []);
 
@@ -127,7 +126,7 @@ const Services = () => {
             <h3 className="font-bold text-red-800 mb-1">Failed to load services</h3>
             <p className="text-sm text-red-600 mb-4">We encountered a problem while fetching the services.</p>
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => fetchCategories()}
               className="px-6 py-2 bg-red-100 text-red-700 font-medium rounded-full text-sm active:scale-95 transition-transform"
             >
               Try Again

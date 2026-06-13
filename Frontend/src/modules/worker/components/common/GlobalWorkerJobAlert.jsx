@@ -177,7 +177,13 @@ export default function GlobalWorkerJobAlert() {
 
   const handleAccept = async (id) => {
     try {
-      await workerService.respondToJob(id, 'ACCEPTED');
+      const bookingToAccept = activeAlerts.find(b => String(b.id || b._id) === String(id));
+      
+      if (bookingToAccept && !bookingToAccept.workerId && !bookingToAccept.vendorId) {
+        await workerService.acceptBroadcastJob(id);
+      } else {
+        await workerService.respondToJob(id, 'ACCEPTED');
+      }
 
       // Clear from pending local storage
       const pendingJobs = JSON.parse(localStorage.getItem('workerPendingJobs') || '[]');

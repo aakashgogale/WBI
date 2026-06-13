@@ -452,12 +452,12 @@ const Checkout = () => {
           try {
             await bookingService.cancel(bookingRequest._id, 'No vendors found after search timeout');
             setTimeout(() => {
-              window.location.reload();
+              window.location.href = window.location.href;
             }, 3000); // 3 second delay to let the user see the error
           } catch (err) {
             console.error('Auto-cancel failed:', err);
             setTimeout(() => {
-              window.location.reload();
+              window.location.href = window.location.href;
             }, 3000);
           }
         };
@@ -639,11 +639,11 @@ const Checkout = () => {
             try {
               await bookingService.cancel(bookingId, 'Initial search found no available vendors');
               setTimeout(() => {
-                window.location.reload();
+                window.location.href = window.location.href;
               }, 2000);
             } catch (err) {
               console.error('Auto-cancel failed:', err);
-              window.location.reload();
+              window.location.href = window.location.href;
             }
           };
           cancelAndRefresh();
@@ -651,7 +651,7 @@ const Checkout = () => {
           // Fallback if ID is missing for some reason
           setCurrentStep('details');
           toast.error('Search failed. Please try again.');
-          setTimeout(() => window.location.reload(), 2000);
+          setTimeout(() => window.location.href = window.location.href, 2000);
         }
       } else {
         // Move to waiting state - alerts sent to nearby vendors

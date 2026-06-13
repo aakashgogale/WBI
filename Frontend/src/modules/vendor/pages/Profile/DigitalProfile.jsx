@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FiEdit, FiShare2, FiDownload, FiMapPin, FiMail, FiPhone, FiGlobe, 
   FiClock, FiCheckCircle, FiStar, FiFileText, FiLock, FiBell, FiShield,
-  FiUploadCloud, FiTrash2, FiEye, FiPlus, FiChevronRight, FiBriefcase
+  FiUploadCloud, FiTrash2, FiEye, FiPlus, FiChevronRight, FiBriefcase, FiArrowUpRight,
+  FiDollarSign, FiMessageSquare
 } from 'react-icons/fi';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
@@ -48,8 +49,8 @@ const DigitalProfile = memo(() => {
     switch(activeTab) {
       case 'Overview':
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Company Information */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
@@ -100,9 +101,14 @@ const DigitalProfile = memo(() => {
                 <p className="text-sm text-gray-800 font-medium leading-relaxed mb-4">
                   {vendor.address?.fullAddress || `${vendor.address?.addressLine1 || ''} ${vendor.address?.city || ''} - ${vendor.address?.pincode || ''}, ${vendor.address?.state || ''}`}
                 </p>
-                <div className="h-32 bg-gray-100 rounded-lg mb-4 flex items-center justify-center bg-cover bg-center" style={{ backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=${vendor.address?.city || 'Mumbai'}&zoom=12&size=400x200&maptype=roadmap&markers=color:green%7C${vendor.address?.city || 'Mumbai'}&key=YOUR_API_KEY')` }}>
-                  {/* Mock map if key fails */}
-                  <button className="bg-[#0D8A72] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg">View on Map</button>
+                <div className="h-32 bg-gray-100 rounded-lg mb-4 flex items-center justify-center bg-cover bg-center relative" style={{ backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(vendor.address?.city || 'Mumbai')}&zoom=12&size=400x200&maptype=roadmap&markers=color:green%7C${encodeURIComponent(vendor.address?.city || 'Mumbai')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}')` }}>
+                  <div className="absolute inset-0 bg-black/10 rounded-lg pointer-events-none"></div>
+                  <button 
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(vendor.address?.fullAddress || vendor.address?.city || 'Mumbai')}`, '_blank')}
+                    className="bg-[#0D8A72] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg hover:bg-[#0a6b58] transition-colors z-10"
+                  >
+                    View on Map
+                  </button>
                 </div>
                 <h4 className="text-xs font-bold text-[#0D8A72] mb-1">Service Coverage Area</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">Mumbai, Thane, Navi Mumbai, Pune, Bengaluru, Hyderabad, Delhi NCR & Remote</p>
@@ -162,7 +168,7 @@ const DigitalProfile = memo(() => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Certifications */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
@@ -266,7 +272,7 @@ const DigitalProfile = memo(() => {
                             <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
-                        <Tooltip contentStyle={{ fontSize: '10px' }}/>
+                        <RechartsTooltip contentStyle={{ fontSize: '10px' }}/>
                         <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorPerf)" />
                         <XAxis dataKey="name" hide />
                         <YAxis hide />
@@ -304,7 +310,7 @@ const DigitalProfile = memo(() => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Documents Vault */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
@@ -470,12 +476,11 @@ const DigitalProfile = memo(() => {
     }
   };
 
-  // Helper icons array since FiDollarSign isn't explicitly imported above but needed for notifications
-  const FiDollarSign = (props) => <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" {...props}><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
+
 
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-6">
+    <div className="max-w-[1400px] mx-auto space-y-8">
       
       {/* Page Header */}
       <div className="flex justify-between items-center mb-2">
@@ -483,7 +488,10 @@ const DigitalProfile = memo(() => {
           <h1 className="text-2xl font-black text-[#0B1E36]">My Profile</h1>
           <p className="text-sm text-gray-500 font-medium mt-1">Manage your company profile, team, services & settings</p>
         </div>
-        <button className="bg-[#0D8A72] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-[#0a6b58] transition-colors flex items-center gap-2">
+        <button 
+          onClick={() => navigate('/vendor/digital-solution/profile/edit')}
+          className="bg-[#0D8A72] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-[#0a6b58] transition-colors flex items-center gap-2"
+        >
           <FiEdit/> Edit Profile
         </button>
       </div>
@@ -590,13 +598,27 @@ const DigitalProfile = memo(() => {
           {/* Quick Actions */}
           <div className="flex flex-col gap-3 min-w-[180px]">
             <p className="text-xs font-bold text-gray-800 mb-1">Quick Actions</p>
-            <button className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg text-xs font-bold text-gray-700 transition-colors">
+            <button 
+              onClick={() => navigate('/vendor/digital-solution/profile/edit')}
+              className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg text-xs font-bold text-gray-700 transition-colors"
+            >
               <span className="flex items-center gap-2"><FiEdit className="text-gray-400"/> Edit Profile</span>
             </button>
-            <button className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg text-xs font-bold text-gray-700 transition-colors">
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast.success('Profile link copied to clipboard!');
+              }}
+              className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg text-xs font-bold text-gray-700 transition-colors"
+            >
               <span className="flex items-center gap-2"><FiShare2 className="text-gray-400"/> Share Profile</span>
             </button>
-            <button className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg text-xs font-bold text-gray-700 transition-colors">
+            <button 
+              onClick={() => {
+                toast.success('Profile PDF download started!');
+              }}
+              className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-3 rounded-lg text-xs font-bold text-gray-700 transition-colors"
+            >
               <span className="flex items-center gap-2"><FiDownload className="text-gray-400"/> Download Profile PDF</span>
             </button>
           </div>
@@ -615,8 +637,7 @@ const DigitalProfile = memo(() => {
   );
 });
 
-// Helper component missing from react-icons/fi above
-const FiMessageSquare = (props) => <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg" {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>;
+
 
 
 DigitalProfile.displayName = 'DigitalProfile';

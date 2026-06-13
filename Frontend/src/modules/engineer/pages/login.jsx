@@ -3,9 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FiPhone, FiLock, FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
-import { engineerAuthService } from '../../../services/authService';
+import { sharedAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
+import ForgotPasswordFlow from '../../../components/auth/ForgotPasswordFlow';
 import { z } from "zod";
 
 // Zod schema for Password Login
@@ -19,6 +20,7 @@ const EngineerLogin = () => {
   const [formData, setFormData] = useState({ phone: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
 
   const brandColor = themeColors.brand?.teal || '#347989';
 
@@ -50,10 +52,15 @@ const EngineerLogin = () => {
 
     setIsLoading(true);
     try {
-      const response = await engineerAuthService.login(formData);
+      const loginPayload = {
+        mobile: formData.phone,
+        password: formData.password
+      };
+
+      const response = await sharedAuthService.unifiedLogin(loginPayload);
       if (response.success) {
-        toast.success('Welcome Back!');
-        navigate('/engineer', { replace: true });
+        toast.success(`Welcome Back! Logged in as ${response.user.role}`);
+        navigate(response.redirectTo, { replace: true });
       } else {
         toast.error(response.message || 'Login failed');
       }
@@ -79,11 +86,21 @@ const EngineerLogin = () => {
           Welcome Back!
         </h2>
         <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
-          Login to your worker account
+          Login to your engineer account
         </p>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
+        {isForgotPassword ? (
+          <div className="bg-white py-8 px-4 sm:rounded-2xl sm:px-10 border-0 sm:border border-gray-100 sm:shadow-2xl sm:shadow-gray-200/50 relative overflow-hidden animate-slide-in-bottom">
+            <ForgotPasswordFlow 
+              role="engineer" 
+              identifier={formData.phone}
+              onBack={() => setIsForgotPassword(false)}
+              onSuccess={() => setIsForgotPassword(false)}
+            />
+          </div>
+        ) : (
         <div className="bg-white py-8 px-4 sm:rounded-2xl sm:px-10 border-0 sm:border border-gray-100 sm:shadow-2xl sm:shadow-gray-200/50 relative overflow-hidden animate-slide-in-bottom">
           
           <form onSubmit={handleLoginSubmit} className="space-y-5">
@@ -140,9 +157,9 @@ const EngineerLogin = () => {
                 </button>
               </div>
               <div className="flex justify-end mt-2">
-                <a href="#" className="text-xs font-semibold text-[#347989] hover:text-[#D68F35] transition-colors">
+                <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs font-semibold text-[#347989] hover:text-[#D68F35] transition-colors">
                   Forgot Password?
-                </a>
+                </button>
               </div>
             </div>
 
@@ -203,6 +220,7 @@ const EngineerLogin = () => {
             </div>
           </div>
         </div>
+        )}
 
         <p className="mt-8 text-center text-sm text-gray-500 animate-fade-in animate-stagger-5">
           Don't have an account?{' '}

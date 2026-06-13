@@ -5,9 +5,10 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaLinkedin } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
-import { login } from '../services/authService';
+import { sharedAuthService } from '../../../services/authService';
 import LogoLoader from '../../../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
+import ForgotPasswordFlow from '../../../components/auth/ForgotPasswordFlow';
 
 const VendorLogin = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const VendorLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
 
   useEffect(() => {
     // Redirect if already logged in
@@ -37,16 +39,21 @@ const VendorLogin = () => {
 
     setIsLoading(true);
     try {
-      const response = await login(formData);
+      const loginPayload = {
+        mobile: formData.identifier,
+        password: formData.password
+      };
+
+      const response = await sharedAuthService.unifiedLogin(loginPayload);
       if (response.success) {
         toast.success(
           <div className="flex flex-col">
             <span className="font-bold">Welcome Back!</span>
-            <span className="text-xs">Successfully logged into your vendor account.</span>
+            <span className="text-xs">Successfully logged into your {response.user.role} account.</span>
           </div>,
           { icon: <FiCheckCircle className="text-green-500" /> }
         );
-        navigate('/vendor', { replace: true });
+        navigate(response.redirectTo, { replace: true });
       } else {
         toast.error(response.message || 'Login failed');
       }
@@ -151,6 +158,16 @@ const VendorLogin = () => {
             <span className="text-xl font-bold text-gray-800">Vendor Portal</span>
           </div>
 
+          {isForgotPassword ? (
+            <div className="my-auto w-full max-w-[460px] mx-auto shrink-0">
+              <ForgotPasswordFlow 
+                role="vendor" 
+                identifier={formData.identifier}
+                onBack={() => setIsForgotPassword(false)}
+                onSuccess={() => setIsForgotPassword(false)}
+              />
+            </div>
+          ) : (
           <div className="bg-white p-6 sm:p-8 xl:p-10 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 w-full max-w-[460px] mx-auto shrink-0 my-auto">
             
             <div className="text-center mb-6">
@@ -231,7 +248,7 @@ const VendorLogin = () => {
                 </div>
 
                 <div className="text-sm">
-                  <button type="button" onClick={() => toast("Forgot Password flow coming soon!")} className="font-semibold text-[#0D8A72] hover:text-[#0a6b58] transition-colors">
+                  <button type="button" onClick={() => setIsForgotPassword(true)} className="font-semibold text-[#0D8A72] hover:text-[#0a6b58] transition-colors">
                     Forgot Password?
                   </button>
                 </div>
@@ -276,6 +293,7 @@ const VendorLogin = () => {
               </p>
             </form>
           </div>
+          )}
         </div>
       </div>
 

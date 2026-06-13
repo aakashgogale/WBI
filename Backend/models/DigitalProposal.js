@@ -1,34 +1,43 @@
 const mongoose = require('mongoose');
 
 const digitalProposalSchema = new mongoose.Schema({
-  proposalId: {
-    type: String, // e.g. PRO-2024-105
-    required: true,
-    unique: true
+  jobId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DigitalJob',
+    required: true
+  },
+  engineerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Engineer',
+    required: true
   },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
-    required: true,
-    index: true
+    required: true
   },
-  clientName: {
+  coverLetter: {
     type: String,
     required: true
   },
-  amount: {
+  bidAmount: {
     type: Number,
     required: true
   },
+  estimatedDuration: {
+    value: { type: Number, required: true },
+    unit: { type: String, enum: ['Hours', 'Days', 'Weeks', 'Months'], default: 'Days' }
+  },
   status: {
     type: String,
-    enum: ['Sent', 'Accepted', 'Pending', 'Draft'],
-    default: 'Draft'
-  },
-  date: {
-    type: Date,
-    required: true
+    enum: ['Pending', 'Reviewed', 'Accepted', 'Rejected', 'Withdrawn'],
+    default: 'Pending'
   }
-}, { timestamps: true });
+}, {
+  timestamps: true
+});
+
+digitalProposalSchema.index({ engineerId: 1, status: 1 });
+digitalProposalSchema.index({ jobId: 1, status: 1 });
 
 module.exports = mongoose.model('DigitalProposal', digitalProposalSchema);

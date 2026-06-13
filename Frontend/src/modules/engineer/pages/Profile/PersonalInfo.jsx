@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiPhone, FiMail, FiCalendar, FiSave, FiAlertCircle } from 'react-icons/fi';
+import { FiUser, FiPhone, FiMail, FiCalendar, FiSave } from 'react-icons/fi';
 import { BsGenderAmbiguous } from 'react-icons/bs';
 import { toast } from 'react-hot-toast';
 import Header from '../../components/layout/Header';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 
 const PersonalInfo = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -21,9 +22,9 @@ const PersonalInfo = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await workerService.getProfile();
-        if (res.success && res.worker) {
-          const w = res.worker;
+        const res = await engineerService.getProfile();
+        if (res.success && (res.engineer || res.worker)) {
+          const w = res.engineer || res.worker;
           setFormData({
             name: w.name || '',
             phone: w.phone || '',
@@ -31,6 +32,7 @@ const PersonalInfo = () => {
             dob: w.dob ? new Date(w.dob).toISOString().split('T')[0] : '',
             gender: w.gender || ''
           });
+          setIsPhoneVerified(w.isPhoneVerified || false);
         }
       } catch (err) {
         toast.error('Failed to load profile');
@@ -50,11 +52,16 @@ const PersonalInfo = () => {
       toast.error('Name is required');
       return;
     }
+    if (!formData.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
     
     setSaving(true);
     try {
-      await workerService.updateProfile({
+      await engineerService.updateProfile({
         name: formData.name,
+        phone: formData.phone,
         email: formData.email,
         dob: formData.dob || null,
         gender: formData.gender
@@ -70,64 +77,68 @@ const PersonalInfo = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FCFC] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#10AFA5] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FCFC] font-sans text-[#0F172A] ">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
       <Header title="Personal Information" showBack={true} onBack={() => navigate(-1)} />
       
       <main className="px-5 pt-6 max-w-md mx-auto space-y-6">
-        <div className="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50">
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-200">
           <div className="space-y-5">
             
             {/* Name */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <FiUser className="text-[#10AFA5]" /> Full Name
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <FiUser className="text-gray-400 text-sm" /> Full Name
               </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#10AFA5]/20 focus:border-[#10AFA5]/30 transition-all"
+                className="w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all border-none"
                 placeholder="Enter your full name"
               />
             </div>
 
-            {/* Phone (Read Only) */}
+            {/* Phone */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <FiPhone className="text-blue-500" /> Mobile Number
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <FiPhone className="text-gray-400 text-sm" /> Mobile Number
               </label>
               <div className="relative">
                 <input
                   type="tel"
+                  name="phone"
                   value={formData.phone}
-                  readOnly
-                  className="w-full bg-gray-100 border border-gray-200 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-500 cursor-not-allowed"
+                  onChange={handleChange}
+                  className="w-full bg-gray-100 border-2 border-gray-300 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-800 outline-none focus:border-gray-900 transition-colors"
+                  placeholder="Enter mobile number"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                  VERIFIED
-                </div>
+                {isPhoneVerified && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-800 tracking-wide bg-gray-200 px-2 py-1 rounded">
+                    VERIFIED
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <FiMail className="text-orange-500" /> Email Address
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <FiMail className="text-gray-400 text-sm" /> Email Address
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#10AFA5]/20 focus:border-[#10AFA5]/30 transition-all"
+                className="w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all border-none"
                 placeholder="email@example.com"
               />
             </div>
@@ -135,28 +146,28 @@ const PersonalInfo = () => {
             <div className="grid grid-cols-2 gap-4">
               {/* DOB */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                  <FiCalendar className="text-purple-500" /> Date of Birth
+                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                  <FiCalendar className="text-gray-400 text-sm" /> Date of Birth
                 </label>
                 <input
                   type="date"
                   name="dob"
                   value={formData.dob}
                   onChange={handleChange}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#10AFA5]/20 focus:border-[#10AFA5]/30 transition-all text-gray-700"
+                  className="w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all text-gray-700 border-none"
                 />
               </div>
 
               {/* Gender */}
               <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                  <BsGenderAmbiguous className="text-indigo-500" /> Gender
+                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                  <BsGenderAmbiguous className="text-gray-400 text-sm" /> Gender
                 </label>
                 <select
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#10AFA5]/20 focus:border-[#10AFA5]/30 transition-all text-gray-700 appearance-none"
+                  className="w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-gray-900/20 transition-all text-gray-700 appearance-none border-none"
                 >
                   <option value="">Select</option>
                   <option value="Male">Male</option>
@@ -172,7 +183,7 @@ const PersonalInfo = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-[#10AFA5] hover:bg-teal-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(16,175,165,0.3)] disabled:opacity-70 disabled:active:scale-100"
+          className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md disabled:opacity-70 disabled:active:scale-100"
         >
           {saving ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

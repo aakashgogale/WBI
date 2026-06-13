@@ -32,6 +32,27 @@ const engineerService = {
     return response.data;
   },
 
+  // --- Digital Solutions ---
+  getDigitalJobs: async (params) => {
+    const response = await api.get('/engineers/digital/jobs', { params });
+    return response.data;
+  },
+  
+  acceptDigitalJob: async (id) => {
+    const response = await api.patch(`/engineers/digital/jobs/${id}/accept`);
+    return response.data;
+  },
+  
+  rejectDigitalJob: async (id) => {
+    const response = await api.patch(`/engineers/digital/jobs/${id}/reject`);
+    return response.data;
+  },
+  
+  getDigitalProjects: async (params) => {
+    const response = await api.get('/engineers/digital/projects', { params });
+    return response.data;
+  },
+
   updateJobStatus: async (id, status, data = {}) => {
     const response = await api.put(`/engineers/jobs/${id}/status`, { status, ...data });
     return response.data;

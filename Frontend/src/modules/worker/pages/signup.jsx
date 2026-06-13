@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiCheckCircle, FiArrowRight, FiArrowLeft, FiChevronLeft } from 'react-icons/fi';
+import { FiCheckCircle, FiArrowRight, FiArrowLeft, FiChevronLeft, FiUser, FiPhone, FiLock, FiMapPin, FiMail } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { workerAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
@@ -72,33 +72,35 @@ export default function WorkerSignup() {
   };
 
   const validateStep = (step) => {
-    if (step === 1) {
-      const schema = z.object({
-        name: z.string().min(2, "Name must be at least 2 characters"),
-        phone: z.string().regex(/^\d{10}$/, "Please enter a valid 10-digit phone number"),
-        password: z.string().min(6, "Password must be at least 6 characters"),
-      });
-      const result = schema.safeParse(formData);
-      if (!result.success) {
-        toast.error(result.error.errors[0].message);
-        return false;
+    const stepData = config?.steps?.find(s => s.step === step);
+    if (stepData && stepData.fields) {
+      for (const field of stepData.fields) {
+        if (field.required && !formData[field.key]) {
+          toast.error(`Please provide your ${field.label}.`);
+          return false;
+        }
+        if (field.validation) {
+          if (field.validation.pattern) {
+            const regex = new RegExp(field.validation.pattern);
+            if (!regex.test(formData[field.key])) {
+              toast.error(field.validation.errorMessage || `Invalid format for ${field.label}`);
+              return false;
+            }
+          }
+          if (field.validation.min && formData[field.key]?.length < field.validation.min) {
+            toast.error(field.validation.errorMessage || `${field.label} must be at least ${field.validation.min} characters`);
+            return false;
+          }
+        }
       }
-      if (!formData.address.city) {
-        toast.error("Please provide your Current City.");
-        return false;
-      }
-      if (!formData.address.pincode) {
-        toast.error("Please provide your Pincode.");
-        return false;
-      }
-      return true;
     }
-    if (step === 2) {
-      if (config?.categories?.length > 0 && formData.serviceCategories.length === 0) {
+
+    const totalSteps = Math.max(...(config?.steps?.map(s => s.step) || [1]), 2);
+    if (step === totalSteps && config?.categories?.length > 0) {
+      if (formData.serviceCategories.length === 0) {
         toast.error("Please select at least one service category");
         return false;
       }
-      return true;
     }
     return true;
   };
@@ -150,8 +152,28 @@ export default function WorkerSignup() {
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LogoLoader fullScreen={false} /></div>;
 
+  const currentStepData = config?.steps?.find(s => s.step === currentStep);
+  const totalSteps = Math.max(...(config?.steps?.map(s => s.step) || [1]), 2); // At least 2 steps (fields + categories)
+
+    const getFieldIcon = (key, type) => {
+    const iconClass = "w-4 h-4";
+    switch (key.toLowerCase()) {
+      case 'name': return <FiUser className={`${iconClass} text-black`} />;
+      case 'phone': return <FiPhone className={`${iconClass} text-black`} />;
+      case 'email': return <FiMail className={`${iconClass} text-black`} />;
+      case 'password': return <FiLock className={`${iconClass} text-black`} />;
+      case 'city': 
+      case 'pincode': return <FiMapPin className={`${iconClass} text-black`} />;
+      default:
+        if (type === 'tel') return <FiPhone className={`${iconClass} text-black`} />;
+        if (type === 'email') return <FiMail className={`${iconClass} text-black`} />;
+        if (type === 'password') return <FiLock className={`${iconClass} text-black`} />;
+        return <FiCheckCircle className={`${iconClass} text-gray-600`} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-[#F8FCFC] font-sans text-[#0F172A]">
       <nav className="bg-white px-6 py-4 border-b flex items-center justify-between shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -161,7 +183,7 @@ export default function WorkerSignup() {
         </div>
         <div className="flex bg-gray-100 p-1 rounded-xl">
           <button 
-            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-[#4F46E5] shadow-sm"
+            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-black shadow-sm"
           >
             Worker
           </button>
@@ -172,74 +194,101 @@ export default function WorkerSignup() {
             Engineer
           </button>
         </div>
-        <Link to="/worker/login" className="text-sm font-semibold text-[#4F46E5] hover:text-[#4338ca]">Sign In</Link>
+        <Link to="/worker/login" className="text-sm font-bold text-black hover:text-gray-800">Sign In</Link>
       </nav>
 
-      <main className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
-          <div className="bg-white rounded-2xl shadow-sm border p-6">
+      <main className="px-5 pt-8 pb-12 max-w-2xl mx-auto space-y-6">
+          <div className="bg-white p-6 sm:p-8 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50">
             
             {/* Stepper Header */}
-            <div className="flex items-center mb-8 max-w-sm">
-              {[1, 2].map((step) => (
+            <div className="flex items-center justify-between mb-10 max-w-sm mx-auto">
+              {Array.from({length: totalSteps}, (_, i) => i + 1).map((step) => (
                 <React.Fragment key={step}>
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm shrink-0 ${currentStep >= step ? 'bg-[#4F46E5] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                  <div className={`w-10 h-10 flex items-center justify-center rounded-2xl font-bold text-sm shrink-0 shadow-sm transition-all duration-300 ${currentStep >= step ? 'bg-black text-white shadow-[0_4px_15px_rgba(0,0,0,0.3)]' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
                     {step}
                   </div>
-                  {step < 2 && <div className={`flex-1 h-1 mx-2 rounded-full ${currentStep > step ? 'bg-[#4F46E5]' : 'bg-gray-100'}`} />}
+                  {step < totalSteps && <div className={`flex-1 h-1.5 mx-3 rounded-full transition-all duration-300 ${currentStep > step ? 'bg-black' : 'bg-gray-100'}`} />}
                 </React.Fragment>
               ))}
             </div>
 
-            {/* STEP 1: Basic Information */}
-            {currentStep === 1 && (
-              <div className="space-y-5 animate-fadeIn">
-                <h2 className="text-xl font-bold">Step 1: Basic Information</h2>
+            {/* Dynamic Step Content */}
+            {currentStepData && currentStepData.fields && currentStepData.fields.length > 0 && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-black text-gray-800">{currentStepData.title || `Step ${currentStep}`}</h2>
+                  <p className="text-sm text-gray-500 mt-2">Please fill in the required details below</p>
+                </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Full Name *</label>
-                    <input name="name" value={formData.name} onChange={handleChange} type="text" className="w-full border rounded-lg p-2 text-sm" placeholder="e.g. Ramesh Sharma" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Mobile Number *</label>
-                    <div className="flex gap-2">
-                       <span className="inline-flex items-center px-3 border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-l-lg">+91</span>
-                       <input name="phone" value={formData.phone} onChange={(e) => setFormData(p => ({...p, phone: e.target.value.replace(/\D/g, '').slice(0, 10)}))} type="tel" className="w-full border rounded-r-lg p-2 text-sm" placeholder="10-digit number" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                  {currentStepData.fields.map(field => (
+                    <div key={field.key} className={field.type === 'password' || field.type === 'email' ? 'md:col-span-2' : ''}>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                        {getFieldIcon(field.key, field.type)} {field.label} {field.required && <span className="text-red-400">*</span>}
+                      </label>
+                      <div className="relative">
+                        {field.type === 'tel' ? (
+                          <div className="relative flex">
+                            <div className="flex items-center justify-center bg-gray-100 border border-gray-100 border-r-0 rounded-l-2xl px-4 text-gray-500 font-medium text-sm">
+                              +91
+                            </div>
+                            <input 
+                              name={field.key} 
+                              value={formData[field.key] || ''} 
+                              onChange={(e) => setFormData(p => ({...p, [field.key]: e.target.value.replace(/\\D/g, '').slice(0, 10)}))} 
+                              type="tel" 
+                              className="w-full bg-gray-50 border border-gray-100 rounded-r-2xl py-3.5 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 transition-all" 
+                              placeholder="10-digit number" 
+                            />
+                          </div>
+                        ) : field.type === 'select' ? (
+                          <select
+                            name={field.key}
+                            value={formData[field.key] || ''}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-4 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 transition-all appearance-none"
+                          >
+                            <option value="">Select {field.label}</option>
+                            {field.options?.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input 
+                            name={field.key} 
+                            value={formData[field.key] || ''} 
+                            onChange={handleChange} 
+                            type={field.type === 'password' ? 'password' : field.type === 'email' ? 'email' : 'text'} 
+                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-3.5 px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black/30 transition-all" 
+                            placeholder={`Enter ${field.label}`} 
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Password *</label>
-                    <input name="password" value={formData.password} onChange={handleChange} type="password" placeholder="Create a strong password" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Current City *</label>
-                    <input name="city" value={formData.address.city} onChange={(e) => handleNestedChange('address', e)} type="text" placeholder="e.g. Indore, MP" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Pin Code *</label>
-                    <input name="pincode" value={formData.address.pincode} onChange={(e) => handleNestedChange('address', e)} type="text" placeholder="452001" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* STEP 2: Services */}
-            {currentStep === 2 && (
-              <div className="space-y-5 animate-fadeIn">
-                <h2 className="text-xl font-bold">Step 2: Services Offered</h2>
+            {/* Final Step: Services (If config has categories) */}
+            {currentStep === totalSteps && config?.categories?.length > 0 && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-black text-gray-800">Services Offered</h2>
+                  <p className="text-sm text-gray-500 mt-2">Select the categories you specialize in</p>
+                </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Service Categories *</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {config?.categories?.map(cat => {
-                      const isSelected = formData.serviceCategories.includes(cat.id);
+                      const isSelected = formData.serviceCategories.includes(cat.id || cat._id);
                       return (
                         <div 
-                          key={cat.id} 
-                          onClick={() => handleCategoryToggle(cat.id)}
-                          className={`px-3 py-2.5 border rounded-xl cursor-pointer transition-all flex items-center ${isSelected ? 'border-[#4F46E5] bg-[#4F46E5]/5 text-[#4F46E5] shadow-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}
+                          key={cat.id || cat._id} 
+                          onClick={() => handleCategoryToggle(cat.id || cat._id)}
+                          className={`px-4 py-3.5 border-2 rounded-2xl cursor-pointer transition-all flex flex-col items-center justify-center text-center gap-2 ${isSelected ? 'border-black bg-black/5 text-black shadow-sm' : 'border-gray-50 bg-gray-50 text-gray-600 hover:border-gray-100 hover:bg-gray-100'}`}
                         >
-                          {cat.icon && <img src={cat.icon} className={`w-5 h-5 mr-2 object-contain ${isSelected ? '' : 'grayscale opacity-60'}`} alt=""/>}
-                          <span className="text-xs font-semibold truncate">{cat.title}</span>
+                          {cat.icon && <img src={cat.icon} className={`w-8 h-8 object-contain transition-all ${isSelected ? 'scale-110' : 'grayscale opacity-60'}`} alt=""/>}
+                          <span className="text-xs font-bold leading-tight">{cat.name || cat.title}</span>
                         </div>
                       );
                     })}
@@ -248,21 +297,24 @@ export default function WorkerSignup() {
               </div>
             )}
 
-            {/* Stepper Navigation */}
-            <div className="flex justify-between mt-8 pt-4 border-t">
-              {currentStep > 1 ? (
-                <button onClick={prevStep} className="px-6 py-2 border rounded-xl font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-2">
-                  <FiChevronLeft /> Back
+            {/* Navigation Buttons */}
+            <div className="flex gap-4 pt-8 mt-8 border-t border-gray-100">
+              {currentStep > 1 && (
+                <button type="button" onClick={prevStep} className="px-6 py-4 border-2 border-gray-100 text-gray-600 rounded-2xl font-bold flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
+                  <FiChevronLeft className="w-5 h-5" />
                 </button>
-              ) : <div></div>}
-
-              {currentStep < 2 ? (
-                <button onClick={nextStep} className="px-8 py-2 bg-[#4F46E5] text-white rounded-xl font-medium shadow-md hover:bg-[#4338ca] flex items-center gap-2">
-                  Continue <FiArrowRight />
+              )}
+              {currentStep < totalSteps ? (
+                <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all">
+                  Continue <FiArrowRight className="w-5 h-5" />
                 </button>
               ) : (
-                <button onClick={handleSubmit} disabled={isSubmitting} className="px-8 py-2 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700 flex items-center gap-2">
-                  {isSubmitting ? 'Submitting...' : 'Complete Registration'}
+                <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all disabled:opacity-70 disabled:active:scale-100">
+                  {isSubmitting ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>Complete Registration <FiCheckCircle className="w-5 h-5" /></>
+                  )}
                 </button>
               )}
             </div>

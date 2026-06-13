@@ -5,7 +5,13 @@ const mongoose = require('mongoose');
  */
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      family: 4, // Use IPv4, skip trying IPv6
+    });
+
+    mongoose.connection.on('error', err => {
+      console.error('MongoDB runtime error:', err);
+    });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

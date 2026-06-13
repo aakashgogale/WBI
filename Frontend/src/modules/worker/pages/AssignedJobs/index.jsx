@@ -145,6 +145,18 @@ const AssignedJobs = () => {
     { id: 'completed', label: 'Completed', count: counts.completed }
   ];
 
+  const searchParams = new URLSearchParams(location.search);
+  const searchQuery = searchParams.get('search')?.toLowerCase() || '';
+
+  const displayedJobs = jobs.filter(job => {
+    if (!searchQuery) return true;
+    const title = (job.serviceName || job.serviceId?.title || '').toLowerCase();
+    const city = (job.address?.city || '').toLowerCase();
+    const bookingNumber = (job.bookingNumber || '').toLowerCase();
+    const status = (getStatusConfig(job.status).label || '').toLowerCase();
+    return title.includes(searchQuery) || city.includes(searchQuery) || bookingNumber.includes(searchQuery) || status.includes(searchQuery);
+  });
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans ">
       {/* Header */}
@@ -210,9 +222,22 @@ const AssignedJobs = () => {
             <h3 className="text-slate-900 font-bold mb-1">No jobs found</h3>
             <p className="text-slate-500 text-sm">You have no {filter !== 'all' ? filter.replace('_', ' ') : ''} jobs.</p>
           </div>
+        ) : displayedJobs.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FiSearch className="w-6 h-6 text-slate-400" />
+            </div>
+            <h3 className="text-slate-900 font-bold mb-1">No matching jobs found</h3>
+            <p className="text-slate-500 text-sm">Try searching with a different keyword.</p>
+          </div>
         ) : (
           <div className="space-y-4">
-            {jobs.map((job, index) => {
+            {searchQuery && (
+              <div className="text-sm text-gray-500 font-medium mb-2 pl-2">
+                Showing results for "<span className="text-gray-900">{searchQuery}</span>"
+              </div>
+            )}
+            {displayedJobs.map((job, index) => {
               const statusConfig = getStatusConfig(job.status);
               const isLastElement = jobs.length === index + 1;
 

@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import PageTransition from '../components/common/PageTransition';
 import VendorLayout from '../components/layout/VendorLayout';
+import DigitalVendorLayout from '../components/layout/DigitalVendorLayout';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PublicRoute from '../../../components/auth/PublicRoute';
@@ -21,11 +21,11 @@ const lazyLoad = (importFunc) => {
             <div className="text-center p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-2">Failed to load page</h2>
               <p className="text-gray-600 mb-4">Please refresh the page or try again later.</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
-                style={{ backgroundColor: '#347989' }}
-              >
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
+                  style={{ backgroundColor: '#347989' }}
+                >
                 Refresh Page
               </button>
             </div>
@@ -66,61 +66,75 @@ const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
 const Projects = lazyLoad(() => import('../pages/Projects'));
 const WorkOrders = lazyLoad(() => import('../pages/WorkOrders'));
 const AmcContracts = lazyLoad(() => import('../pages/AmcContracts'));
-
-// Loading fallback component
-import LogoLoader from '../../../components/common/LogoLoader';
+const DigitalProfile = lazyLoad(() => import('../pages/Profile/DigitalProfile'));
+const DigitalTeamEngineers = lazyLoad(() => import('../pages/WorkersList/DigitalTeamEngineers'));
+const DigitalServices = lazyLoad(() => import('../pages/DigitalServices/DigitalServices'));
 
 const LoadingFallback = () => (
-  <LogoLoader />
+  <div className="min-h-screen"></div>
 );
 
 const VendorRoutes = () => {
   return (
     <ErrorBoundary>
       <Suspense fallback={<LoadingFallback />}>
-        <PageTransition>
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<PublicRoute userType="vendor"><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute userType="vendor"><Signup /></PublicRoute>} />
 
-            {/* Protected routes wrapped in VendorLayout */}
-            <Route element={<ProtectedRoute userType="vendor"><VendorLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Navigate to="dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/booking-alerts" element={<BookingAlerts />} />
-              <Route path="/booking-alert/:id" element={<BookingAlert />} />
-              <Route path="/booking/:id" element={<BookingDetails />} />
-              <Route path="/booking/:id/map" element={<BookingMap />} />
-              <Route path="/booking/:id/billing" element={<BillingPage />} />
-              <Route path="/booking/:id/timeline" element={<BookingTimeline />} />
-              <Route path="/jobs" element={<ActiveJobs />} />
-              <Route path="/engineers" element={<WorkersList />} />
-              <Route path="/workers" element={<WorkersList />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/work-orders" element={<WorkOrders />} />
-              <Route path="/amc" element={<AmcContracts />} />
-              <Route path="/workers/add" element={<AddEditWorker />} />
-              <Route path="/workers/:id/edit" element={<AddEditWorker />} />
-              <Route path="/booking/:id/assign-worker" element={<AssignWorker />} />
-              <Route path="/earnings" element={<Earnings />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/wallet/withdraw" element={<WithdrawalRequest />} />
-              <Route path="/wallet/settle" element={<SettlementRequest />} />
-              <Route path="/wallet/settlements" element={<SettlementHistory />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/details" element={<ProfileDetails />} />
-              <Route path="/profile/edit" element={<EditProfile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/address-management" element={<AddressManagement />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/my-ratings" element={<MyRatings />} />
-              <Route path="/reviews" element={<MyRatings />} />
-              <Route path="/support" element={<AboutWBI />} />
-              <Route path="/about-wbi" element={<AboutWBI />} />
+            {/* Base Redirect */}
+            <Route path="/" element={<Navigate to="digital-solution/dashboard" replace />} />
+
+            {/* Digital Solution specific routes (Main Vendor Layout now) */}
+            <Route element={<ProtectedRoute userType="vendor"><DigitalVendorLayout /></ProtectedRoute>}>
+              <Route path="/digital-solution/dashboard" element={<Dashboard />} />
+              <Route path="/digital-solution/my-profile" element={<DigitalProfile />} />
+              <Route path="/digital-solution/booking-alerts" element={<BookingAlerts />} />
+              <Route path="/digital-solution/booking-alert/:id" element={<BookingAlert />} />
+              <Route path="/digital-solution/booking/:id" element={<BookingDetails />} />
+              <Route path="/digital-solution/booking/:id/map" element={<BookingMap />} />
+              <Route path="/digital-solution/booking/:id/billing" element={<BillingPage />} />
+              <Route path="/digital-solution/booking/:id/timeline" element={<BookingTimeline />} />
+              <Route path="/digital-solution/jobs" element={<ActiveJobs />} />
+              <Route path="/digital-solution/engineers" element={<DigitalTeamEngineers />} />
+              <Route path="/digital-solution/services" element={<DigitalServices />} />
+              <Route path="/digital-solution/workers" element={<WorkersList />} />
+              <Route path="/digital-solution/projects" element={<Projects />} />
+              <Route path="/digital-solution/work-orders" element={<WorkOrders />} />
+              <Route path="/digital-solution/amc" element={<AmcContracts />} />
+              <Route path="/digital-solution/workers/add" element={<AddEditWorker />} />
+              <Route path="/digital-solution/workers/:id/edit" element={<AddEditWorker />} />
+              <Route path="/digital-solution/booking/:id/assign-worker" element={<AssignWorker />} />
+              <Route path="/digital-solution/earnings" element={<Earnings />} />
+              <Route path="/digital-solution/wallet" element={<Wallet />} />
+              <Route path="/digital-solution/wallet/withdraw" element={<WithdrawalRequest />} />
+              <Route path="/digital-solution/wallet/settle" element={<SettlementRequest />} />
+              <Route path="/digital-solution/wallet/settlements" element={<SettlementHistory />} />
+              <Route path="/digital-solution/profile" element={<Profile />} />
+              <Route path="/digital-solution/profile/details" element={<ProfileDetails />} />
+              <Route path="/digital-solution/profile/edit" element={<EditProfile />} />
+              <Route path="/digital-solution/settings" element={<Settings />} />
+              <Route path="/digital-solution/address-management" element={<AddressManagement />} />
+              <Route path="/digital-solution/notifications" element={<Notifications />} />
+              <Route path="/digital-solution/my-ratings" element={<MyRatings />} />
+              <Route path="/digital-solution/reviews" element={<MyRatings />} />
+              <Route path="/digital-solution/support" element={<AboutWBI />} />
+              <Route path="/digital-solution/about-wbi" element={<AboutWBI />} />
+              <Route path="/digital-solution/*" element={<Navigate to="/vendor/digital-solution/dashboard" replace />} />
             </Route>
+
+            {/* Fallbacks for old routes to redirect to new structure */}
+            <Route path="/dashboard" element={<Navigate to="/vendor/digital-solution/dashboard" replace />} />
+            <Route path="/projects" element={<Navigate to="/vendor/digital-solution/projects" replace />} />
+            <Route path="/engineers" element={<Navigate to="/vendor/digital-solution/engineers" replace />} />
+            <Route path="/work-orders" element={<Navigate to="/vendor/digital-solution/work-orders" replace />} />
+            <Route path="/earnings" element={<Navigate to="/vendor/digital-solution/earnings" replace />} />
+            <Route path="/settings" element={<Navigate to="/vendor/digital-solution/settings" replace />} />
+            <Route path="/notifications" element={<Navigate to="/vendor/digital-solution/notifications" replace />} />
+            <Route path="/reviews" element={<Navigate to="/vendor/digital-solution/reviews" replace />} />
+            <Route path="/support" element={<Navigate to="/vendor/digital-solution/support" replace />} />
           </Routes>
-        </PageTransition>
       </Suspense>
 
       {/* Global Alerts inside Vendor boundary but outside specific page routes */}

@@ -11,9 +11,17 @@ const getAssignedJobs = async (req, res) => {
     const { status, page = 1, limit = 10 } = req.query;
 
     // Build query
-    const query = { workerId };
+    const baseQuery = {
+      $or: [
+        { workerId },
+        { workerId: null, notifiedWorkers: workerId, status: BOOKING_STATUS.CONFIRMED }
+      ]
+    };
+    
+    let query = { ...baseQuery };
     if (status && status !== 'all') {
       if (status === 'assigned') {
+        // "Assigned" tab should also include broadcasted jobs (which are CONFIRMED)
         query.status = { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED] };
       } else if (status === 'in_progress') {
         query.status = { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] };
@@ -42,10 +50,10 @@ const getAssignedJobs = async (req, res) => {
 
     // Get dynamic counts for tabs
     const [all, assigned, inProgress, completed] = await Promise.all([
-      Booking.countDocuments({ workerId }),
-      Booking.countDocuments({ workerId, status: { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED] } }),
-      Booking.countDocuments({ workerId, status: { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] } }),
-      Booking.countDocuments({ workerId, status: { $in: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED] } })
+      Booking.countDocuments(baseQuery),
+      Booking.countDocuments({ ...baseQuery, status: { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED] } }),
+      Booking.countDocuments({ ...baseQuery, status: { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] } }),
+      Booking.countDocuments({ ...baseQuery, status: { $in: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED] } })
     ]);
 
     res.status(200).json({
@@ -81,7 +89,13 @@ const getJobById = async (req, res) => {
     const workerId = req.user.id;
     const { id } = req.params;
 
-    const booking = await Booking.findOne({ _id: id, workerId })
+    const booking = await Booking.findOne({
+      _id: id,
+      $or: [
+        { workerId },
+        { notifiedWorkers: workerId }
+      ]
+    })
       .populate('userId', 'name phone email')
       .populate('vendorId', 'name businessName phone email address')
       .populate('serviceId', 'title description iconUrl images')
@@ -1123,7 +1137,136 @@ const shareJobReport = async (req, res) => {
   }
 };
 
+/**
+ * Accept a broadcasted one-time job
+ * Similar to how vendors accept jobs from users
+ */
+const acceptBroadcastJob = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { id } = req.params;
+
+    // ATOMIC UPDATE: Check status and workerId/vendorId in query to prevent race conditions
+    // Only accept if status is REQUESTED/SEARCHING and NO worker/vendor is assigned yet
+    const updatedBooking = await Booking.findOneAndUpdate(
+      {
+        _id: id,
+        status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
+        workerId: null,
+        vendorId: null
+      },
+      {
+        $set: {
+          workerId: workerId,
+          acceptedAt: new Date(),
+          workerAcceptedAt: new Date(),
+          status: BOOKING_STATUS.ASSIGNED, // Or CONFIRMED depending on flow
+          workerResponse: 'ACCEPTED'
+        }
+      },
+      { new: true } // Return updated doc
+    );
+
+    if (!updatedBooking) {
+      // If update failed, check why (likely already taken)
+      const existing = await Booking.findById(id);
+      if (existing && (existing.workerId || existing.vendorId)) {
+        return res.status(409).json({
+          success: false,
+          message: 'Sorry, this job has already been accepted by someone else.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Job is no longer available.'
+      });
+    }
+
+    const booking = updatedBooking;
+
+    // Update worker availability
+    const WorkerModel = require('../../models/Worker');
+    await WorkerModel.findByIdAndUpdate(workerId, { availability: 'ON_JOB' });
+
+    // Update BookingRequest statuses if exists
+    const BookingRequest = require('../../models/BookingRequest');
+    await BookingRequest.findOneAndUpdate(
+      { bookingId: id, workerId },
+      { status: 'ACCEPTED', respondedAt: new Date() }
+    );
+    await BookingRequest.updateMany(
+      { bookingId: id, workerId: { $ne: workerId }, workerId: { $exists: true } },
+      { status: 'EXPIRED', respondedAt: new Date() }
+    );
+
+    const { createNotification } = require('../notificationControllers/notificationController');
+
+    // NOTIFY OTHER WORKERS to remove this job
+    const io = req.app.get('io');
+    if (io && booking.notifiedWorkers && booking.notifiedWorkers.length > 0) {
+      booking.notifiedWorkers.forEach(otherWorkerId => {
+        if (otherWorkerId.toString() !== workerId.toString()) {
+          const room = `worker_${otherWorkerId.toString()}`;
+          io.to(room).emit('job_taken', {
+            bookingId: booking._id.toString(),
+            message: 'This job has been accepted by someone else.'
+          });
+        }
+      });
+    }
+
+    // Emit real-time updates to USER
+    if (io) {
+      const message = 'A professional has accepted your request. Your booking is confirmed!';
+      io.to(`user_${booking.userId}`).emit('booking_accepted', {
+        bookingId: booking._id,
+        bookingNumber: booking.bookingNumber,
+        worker: {
+          id: workerId,
+          name: req.user.name,
+        },
+        message
+      });
+
+      io.to(`user_${booking.userId}`).emit('booking_updated', {
+        bookingId: booking._id,
+        status: booking.status,
+        message: 'A professional has accepted your request'
+      });
+    }
+
+    // Send notification to user
+    const notificationMessage = `Your booking ${booking.bookingNumber} is confirmed! ${req.user.name} will arrive at the scheduled time.`;
+    await createNotification({
+      userId: booking.userId,
+      type: 'booking_accepted',
+      title: 'Booking Confirmed!',
+      message: notificationMessage,
+      relatedId: booking._id,
+      relatedType: 'booking',
+      pushData: {
+        type: 'booking_accepted',
+        bookingId: booking._id.toString(),
+        link: `/user/booking/${booking._id}`
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Job accepted successfully',
+      data: booking
+    });
+  } catch (error) {
+    console.error('Accept broadcast job error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to accept job. Please try again.'
+    });
+  }
+};
+
 module.exports = {
+  acceptBroadcastJob,
   getAssignedJobs,
   getJobById,
   updateJobStatus,

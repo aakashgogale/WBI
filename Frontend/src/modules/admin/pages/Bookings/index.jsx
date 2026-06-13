@@ -24,6 +24,7 @@ const BookingStatsCard = ({ title, count, icon: Icon, colorClass, bgClass }) => 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -256,10 +257,53 @@ const Bookings = () => {
                         })}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <button className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                    <td className="px-4 py-3 text-right relative">
+                      <button 
+                        onClick={() => setActiveDropdown(activeDropdown === booking._id ? null : booking._id)}
+                        className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
                         <FiMoreVertical className="w-4 h-4" />
                       </button>
+                      
+                      {activeDropdown === booking._id && (
+                        <div className="absolute right-8 top-10 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 text-left">
+                          <button 
+                            onClick={async () => {
+                              try {
+                                toast.loading('Assigning provider...', { id: 'assign' });
+                                await adminBookingService.autoAssignProvider(booking._id);
+                                toast.success('Worker will be notified immediately!', { id: 'assign' });
+                                fetchData();
+                              } catch (error) {
+                                toast.error(error.message || 'Failed to assign provider', { id: 'assign' });
+                              }
+                              setActiveDropdown(null);
+                            }}
+                            className="w-full px-4 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <FiCheckCircle className="w-3 h-3" /> Assign Provider
+                          </button>
+                          <button 
+                            onClick={() => {
+                              toast.success('Action coming soon');
+                              setActiveDropdown(null);
+                            }}
+                            className="w-full px-4 py-2 text-[11px] font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <FiBox className="w-3 h-3" /> View Details
+                          </button>
+                          <div className="h-px bg-gray-100 my-1"></div>
+                          <button 
+                            onClick={() => {
+                              toast.success('Action coming soon');
+                              setActiveDropdown(null);
+                            }}
+                            className="w-full px-4 py-2 text-[11px] font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <FiXCircle className="w-3 h-3" /> Cancel Booking
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))

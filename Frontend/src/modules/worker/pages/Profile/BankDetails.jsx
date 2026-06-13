@@ -90,60 +90,60 @@ const BankDetails = () => {
             
             {/* Account Holder */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <FiFileText className="text-indigo-500" /> Account Holder Name
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <FiFileText className="text-slate-400 text-sm" /> Account Holder Name
               </label>
               <input
                 type="text"
                 name="accountHolder"
                 value={formData.accountHolder}
                 onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all uppercase"
-                placeholder="NAME AS PER BANK"
+                className="w-full bg-[#F8F9FA] rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all uppercase border-none"
+                placeholder="KARTIK"
               />
             </div>
 
             {/* Bank Name */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <BsBank className="text-indigo-500" /> Bank Name
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <BsBank className="text-slate-400 text-sm" /> Bank Name
               </label>
               <input
                 type="text"
                 name="bankName"
                 value={formData.bankName}
                 onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all"
+                className="w-full bg-[#F8F9FA] rounded-2xl px-4 py-3.5 text-sm font-medium text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all border-none"
                 placeholder="e.g. State Bank of India"
               />
             </div>
 
             {/* Account Number */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <FiHash className="text-indigo-500" /> Account Number
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <FiHash className="text-slate-400 text-sm" /> Account Number
               </label>
               <input
-                type="password" // Initially password to secure, but maybe text is better for workers? Let's use text but styled safely
+                type="text"
                 name="accountNumber"
                 value={formData.accountNumber}
                 onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all"
+                className="w-full bg-[#F8F9FA] rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-800 placeholder-gray-500 tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all border-none"
                 placeholder="0000 0000 0000"
               />
             </div>
 
             {/* IFSC Code */}
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
-                <FiFileText className="text-indigo-500" /> IFSC Code
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1 flex items-center gap-1.5">
+                <FiFileText className="text-slate-400 text-sm" /> IFSC Code
               </label>
               <input
                 type="text"
                 name="ifscCode"
                 value={formData.ifscCode}
                 onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all uppercase"
+                className="w-full bg-[#F8F9FA] rounded-2xl px-4 py-3.5 text-sm font-bold text-gray-800 placeholder-gray-500 tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all uppercase border-none"
                 placeholder="SBIN0001234"
                 maxLength={11}
               />
@@ -155,7 +155,7 @@ const BankDetails = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(79,70,229,0.3)] disabled:opacity-70 disabled:active:scale-100"
+          className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.15)] disabled:opacity-70 disabled:active:scale-100"
         >
           {saving ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

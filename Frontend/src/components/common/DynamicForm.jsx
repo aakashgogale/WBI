@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiCheckCircle } from 'react-icons/fi';
 
+import { toast } from 'react-hot-toast';
+
 const DynamicForm = ({ config, initialData = {}, onSubmit, onCancel, submitLabel = 'Submit' }) => {
   const [formData, setFormData] = useState(initialData);
 
@@ -14,36 +16,59 @@ const DynamicForm = ({ config, initialData = {}, onSubmit, onCancel, submitLabel
 
   const handleChange = (e, field) => {
     let value;
+    const key = field.key || field.fieldKey;
     if (field.type === 'file') {
-      // In a real app we might handle file uploads here
-      // For now, assume it's handled externally or as a base64 string
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setFormData({ ...formData, [field.key]: reader.result });
+          setFormData({ ...formData, [key]: reader.result });
         };
         reader.readAsDataURL(file);
       }
     } else {
       value = e.target.value;
-      setFormData({ ...formData, [field.key]: value });
+      setFormData({ ...formData, [key]: value });
     }
   };
 
   const handleCheckboxChange = (e, field, optionValue) => {
-    const currentValues = formData[field.key] || [];
+    const key = field.key || field.fieldKey;
+    const currentValues = formData[key] || [];
     let newValues;
     if (e.target.checked) {
       newValues = [...currentValues, optionValue];
     } else {
       newValues = currentValues.filter((v) => v !== optionValue);
     }
-    setFormData({ ...formData, [field.key]: newValues });
+    setFormData({ ...formData, [key]: newValues });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Manual validation
+    for (const field of config.fields) {
+      if (field.visible === false) continue;
+      
+      if (field.required) {
+        const key = field.key || field.fieldKey;
+        const val = formData[key];
+        
+        if (field.type === 'multiselect') {
+          if (!val || val.length === 0) {
+            toast.error(`Please select at least one option for ${field.label}`);
+            return;
+          }
+        } else {
+          if (val === undefined || val === null || val.toString().trim() === '') {
+            toast.error(`Please fill out ${field.label}`);
+            return;
+          }
+        }
+      }
+    }
+
     onSubmit(formData);
   };
 
@@ -55,10 +80,10 @@ const DynamicForm = ({ config, initialData = {}, onSubmit, onCancel, submitLabel
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {config.fields.map((field) => {
-          if (!field.visible) return null;
+          if (field.visible === false) return null;
 
           return (
-            <div key={field.key} className={field.type === 'textarea' || field.type === 'multiselect' ? "col-span-full" : ""}>
+            <div key={field.key || field.fieldKey || field._id} className={field.type === 'textarea' || field.type === 'multiselect' ? "col-span-full" : ""}>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 {field.label} {field.required && <span className="text-red-500">*</span>}
               </label>
@@ -67,22 +92,32 @@ const DynamicForm = ({ config, initialData = {}, onSubmit, onCancel, submitLabel
               {['text', 'email', 'phone', 'number'].includes(field.type) && (
                 <input
                   type={field.type === 'phone' ? 'tel' : field.type}
-                  value={formData[field.key] || ''}
+                  value={formData[field.key || field.fieldKey] || ''}
                   onChange={(e) => handleChange(e, field)}
-                  required={field.required}
-                  disabled={!field.editable}
+                  disabled={field.editable === false}
                   placeholder={`Enter ${field.label.toLowerCase()}`}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                 />
               )}
 
-              {/* Dropdown */}
-              {field.type === 'dropdown' && (
-                <select
-                  value={formData[field.key] || ''}
+              {/* Textarea */}
+              {field.type === 'textarea' && (
+                <textarea
+                  value={formData[field.key || field.fieldKey] || ''}
                   onChange={(e) => handleChange(e, field)}
-                  required={field.required}
-                  disabled={!field.editable}
+                  disabled={field.editable === false}
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-y"
+                />
+              )}
+
+              {/* Dropdown */}
+              {(field.type === 'dropdown' || field.type === 'select') && (
+                <select
+                  value={formData[field.key || field.fieldKey] || ''}
+                  onChange={(e) => handleChange(e, field)}
+                  disabled={field.editable === false}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm appearance-none"
                 >
                   <option value="">Select {field.label}</option>
@@ -101,9 +136,9 @@ const DynamicForm = ({ config, initialData = {}, onSubmit, onCancel, submitLabel
                     <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={(formData[field.key] || []).includes(opt.value)}
+                        checked={(formData[field.key || field.fieldKey] || []).includes(opt.value)}
                         onChange={(e) => handleCheckboxChange(e, field, opt.value)}
-                        disabled={!field.editable}
+                        disabled={field.editable === false}
                         className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                       />
                       <span className="text-sm text-gray-700">{opt.label}</span>
@@ -118,12 +153,11 @@ const DynamicForm = ({ config, initialData = {}, onSubmit, onCancel, submitLabel
                   <input
                     type="file"
                     onChange={(e) => handleChange(e, field)}
-                    required={field.required && !formData[field.key]}
-                    disabled={!field.editable}
+                    disabled={field.editable === false}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
                   />
-                  {formData[field.key] && formData[field.key].startsWith('data:image') && (
-                    <img src={formData[field.key]} alt="Preview" className="mt-2 h-20 rounded-lg object-cover" />
+                  {formData[field.key || field.fieldKey] && formData[field.key || field.fieldKey].startsWith('data:image') && (
+                    <img src={formData[field.key || field.fieldKey]} alt="Preview" className="mt-2 h-20 rounded-lg object-cover" />
                   )}
                 </div>
               )}

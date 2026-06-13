@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../../theme';
 import { engineerAuthService } from '../../../../services/authService';
 import Header from '../../components/layout/Header';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
 
 const Settings = () => {
@@ -39,7 +39,7 @@ const Settings = () => {
     const loadSettings = async () => {
       try {
         setLoading(true);
-        const res = await workerService.getProfile();
+        const res = await engineerService.getProfile();
         if (res.success && res.worker?.settings) {
           setSettings(res.worker.settings);
           // Sync with localStorage for legacy components
@@ -61,7 +61,7 @@ const Settings = () => {
 
   const updateDBSettings = async (newSettings) => {
     try {
-      const res = await workerService.updateProfile({ settings: newSettings });
+      const res = await engineerService.updateProfile({ settings: newSettings });
       if (res.success) {
         localStorage.setItem('workerSettings', JSON.stringify(newSettings));
 

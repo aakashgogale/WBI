@@ -86,12 +86,40 @@ const verifyLogin = async (req, res) => {
       });
     }
 
-    // 2. Check if user exists
-    const user = await User.findOne({ phone });
+    // 2. Check if user exists in ANY collection
+    const Worker = require('../../models/Worker');
+    const Engineer = require('../../models/Engineer');
+    const Vendor = require('../../models/Vendor');
+    const Admin = require('../../models/Admin');
 
-    if (user) {
+    const collections = [
+      { role: 'worker', model: Worker, redirect: '/worker/dashboard' },
+      { role: 'engineer', model: Engineer, redirect: '/engineer/dashboard' },
+      { role: 'vendor', model: Vendor, redirect: '/vendor/dashboard' },
+      { role: 'user', model: User, redirect: '/user/dashboard' },
+      { role: 'admin', model: Admin, redirect: '/admin/dashboard' }
+    ];
+
+    let foundUser = null;
+    let foundRoleInfo = null;
+
+    for (const item of collections) {
+      const user = await item.model.findOne({ phone });
+      if (user) {
+        foundUser = user;
+        foundRoleInfo = { ...item };
+        // Override for User collection with role='admin'
+        if (item.role === 'user' && user.role === 'admin') {
+          foundRoleInfo.role = 'admin';
+          foundRoleInfo.redirect = '/admin/dashboard';
+        }
+        break;
+      }
+    }
+
+    if (foundUser) {
       // EXISTING USER -> LOGIN
-      if (!user.isActive) {
+      if (foundUser.isActive === false && foundRoleInfo.role !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'Your account has been deactivated.'
@@ -100,14 +128,14 @@ const verifyLogin = async (req, res) => {
 
       // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens
       const loginSessionId = Date.now().toString();
-      await User.findByIdAndUpdate(user._id, { 
+      await foundRoleInfo.model.findByIdAndUpdate(foundUser._id, { 
         loginSessionId,
         $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens
-      });
+      }).catch(() => {}); // Safely ignore if fields don't exist
       
       const tokens = generateTokenPair({
-        userId: user._id,
-        role: USER_ROLES.USER,
+        userId: foundUser._id,
+        role: foundRoleInfo.role.toUpperCase(),
         loginSessionId
       });
 
@@ -116,13 +144,14 @@ const verifyLogin = async (req, res) => {
         isNewUser: false,
         message: 'Login successful',
         user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          isPhoneVerified: user.isPhoneVerified,
-          isEmailVerified: user.isEmailVerified
+          id: foundUser._id,
+          name: foundUser.name,
+          email: foundUser.email,
+          phone: foundUser.phone,
+          role: foundRoleInfo.role
         },
+        role: foundRoleInfo.role,
+        redirectTo: foundRoleInfo.redirect,
         ...tokens
       });
 

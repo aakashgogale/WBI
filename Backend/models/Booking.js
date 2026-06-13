@@ -37,12 +37,20 @@ const bookingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor'
   }],
+  notifiedWorkers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Worker'
+  }],
 
   // ==========================================
   // WAVE-BASED ALERTING
   // ==========================================
   potentialVendors: [{
     vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+    distance: { type: Number } // in km
+  }],
+  potentialWorkers: [{
+    workerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Worker' },
     distance: { type: Number } // in km
   }],
   currentWave: {

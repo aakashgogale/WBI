@@ -67,11 +67,8 @@ const ElectricalSafetyTestEnquiries = lazy(() => import('../pages/ElectricalSafe
 const HcPreventiveMaintenanceEnquiries = lazy(() => import('../pages/HcPreventiveMaintenanceEnquiries'));
 const HcAmcEnquiries = lazy(() => import('../pages/HcAmcEnquiries'));
 
-// Loading fallback component
-import LogoLoader from '../../../components/common/LogoLoader';
-
 const LoadingFallback = () => (
-  <LogoLoader />
+  <div className="min-h-screen"></div>
 );
 
 const AdminRoutes = () => {

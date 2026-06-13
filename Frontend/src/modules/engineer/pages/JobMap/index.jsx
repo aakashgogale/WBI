@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView, PolylineF } from '@react-google-maps/api';
 import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiCheckCircle, FiMaximize, FiMinimize, FiClock, FiWifiOff, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
 import useAppNotifications from '../../../../hooks/useAppNotifications';
 
@@ -57,36 +57,37 @@ const JobMap = () => {
 
   const mapRef = useRef(null);
 
-  useEffect(() => {
-    const fetchJob = async () => {
-      try {
-        const response = await workerService.getJobById(id);
-        const data = response.data || response;
-        setJob(data);
+  const fetchJob = async () => {
+    try {
+      const response = await engineerService.getJobById(id);
+      const data = response.data || response;
+      setJob(data);
 
-        // 1. Destination: Fixed Job Address from DB
-        const bAddr = data.address || {};
+      // 1. Destination: Fixed Job Address from DB
+      const bAddr = data.address || {};
 
-        if (bAddr.lat && bAddr.lng) {
-          setCoords({ lat: parseFloat(bAddr.lat), lng: parseFloat(bAddr.lng) });
-        } else {
-          const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr.addressLine1 || ''}, ${bAddr.city || ''}, ${bAddr.state || ''} ${bAddr.pincode || ''}`;
-          if (addressStr.replaceAll(',', '').trim() && !addressStr.toLowerCase().includes('current location')) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ address: addressStr }, (results, status) => {
-              if (status === 'OK' && results[0]) {
-                setCoords(results[0].geometry.location.toJSON());
-              }
-            });
-          }
+      if (bAddr.lat && bAddr.lng) {
+        setCoords({ lat: parseFloat(bAddr.lat), lng: parseFloat(bAddr.lng) });
+      } else {
+        const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr.addressLine1 || ''}, ${bAddr.city || ''}, ${bAddr.state || ''} ${bAddr.pincode || ''}`;
+        if (addressStr.replaceAll(',', '').trim() && !addressStr.toLowerCase().includes('current location')) {
+          const geocoder = new window.google.maps.Geocoder();
+          geocoder.geocode({ address: addressStr }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+              setCoords(results[0].geometry.location.toJSON());
+            }
+          });
         }
-
-      } catch (error) {
-        // Error
-      } finally {
-        setLoading(false);
       }
-    };
+
+    } catch (error) {
+      // Error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (isLoaded) fetchJob();
   }, [id, isLoaded]);
 
@@ -590,7 +591,7 @@ const JobMap = () => {
             </p>
             <div className="flex gap-3 w-full">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => { setRouteError(null); fetchJob(); }}
                 className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <FiRefreshCw className="w-4 h-4" /> Retry
@@ -767,7 +768,7 @@ const JobMap = () => {
             <button
               onClick={async () => {
                 try {
-                  await workerService.workerReached(id);
+                  await engineerService.workerReached(id);
                   toast.success('Customer notified that you reached');
                 } catch (e) {
                   console.error('Reached notification failed', e);

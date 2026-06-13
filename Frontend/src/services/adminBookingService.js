@@ -39,5 +39,15 @@ export const adminBookingService = {
     } catch (error) {
       throw error.response?.data || { message: 'Failed to cancel booking' };
     }
+  },
+
+  // Auto assign provider
+  autoAssignProvider: async (id) => {
+    try {
+      const response = await api.post(`/admin/bookings/${id}/auto-assign`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to auto-assign provider' };
+    }
   }
 };

@@ -33,7 +33,11 @@ const createCategoryValidation = [
   body('status')
     .optional()
     .isIn(['active', 'inactive', 'deleted'])
-    .withMessage('Status must be active, inactive, or deleted')
+    .withMessage('Status must be active, inactive, or deleted'),
+  body('providerType')
+    .optional()
+    .isIn(['vendor', 'worker', 'both'])
+    .withMessage('Provider type must be vendor, worker, or both')
 ];
 
 const updateCategoryValidation = [
@@ -57,7 +61,11 @@ const updateCategoryValidation = [
   body('status')
     .optional()
     .isIn(['active', 'inactive', 'deleted'])
-    .withMessage('Status must be active, inactive, or deleted')
+    .withMessage('Status must be active, inactive, or deleted'),
+  body('providerType')
+    .optional()
+    .isIn(['vendor', 'worker', 'both'])
+    .withMessage('Provider type must be vendor, worker, or both')
 ];
 
 // Routes

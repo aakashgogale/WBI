@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 
 /**
  * Reusable Visit Verification Modal
@@ -94,7 +94,7 @@ const VisitVerificationModal = ({ isOpen, onClose, bookingId, onSuccess }) => {
       };
 
       // Use workerService instead of direct import
-      const response = await workerService.verifyVisit(bookingId, otp, location);
+      const response = await engineerService.verifyVisit(bookingId, otp, location);
 
       if (response.success) {
         toast.success('Visit Verified Successfully!');

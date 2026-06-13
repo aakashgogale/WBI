@@ -296,9 +296,95 @@ const findVendorsByCity = async (city, filters = {}) => {
   }
 };
 
+const _buildWorkerQuery = (filters = {}) => {
+  const { WORKER_STATUS } = require('../utils/constants');
+  
+  const serviceCategory = filters.service;
+  
+  const queryFilters = { ...filters };
+  delete queryFilters.service;
+  delete queryFilters.city;
+
+  const baseQuery = {
+    approvalStatus: 'approved',
+    isActive: true,
+    ...queryFilters
+  };
+
+  if (filters.city) {
+    baseQuery['address.city'] = { $regex: new RegExp(filters.city, 'i') };
+  }
+
+  if (serviceCategory) {
+    baseQuery.serviceCategories = { $in: [serviceCategory] };
+  }
+
+  return baseQuery;
+};
+
+/**
+ * Find workers within specified radius of a location
+ */
+const findNearbyWorkers = async (centerLocation, radiusKm = 10, filters = {}) => {
+  const Worker = require('../models/Worker');
+  const Settings = require('../models/Settings');
+
+  if (!centerLocation || typeof centerLocation.lat !== 'number' || typeof centerLocation.lng !== 'number') {
+    console.warn('[LocationService] Invalid coordinates for worker search.');
+    return [];
+  }
+
+  try {
+    if (radiusKm === 10) {
+      const globalSettings = await Settings.findOne({ type: 'global' }).select('searchRadius').lean();
+      if (globalSettings?.searchRadius) radiusKm = globalSettings.searchRadius;
+    }
+
+    const baseQuery = _buildWorkerQuery(filters);
+    
+    // Workers don't currently have a geo-indexed field like vendors (or maybe they do? "location" is an object but not GeoJSON)
+    // We will use Haversine fallback directly for workers since they use a simple location object.
+    
+    const workers = await Worker.find(baseQuery)
+      .select('name phone address location profilePhoto serviceCategories rating isOnline availability settings');
+
+    console.log(`[LocationService] found ${workers.length} workers matching baseQuery before distance filter`);
+
+    let nearbyWorkers = workers.map(worker => {
+      let distance = null;
+
+      const wLat = worker.location?.lat || worker.address?.lat;
+      const wLng = worker.location?.lng || worker.address?.lng;
+
+      if (wLat && wLng) {
+        distance = calculateDistance(centerLocation, {
+          lat: wLat,
+          lng: wLng
+        });
+      }
+
+      // Default radius 20km for workers if not specified
+      const wRange = radiusKm || 20;
+      return {
+        ...worker.toObject(),
+        distance: distance,
+        withinRange: distance !== null && distance <= wRange,
+        isUsingCurrentLocation: !!worker.location?.lat
+      };
+    }).filter(worker => worker.withinRange);
+
+    console.log(`[LocationService] Found ${nearbyWorkers.length} workers using Haversine`);
+    return nearbyWorkers;
+  } catch (error) {
+    console.error('Find nearby workers error:', error);
+    return [];
+  }
+};
+
 module.exports = {
   geocodeAddress,
   findNearbyVendors,
+  findNearbyWorkers,
   findVendorsByCity,
   calculateDistance,
   getDistanceMatrix

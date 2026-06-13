@@ -5,7 +5,7 @@ import { FiX, FiMapPin, FiClock, FiCheck, FiBell, FiMinimize2 } from 'react-icon
 import { motion, AnimatePresence } from 'framer-motion';
 import { workerTheme as themeColors } from '../../../../theme';
 import { playAlertRing, stopAlertRing } from '../../../../utils/notificationSound';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 
 const WorkerAlertCard = ({ booking, onAccept, onReject, initialTimeLeft = 120 }) => {
   const [timeLeft, setTimeLeft] = useState(initialTimeLeft);
@@ -177,7 +177,7 @@ export default function GlobalWorkerJobAlert() {
 
   const handleAccept = async (id) => {
     try {
-      await workerService.respondToJob(id, 'ACCEPTED');
+      await engineerService.respondToJob(id, 'ACCEPTED');
 
       // Clear from pending local storage
       const pendingJobs = JSON.parse(localStorage.getItem('workerPendingJobs') || '[]');
@@ -200,7 +200,7 @@ export default function GlobalWorkerJobAlert() {
 
   const handleReject = async (id, isAutoReject = false) => {
     try {
-      await workerService.respondToJob(id, 'REJECTED');
+      await engineerService.respondToJob(id, 'REJECTED');
     } catch (error) {
       console.error("Failed to reject on backend", error);
     } finally {

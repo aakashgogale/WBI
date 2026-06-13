@@ -78,13 +78,14 @@ const Profile = () => {
   const basePath = window.location.pathname.startsWith('/engineer') ? '/engineer' : '/engineer';
 
   const menuItems = [
-    { id: 'personal', title: 'Personal Information', icon: <FiUser />, route: `${basePath}/profile/personal-info`, color: 'text-teal-600', bgColor: 'bg-teal-50' },
-    { id: 'bank', title: 'Bank Details', icon: <FiCreditCard />, route: `${basePath}/profile/bank-details`, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
-    { id: 'documents', title: 'Documents', icon: <FiFileText />, route: `${basePath}/profile/documents`, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-    { id: 'locations', title: 'Work Locations', icon: <FiMapPin />, route: `${basePath}/profile/work-locations`, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { id: 'customDetails', title: 'Custom Details', icon: <FiFileText />, route: `${basePath}/profile/custom-details`, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { id: 'notifications', title: 'Notification Settings', icon: <FiBell />, route: `${basePath}/profile/notifications`, color: 'text-orange-500', bgColor: 'bg-orange-50' },
-    { id: 'support', title: 'Help & Support', icon: <FiHelpCircle />, route: `${basePath}/profile/support`, color: 'text-teal-600', bgColor: 'bg-teal-50' }
+    { id: 'personal', title: 'Personal Information', icon: <FiUser />, route: `${basePath}/profile/personal-info`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+    { id: 'skills', title: 'Skills & Expertise', icon: <FiStar />, route: `${basePath}/profile/skills`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+    { id: 'bank', title: 'Bank Details', icon: <FiCreditCard />, route: `${basePath}/profile/bank-details`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+    { id: 'documents', title: 'Documents', icon: <FiFileText />, route: `${basePath}/profile/documents`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+    { id: 'locations', title: 'Work Locations', icon: <FiMapPin />, route: `${basePath}/profile/work-locations`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+
+    { id: 'notifications', title: 'Notification Settings', icon: <FiBell />, route: `${basePath}/profile/notifications`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+    { id: 'support', title: 'Help & Support', icon: <FiHelpCircle />, route: `${basePath}/profile/support`, color: 'text-gray-800', bgColor: 'bg-gray-50' }
   ];
 
   if (isLoading) return <LogoLoader />;
@@ -100,7 +101,7 @@ const Profile = () => {
         </div>
         <h1 className="text-lg font-bold">Profile</h1>
         <button 
-          onClick={() => navigate('/engineer/profile/edit')}
+          onClick={() => navigate(`${basePath}/profile/edit`)}
           className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-700 active:scale-95 transition-all"
         >
           <FiEdit className="w-5 h-5" />
@@ -110,23 +111,23 @@ const Profile = () => {
       <main className="flex-1 flex flex-col px-4 pt-6 pb-6">
         {/* Profile Card */}
         <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 mb-6 flex items-center gap-5 relative overflow-hidden">
-          <div className="w-20 h-20 rounded-full bg-teal-50 border-4 border-[#10AFA5]/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className="w-20 h-20 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
             {profile.profilePhoto ? (
               <img src={profile.profilePhoto} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
-              <FiUser className="w-8 h-8 text-[#10AFA5]" />
+              <FiUser className="w-8 h-8 text-gray-900" />
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{profile.name || 'Engineer'}</h2>
-            <div className="flex items-center gap-1.5 mb-2 text-sm text-gray-500 font-medium">
-              <FiShield className="w-4 h-4 text-emerald-500" />
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{profile.name || 'Worker'}</h2>
+            <div className="flex items-center gap-1.5 mb-2 text-sm text-gray-600 font-medium">
+              <FiShield className="w-4 h-4 text-gray-900" />
               <span>ID: {profile.id ? profile.id.substring(profile.id.length - 6).toUpperCase() : profile._id ? profile._id.substring(profile._id.length - 6).toUpperCase() : 'N/A'}</span>
             </div>
-            <div className="flex items-center gap-1 bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-lg w-max font-bold text-sm cursor-pointer hover:bg-yellow-100 transition-colors" onClick={() => navigate('/engineer/profile/ratings')}>
-              <FiStar className="fill-yellow-500 text-yellow-500" />
+            <div className="flex items-center gap-1 bg-gray-100 text-gray-900 px-2.5 py-1 rounded-lg w-max font-bold text-sm cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => navigate('/engineer/profile/ratings')}>
+              <FiStar className="text-gray-900" />
               <span>{profile.rating?.toFixed(1) || '0.0'}</span>
-              <span className="text-yellow-600/70 ml-1 font-semibold text-xs">({profile.totalReviews || 0} reviews)</span>
+              <span className="text-gray-600 ml-1 font-semibold text-xs">({profile.totalReviews || 0} reviews)</span>
             </div>
           </div>
         </div>
@@ -134,15 +135,15 @@ const Profile = () => {
         {/* Completion Progress */}
         <div className="mb-8">
           <div className="flex justify-between items-end mb-3">
-            <h3 className="font-bold text-[#10AFA5] text-[15px]">Profile Completion</h3>
-            <span className="font-black text-[#10AFA5] text-lg">{completion}%</span>
+            <h3 className="font-bold text-gray-900 text-[15px]">Profile Completion</h3>
+            <span className="font-black text-gray-900 text-lg">{completion}%</span>
           </div>
           <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${completion}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-[#10AFA5] to-teal-400 rounded-full"
+              className="h-full bg-gray-900 rounded-full"
             />
           </div>
         </div>

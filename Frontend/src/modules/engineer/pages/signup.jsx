@@ -1,220 +1,197 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiUser, FiMail, FiPhone, FiLock, FiCheckCircle, FiArrowRight, FiArrowLeft, FiChevronLeft, FiUpload, FiX, FiBriefcase, FiTool, FiCalendar, FiMapPin } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiLock, FiCheckCircle, FiArrowRight, FiArrowLeft, FiChevronLeft, FiMapPin } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { z } from 'zod';
+import LogoLoader from '../../../components/common/LogoLoader';
 import { engineerAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
-
-// Constants for Dropdowns
-const PRIMARY_SKILLS = [
-  'CCTV / Surveillance Systems', 'Access Control Systems', 'Fire Alarm & Safety',
-  'Networking & Structured Cabling', 'ATM Service & Banking Equipment', 'UPS / Battery Systems',
-  'Diesel Generator Service', 'AC / HVAC Systems', 'Electrical / Panel Work',
-  'Biomedical Equipment', 'EV Charging Systems', 'POS / Barcode / Peripherals',
-  'Software / IT Support', 'Other'
-];
-
-const EXPERIENCE_LEVELS = ['Fresher (0–1 year)', 'Junior (1–3 years)', 'Mid-level (3–6 years)', 'Senior (6–10 years)', 'Expert (10+ years)'];
-const EDUCATION_LEVELS = ['10th Pass', '12th Pass', 'ITI / Diploma', 'B.Tech / B.E.', 'B.Sc / B.Com / B.A.', 'M.Tech / M.E.', 'MBA / MCA', 'Other'];
-const REGISTRATION_TYPES = ['Individual Engineer / Technician', 'Company / Firm Employee', 'Freelancer'];
-const HEARD_ABOUT = ['Social Media', 'Company / Employer referred', 'Friend / Colleague', 'Google Search', 'Other'];
 
 export default function EngineerSignup() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [config, setConfig] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showOtpField, setShowOtpField] = useState(false);
-  const [otpValue, setOtpValue] = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
 
-  // === ENGINEER STATE ===
-  const [engData, setEngData] = useState({
-    name: '', profilePhoto: null, dob: '', gender: '',
-    phone: '', isPhoneVerified: false, whatsappNumber: '', emergencyContactNumber: '',
-    email: '', isEmailVerified: false,
-    city: '', state: '', pincode: '',
-    registrationType: 'Individual Engineer / Technician',
-    companyDetails: { companyName: '', companyRegNumber: '', employeeId: '', designation: '', reportingManager: '', companyContact: '', companyEmailDomain: '', companyId: null },
-    primarySkill: '', secondarySkills: [], totalExperienceYears: '', experienceLevel: '',
-    canWorkIndependently: true, willingToTravel: true, preferredWorkType: 'Both',
-    aadhaarNumber: '', aadhaarFront: null, aadhaarBack: null,
-    panNumber: '', panPhoto: null, highestEducation: '', fieldOfStudy: '',
-    skillCertificates: [], governmentCertifications: [],
-    username: '', password: '', confirmPassword: '', preferredLoginMethod: 'Both',
-    referralCode: '', heardAboutWbi: '',
-    acceptTerms: false
+  const [formData, setFormData] = useState({
+    serviceCategories: [],
+    subServices: [],
+    skills: [],
   });
 
+  useEffect(() => {
+    localStorage.removeItem('engineerAccessToken');
+    localStorage.removeItem('engineerRefreshToken');
+    localStorage.removeItem('engineerData');
+    
+    const loadConfig = async () => {
+      try {
+        const response = await engineerAuthService.getRegistrationConfig();
+        if (response.success) {
+          setConfig(response.config);
+        } else {
+          toast.error('Failed to load registration configuration');
+        }
+      } catch (err) {
+        toast.error('Error connecting to server. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadConfig();
+  }, []);
 
-  // Handlers for Engineer Form
-  const handleEngChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setEngData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-  };
-
-  const handleEngCompanyChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setEngData(prev => ({ ...prev, companyDetails: { ...prev.companyDetails, [name]: value } }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEngFileUpload = (e, field) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setEngData(prev => ({ ...prev, [field]: reader.result }));
-    reader.readAsDataURL(file);
-  };
-
-  const addCertificate = () => {
-    setEngData(prev => ({
+  const handleNestedChange = (section, e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
       ...prev,
-      skillCertificates: [...prev.skillCertificates, { name: '', issuingAuthority: '', issueDate: '', expiryDate: '', documentUrl: null }]
+      [section]: {
+        ...prev[section],
+        [name]: value
+      }
     }));
   };
 
-  const updateCertificate = (index, field, value) => {
-    const newCerts = [...engData.skillCertificates];
-    newCerts[index][field] = value;
-    setEngData(prev => ({ ...prev, skillCertificates: newCerts }));
-  };
-
-  const uploadCertificateDoc = (index, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => updateCertificate(index, 'documentUrl', reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  // OTP Verification Logic
-  const verifyPhone = async () => {
-    if (!engData.phone || engData.phone.length < 10) {
-      toast.error('Please enter a valid phone number');
-      return;
-    }
-    setOtpLoading(true);
-    try {
-      const res = await engineerAuthService.sendOTP(engData.phone);
-      if (res.success) {
-        toast.success('OTP sent successfully');
-        setShowOtpField(true);
+  const handleCategoryToggle = (categoryId) => {
+    setFormData(prev => {
+      const isSelected = prev.serviceCategories.includes(categoryId);
+      if (isSelected) {
+        // Remove category and its sub-services
+        const subServicesToRemove = config?.subServices
+          ?.filter(sub => sub.categoryId === categoryId)
+          ?.map(sub => sub.id || sub._id) || [];
+        return { 
+          ...prev, 
+          serviceCategories: prev.serviceCategories.filter(id => id !== categoryId),
+          subServices: prev.subServices.filter(id => !subServicesToRemove.includes(id))
+        };
       } else {
-        toast.error(res.message || 'Failed to send OTP');
+        return { ...prev, serviceCategories: [...prev.serviceCategories, categoryId] };
       }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to send OTP');
-    } finally {
-      setOtpLoading(false);
-    }
+    });
   };
 
-  const confirmOtp = async () => {
-    if (!otpValue || otpValue.length < 4) {
-      toast.error('Please enter a valid OTP');
-      return;
-    }
-    setOtpLoading(true);
-    try {
-      const res = await engineerAuthService.verifyLogin({ phone: engData.phone, otp: otpValue });
-      if (res.success) {
-        toast.success('Phone verified successfully');
-        setEngData(prev => ({ ...prev, isPhoneVerified: true }));
-        setShowOtpField(false);
+  const handleSubServiceToggle = (subServiceId) => {
+    setFormData(prev => {
+      const isSelected = prev.subServices.includes(subServiceId);
+      if (isSelected) {
+        return { ...prev, subServices: prev.subServices.filter(id => id !== subServiceId) };
       } else {
-        toast.error(res.message || 'Invalid OTP');
+        return { ...prev, subServices: [...prev.subServices, subServiceId] };
       }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Invalid OTP');
-    } finally {
-      setOtpLoading(false);
-    }
+    });
   };
 
-  // Mock for email until email OTP is supported backend
-  const verifyEmail = () => { toast.success('Email verified'); setEngData(prev => ({ ...prev, isEmailVerified: true })); };
+  const handleSkillToggle = (skillId) => {
+    setFormData(prev => {
+      const isSelected = prev.skills.includes(skillId);
+      if (isSelected) {
+        return { ...prev, skills: prev.skills.filter(id => id !== skillId) };
+      } else {
+        return { ...prev, skills: [...prev.skills, skillId] };
+      }
+    });
+  };
 
-  // Validation
   const validateStep = (step) => {
-    if (step === 1) {
-      if (!engData.name || !engData.dob || !engData.phone || !engData.email || !engData.city || !engData.emergencyContactNumber) return false;
-      if (!engData.isPhoneVerified || !engData.isEmailVerified) {
-        toast.error("Please verify Phone and Email first");
+    const stepData = config?.steps?.find(s => s.step === step);
+    if (stepData && stepData.fields) {
+      for (const field of stepData.fields) {
+        if (field.required && !formData[field.key]) {
+          toast.error(`Please provide your ${field.label}.`);
+          return false;
+        }
+        if (field.validation) {
+          if (field.validation.pattern) {
+            const regex = new RegExp(field.validation.pattern);
+            if (!regex.test(formData[field.key])) {
+              toast.error(field.validation.errorMessage || `Invalid format for ${field.label}`);
+              return false;
+            }
+          }
+          if (field.validation.min && formData[field.key]?.length < field.validation.min) {
+            toast.error(field.validation.errorMessage || `${field.label} must be at least ${field.validation.min} characters`);
+            return false;
+          }
+        }
+      }
+    }
+
+    const configMaxStep = Math.max(...(config?.steps?.map(s => s.step) || [1]));
+    const computedTotalSteps = config?.categories?.length > 0 ? configMaxStep + 1 : Math.max(configMaxStep, 2);
+    
+    if (step === computedTotalSteps && config?.categories?.length > 0) {
+      if (formData.serviceCategories.length === 0) {
+        toast.error("Please select at least one service category");
         return false;
       }
-      return true;
-    }
-    if (step === 2) {
-      if (!engData.primarySkill || !engData.totalExperienceYears || !engData.experienceLevel) return false;
-      return true;
-    }
-    if (step === 3) {
-      if (!engData.aadhaarNumber || !engData.aadhaarFront || !engData.aadhaarBack || !engData.panNumber || !engData.panPhoto) return false;
-      return true;
     }
     return true;
   };
 
   const nextStep = () => {
     if (validateStep(currentStep)) setCurrentStep(prev => prev + 1);
-    else toast.error("Please fill all mandatory fields.");
   };
 
   const prevStep = () => setCurrentStep(prev => prev - 1);
 
-  // Submission
-  const submitEngineer = async () => {
-    if (!engData.acceptTerms) return toast.error("Please accept Terms & Privacy Policy");
-    if (engData.password !== engData.confirmPassword) return toast.error("Passwords do not match");
-    if (engData.password.length < 8) return toast.error("Password must be at least 8 characters");
-
+  const handleSubmit = async () => {
+    if (!validateStep(currentStep)) return;
     setIsSubmitting(true);
     try {
-      // Build payload matching backend
+      const categoryTitles = formData.serviceCategories.map(id => {
+        const cat = config?.categories?.find(c => c.id === id || c._id === id);
+        return cat ? (cat.title || cat.name) : id;
+      });
+
+      const subServiceTitles = formData.subServices.map(id => {
+        const sub = config?.subServices?.find(c => c.id === id || c._id === id);
+        return sub ? (sub.title || sub.name) : id;
+      });
+
       const payload = {
-        name: engData.name, email: engData.email, phone: engData.phone, password: engData.password,
-        dob: engData.dob, gender: engData.gender,
-        registrationType: engData.registrationType,
-        companyDetails: engData.companyDetails,
-        whatsappNumber: engData.whatsappNumber,
-        emergencyContactNumber: engData.emergencyContactNumber,
-        address: { city: engData.city, state: engData.state, pincode: engData.pincode },
-        primarySkill: engData.primarySkill,
-        secondarySkills: engData.secondarySkills,
-        totalExperienceYears: parseInt(engData.totalExperienceYears),
-        experienceLevel: engData.experienceLevel,
-        canWorkIndependently: engData.canWorkIndependently,
-        willingToTravel: engData.willingToTravel,
-        preferredWorkType: engData.preferredWorkType,
-        panNumber: engData.panNumber,
-        highestEducation: engData.highestEducation,
-        fieldOfStudy: engData.fieldOfStudy,
-        skillCertificates: engData.skillCertificates,
-        governmentCertifications: engData.governmentCertifications,
-        username: engData.username || engData.name.toLowerCase().replace(/\s+/g, ''),
-        preferredLoginMethod: engData.preferredLoginMethod,
-        referralCode: engData.referralCode,
-        heardAboutWbi: engData.heardAboutWbi,
-        uploadedDocuments: [
-          { key: 'Aadhaar Card Front', url: engData.aadhaarFront, backUrl: engData.aadhaarBack },
-          { key: 'PAN Card Photo', url: engData.panPhoto }
-        ]
+        ...formData,
+        roleType: 'Engineer',
+        serviceCategories: categoryTitles,
+        subServices: subServiceTitles,
+        skills: formData.skills,
       };
 
-      const res = await engineerAuthService.register(payload);
-      if (res.success) {
-        toast.success("Registration Successful!");
-        navigate('/engineer', { replace: true });
+      const response = await engineerAuthService.register(payload);
+      if (response.success) {
+        toast.success(
+          <div className="flex flex-col">
+            <span className="font-bold">Welcome Onboard!</span>
+            <span className="text-xs">Your account is pending approval.</span>
+          </div>,
+          { icon: <FiCheckCircle className="text-green-500" /> }
+        );
+        navigate('/engineer/login', { replace: true });
       } else {
-        toast.error(res.message);
+        toast.error(response.message || 'Registration failed');
       }
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || "Registration failed";
-      toast.error(errorMsg);
+    } catch (error) {
+      if (error.response?.data?.errors?.length > 0) {
+        toast.error(error.response.data.errors[0].msg || 'Validation failed');
+      } else {
+        toast.error(error.response?.data?.message || 'Registration failed');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LogoLoader fullScreen={false} /></div>;
+
+  const currentStepData = config?.steps?.find(s => s.step === currentStep);
+  const configMaxStep = Math.max(...(config?.steps?.map(s => s.step) || [1]));
+  const totalSteps = config?.categories?.length > 0 ? configMaxStep + 1 : Math.max(configMaxStep, 2);
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -242,309 +219,156 @@ export default function EngineerSignup() {
       </nav>
 
       <main className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
-        
           <div className="bg-white rounded-2xl shadow-sm border p-6">
             
             {/* Stepper Header */}
-            <div className="flex items-center justify-between mb-8">
-              {[1, 2, 3, 4].map((step) => (
-                <div key={step} className="flex items-center">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${currentStep >= step ? 'bg-[#4F46E5] text-white' : 'bg-gray-100 text-gray-400'}`}>
+            <div className="flex items-center justify-between mb-8 max-w-sm mx-auto">
+              {Array.from({length: totalSteps}, (_, i) => i + 1).map((step) => (
+                <React.Fragment key={step}>
+                  <div className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm shrink-0 shadow-sm transition-all ${currentStep >= step ? 'bg-[#4F46E5] text-white ring-4 ring-[#4F46E5]/20' : 'bg-gray-100 text-gray-400'}`}>
                     {step}
                   </div>
-                  {step < 4 && <div className={`w-10 sm:w-20 h-1 mx-2 rounded-full ${currentStep > step ? 'bg-[#4F46E5]' : 'bg-gray-100'}`} />}
-                </div>
+                  {step < totalSteps && <div className={`flex-1 h-1.5 mx-3 rounded-full transition-all ${currentStep > step ? 'bg-[#4F46E5]' : 'bg-gray-100'}`} />}
+                </React.Fragment>
               ))}
             </div>
 
-            {/* STEP 1: Basic Information */}
-            {currentStep === 1 && (
+            {/* Dynamic Step Content */}
+            {currentStepData && currentStepData.fields && currentStepData.fields.length > 0 && (
               <div className="space-y-5 animate-fadeIn">
-                <h2 className="text-xl font-bold">Step 1: Basic Information</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Full Name *</label>
-                    <input name="name" value={engData.name} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Date of Birth * (18+)</label>
-                    <input name="dob" value={engData.dob} onChange={handleEngChange} type="date" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  
-                  {/* Phone with inline verification */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Primary Phone *</label>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <input name="phone" value={engData.phone} onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                          setEngData(prev => ({ ...prev, phone: val, isPhoneVerified: false }));
-                          setShowOtpField(false);
-                        }} type="tel" className="w-full border rounded-lg p-2 text-sm" disabled={engData.isPhoneVerified} placeholder="10-digit number" />
-                        {!engData.isPhoneVerified && !showOtpField && <button onClick={verifyPhone} disabled={otpLoading} className="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap disabled:opacity-50">{otpLoading ? 'Sending...' : 'Verify'}</button>}
-                        {engData.isPhoneVerified && <span className="text-green-500 flex items-center"><FiCheckCircle/></span>}
-                      </div>
-                      
-                      {showOtpField && !engData.isPhoneVerified && (
-                        <div className="flex gap-2 mt-1 animate-fadeIn">
-                          <input 
-                            type="text" 
-                            value={otpValue} 
-                            onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))} 
-                            placeholder="Enter OTP" 
-                            className="w-full border rounded-lg p-2 text-sm border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/20" 
-                          />
-                          <button onClick={confirmOtp} disabled={otpLoading} className="bg-[#4F46E5] hover:bg-[#4338ca] text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap disabled:opacity-50">
-                            {otpLoading ? 'Verifying...' : 'Confirm'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Email with inline verification */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Email Address *</label>
-                    <div className="flex gap-2">
-                      <input name="email" value={engData.email} onChange={handleEngChange} type="email" className="w-full border rounded-lg p-2 text-sm" disabled={engData.isEmailVerified} />
-                      {!engData.isEmailVerified && <button onClick={verifyEmail} className="bg-gray-800 text-white px-3 py-1 rounded-lg text-xs whitespace-nowrap">Verify</button>}
-                      {engData.isEmailVerified && <span className="text-green-500 flex items-center"><FiCheckCircle/></span>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">WhatsApp Number</label>
-                    <input name="whatsappNumber" value={engData.whatsappNumber} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" placeholder="Same as primary if empty" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Emergency Contact Number *</label>
-                    <input name="emergencyContactNumber" value={engData.emergencyContactNumber} onChange={handleEngChange} type="tel" className="w-full border rounded-lg p-2 text-sm" placeholder="For field emergencies" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Gender *</label>
-                    <select name="gender" value={engData.gender} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                      <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">City *</label>
-                    <input name="city" value={engData.city} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">State *</label>
-                    <input name="state" value={engData.state} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Registration Type *</label>
-                    <select name="registrationType" value={engData.registrationType} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm bg-blue-50 border-blue-200">
-                      {REGISTRATION_TYPES.map(rt => <option key={rt} value={rt}>{rt}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Conditional Company Fields */}
-                {engData.registrationType === 'Company / Firm Employee' && (
-                  <div className="bg-gray-50 p-4 rounded-xl border space-y-4">
-                    <h3 className="font-semibold text-gray-800 text-sm">Company Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input name="companyName" value={engData.companyDetails.companyName} onChange={handleEngCompanyChange} placeholder="Company / Firm Name" className="w-full border rounded-lg p-2 text-sm" />
-                      <input name="employeeId" value={engData.companyDetails.employeeId} onChange={handleEngCompanyChange} placeholder="Employee ID / Staff Code" className="w-full border rounded-lg p-2 text-sm" />
-                      <input name="designation" value={engData.companyDetails.designation} onChange={handleEngCompanyChange} placeholder="Designation" className="w-full border rounded-lg p-2 text-sm" />
-                      <input name="companyContact" value={engData.companyDetails.companyContact} onChange={handleEngCompanyChange} placeholder="Company Contact Number" className="w-full border rounded-lg p-2 text-sm" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* STEP 2: Skills */}
-            {currentStep === 2 && (
-              <div className="space-y-5 animate-fadeIn">
-                <h2 className="text-xl font-bold">Step 2: Skills & Experience</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Primary Skill / Trade *</label>
-                    <select name="primarySkill" value={engData.primarySkill} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                      <option value="">Select Primary Skill</option>
-                      {PRIMARY_SKILLS.map(skill => <option key={skill} value={skill}>{skill}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Total Years of Experience *</label>
-                    <input name="totalExperienceYears" value={engData.totalExperienceYears} onChange={handleEngChange} type="number" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Experience Level *</label>
-                    <select name="experienceLevel" value={engData.experienceLevel} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                      <option value="">Select Level</option>
-                      {EXPERIENCE_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Secondary Skills</label>
-                    <div className="flex flex-wrap gap-2">
-                      {PRIMARY_SKILLS.map(skill => {
-                        const isSelected = engData.secondarySkills.includes(skill);
-                        if(skill === engData.primarySkill) return null; // Can't be primary and secondary
-                        return (
-                          <span 
-                            key={skill}
-                            onClick={() => {
-                              setEngData(prev => ({
-                                ...prev,
-                                secondarySkills: isSelected 
-                                  ? prev.secondarySkills.filter(s => s !== skill)
-                                  : [...prev.secondarySkills, skill]
-                              }))
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-[11px] cursor-pointer transition-all border font-medium ${isSelected ? 'bg-[#4F46E5] text-white border-[#4F46E5]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                <h2 className="text-xl font-bold">{currentStepData.title || `Step ${currentStep}`}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {currentStepData.fields.map(field => (
+                    <div key={field.key}>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">{field.label} {field.required && '*'}</label>
+                      <div className="relative">
+                        {field.type === 'tel' ? (
+                          <div className="relative flex">
+                            <div className="flex items-center justify-center bg-gray-100 border border-gray-200 border-r-0 rounded-l-xl px-4 text-gray-500 font-medium text-sm">
+                              +91
+                            </div>
+                            <input 
+                              name={field.key} 
+                              value={formData[field.key] || ''} 
+                              onChange={(e) => setFormData(p => ({...p, [field.key]: e.target.value.replace(/\D/g, '').slice(0, 10)}))} 
+                              type="tel" 
+                              className="w-full bg-gray-50 border border-gray-200 rounded-r-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all" 
+                              placeholder="10-digit number" 
+                            />
+                          </div>
+                        ) : field.type === 'select' ? (
+                          <select
+                            name={field.key}
+                            value={formData[field.key] || ''}
+                            onChange={handleChange}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all"
                           >
-                            {skill}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  <div className="md:col-span-2 flex items-center gap-4">
-                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="canWorkIndependently" checked={engData.canWorkIndependently} onChange={handleEngChange} /> Can work independently?</label>
-                    <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="willingToTravel" checked={engData.willingToTravel} onChange={handleEngChange} /> Willing to travel for site visits?</label>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Preferred work type</label>
-                    <select name="preferredWorkType" value={engData.preferredWorkType} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                      <option>On-site</option><option>Remote</option><option>Both</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 3: Documents */}
-            {currentStep === 3 && (
-              <div className="space-y-6 animate-fadeIn">
-                <h2 className="text-xl font-bold">Step 3: Documents</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Aadhaar */}
-                  <div className="md:col-span-2 bg-gray-50 p-4 rounded-xl border">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">Aadhaar Card *</label>
-                    <input name="aadhaarNumber" value={engData.aadhaarNumber} onChange={handleEngChange} placeholder="12-digit Aadhaar Number" maxLength="12" className="w-full border rounded-lg p-2 text-sm mb-3" />
-                    <div className="flex gap-4">
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-500 mb-1">Front Photo</label>
-                        <input type="file" onChange={(e) => handleEngFileUpload(e, 'aadhaarFront')} className="text-xs w-full" accept="image/*" />
+                            <option value="">Select {field.label}</option>
+                            {field.options?.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input 
+                            name={field.key} 
+                            value={formData[field.key] || ''} 
+                            onChange={handleChange} 
+                            type={field.type === 'password' ? 'password' : field.type === 'email' ? 'email' : 'text'} 
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/20 focus:border-[#4F46E5] transition-all" 
+                            placeholder={`Enter ${field.label}`} 
+                          />
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-500 mb-1">Back Photo</label>
-                        <input type="file" onChange={(e) => handleEngFileUpload(e, 'aadhaarBack')} className="text-xs w-full" accept="image/*" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* PAN */}
-                  <div className="bg-gray-50 p-4 rounded-xl border">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">PAN Card *</label>
-                    <input name="panNumber" value={engData.panNumber} onChange={handleEngChange} placeholder="PAN Number" className="w-full border rounded-lg p-2 text-sm mb-3 uppercase" />
-                    <input type="file" onChange={(e) => handleEngFileUpload(e, 'panPhoto')} className="text-xs w-full" accept="image/*" />
-                  </div>
-
-                  {/* Education */}
-                  <div className="bg-gray-50 p-4 rounded-xl border space-y-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Highest Education Qualification *</label>
-                      <select name="highestEducation" value={engData.highestEducation} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                        <option value="">Select Education</option>
-                        {EDUCATION_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Field of Study / Branch</label>
-                      <input name="fieldOfStudy" value={engData.fieldOfStudy} onChange={handleEngChange} placeholder="e.g. Electronics, Mechanical" className="w-full border rounded-lg p-2 text-sm" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Certificates */}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-800">Skill / Trade Certificates</h3>
-                    <button onClick={addCertificate} className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-medium">+ Add Certificate</button>
-                  </div>
-                  {engData.skillCertificates.map((cert, index) => (
-                    <div key={index} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 bg-white p-3 border rounded-lg relative">
-                      <button onClick={() => setEngData(p => ({ ...p, skillCertificates: p.skillCertificates.filter((_, i) => i !== index)}))} className="absolute top-2 right-2 text-red-500"><FiX/></button>
-                      <input value={cert.name} onChange={e => updateCertificate(index, 'name', e.target.value)} placeholder="Certificate Name" className="border rounded px-2 py-1 text-xs" />
-                      <input value={cert.issuingAuthority} onChange={e => updateCertificate(index, 'issuingAuthority', e.target.value)} placeholder="Issuing Authority" className="border rounded px-2 py-1 text-xs" />
-                      <input type="date" value={cert.issueDate} onChange={e => updateCertificate(index, 'issueDate', e.target.value)} title="Issue Date" className="border rounded px-2 py-1 text-xs" />
-                      <input type="file" onChange={e => uploadCertificateDoc(index, e)} className="text-xs" accept="image/*,.pdf" />
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* STEP 4: Account Setup */}
-            {currentStep === 4 && (
+            {/* Final Step: Services (If config has categories) */}
+            {currentStep === totalSteps && config?.categories?.length > 0 && (
               <div className="space-y-5 animate-fadeIn">
-                <h2 className="text-xl font-bold">Step 4: Account Setup</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Username (auto-suggested) *</label>
-                    <input name="username" value={engData.username || engData.name.toLowerCase().replace(/\s+/g, '')} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Preferred Login Method</label>
-                    <select name="preferredLoginMethod" value={engData.preferredLoginMethod} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                      <option>Both</option><option>Phone OTP</option><option>Password</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Password *</label>
-                    <input name="password" value={engData.password} onChange={handleEngChange} type="password" placeholder="Min 8 characters" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Confirm Password *</label>
-                    <input name="confirmPassword" value={engData.confirmPassword} onChange={handleEngChange} type="password" placeholder="Confirm Password" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Referral Code (Optional)</label>
-                    <input name="referralCode" value={engData.referralCode} onChange={handleEngChange} type="text" className="w-full border rounded-lg p-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">How did you hear about WBI?</label>
-                    <select name="heardAboutWbi" value={engData.heardAboutWbi} onChange={handleEngChange} className="w-full border rounded-lg p-2 text-sm">
-                      <option value="">Select Option</option>
-                      {HEARD_ABOUT.map(h => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2 pt-4 border-t space-y-2">
-                    <label className="flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" name="acceptTerms" checked={engData.acceptTerms} onChange={handleEngChange} className="rounded text-indigo-600 focus:ring-indigo-500" />
-                      I accept the <a href="#" className="text-indigo-600 hover:underline">Terms & Conditions</a> and <a href="#" className="text-indigo-600 hover:underline">Privacy Policy</a> *
-                    </label>
+                <h2 className="text-xl font-bold">Step {totalSteps}: Services Offered</h2>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">Service Categories *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {config?.categories?.map(cat => {
+                      const isSelected = formData.serviceCategories.includes(cat.id || cat._id);
+                      return (
+                        <div key={cat.id || cat._id} className={`border rounded-xl transition-all flex flex-col overflow-hidden ${isSelected ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                          <div 
+                            onClick={() => handleCategoryToggle(cat.id || cat._id)}
+                            className="px-3 py-2.5 cursor-pointer flex items-center"
+                          >
+                            {cat.icon && <img src={cat.icon} className={`w-5 h-5 mr-2 object-contain ${isSelected ? '' : 'grayscale opacity-60'}`} alt=""/>}
+                            <span className={`text-xs font-semibold truncate ${isSelected ? 'text-[#4F46E5]' : 'text-gray-600'}`}>{cat.name || cat.title}</span>
+                          </div>
+                          
+                          {/* Sub Services */}
+                          {isSelected && config?.subServices?.some(sub => sub.categoryId === (cat.id || cat._id)) && (
+                            <div className="px-3 pb-3 space-y-1.5 border-t border-[#4F46E5]/10 pt-2 mt-auto">
+                              {config.subServices
+                                .filter(sub => sub.categoryId === (cat.id || cat._id))
+                                .map(sub => {
+                                  const isSubSelected = formData.subServices.includes(sub.id || sub._id);
+                                  return (
+                                    <div 
+                                      key={sub.id || sub._id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSubServiceToggle(sub.id || sub._id);
+                                      }}
+                                      className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-all flex items-center ${isSubSelected ? 'bg-[#4F46E5] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
+                                    >
+                                      {sub.name}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+
+                {config?.skills?.length > 0 && (
+                  <div className="mt-8 border-t border-gray-100 pt-6">
+                    <label className="block text-xs font-medium text-gray-700 mb-3">Skills & Expertise</label>
+                    <p className="text-[11px] text-gray-500 mb-3 -mt-1">Select the specific technologies and skills you are proficient in.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {config?.skills?.map(skill => {
+                        const isSelected = formData.skills.includes(skill.id || skill._id);
+                        return (
+                          <div 
+                            key={skill.id || skill._id}
+                            onClick={() => handleSkillToggle(skill.id || skill._id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 border ${isSelected ? 'bg-[#4F46E5] text-white border-[#4F46E5] shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-[#4F46E5]/30 hover:bg-[#4F46E5]/5'}`}
+                          >
+                            {skill.name}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Stepper Navigation */}
-            <div className="flex justify-between mt-8 pt-4 border-t">
-              {currentStep > 1 ? (
-                <button onClick={prevStep} className="px-6 py-2 border rounded-xl font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-2">
-                  <FiChevronLeft /> Back
+            {/* Navigation Buttons */}
+            <div className="flex gap-4 pt-6 border-t mt-8">
+              {currentStep > 1 && (
+                <button type="button" onClick={prevStep} className="flex-1 py-3.5 border-2 border-gray-200 text-gray-900 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition-all">
+                  <FiChevronLeft className="w-5 h-5" /> Back
                 </button>
-              ) : <div></div>}
-
-              {currentStep < 4 ? (
-                <button onClick={nextStep} className="px-8 py-2 bg-[#4F46E5] text-white rounded-xl font-medium shadow-md hover:bg-[#4338ca] flex items-center gap-2">
-                  Continue <FiArrowRight />
+              )}
+              {currentStep < totalSteps ? (
+                <button type="button" onClick={nextStep} className="flex-1 py-3.5 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black active:scale-95 shadow-lg shadow-gray-900/30 transition-all">
+                  Next Step <FiArrowRight className="w-5 h-5" />
                 </button>
               ) : (
-                <button onClick={submitEngineer} disabled={isSubmitting} className="px-8 py-2 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700 flex items-center gap-2">
-                  {isSubmitting ? 'Submitting...' : 'Complete Registration'}
+                <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="flex-1 py-3.5 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black active:scale-95 shadow-lg shadow-gray-900/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed">
+                  {isSubmitting ? 'Submitting...' : 'Complete Registration'} <FiCheckCircle className="w-5 h-5" />
                 </button>
               )}
             </div>

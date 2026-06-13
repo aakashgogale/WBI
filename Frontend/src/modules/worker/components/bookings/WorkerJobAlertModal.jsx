@@ -56,7 +56,14 @@ const WorkerJobAlertModal = ({ isOpen, jobId, onClose, onJobAccepted }) => {
 
   const handleAccept = async () => {
     try {
-      const res = await workerService.respondToJob(jobId, 'ACCEPTED');
+      let res;
+      // If no vendorId and no workerId is set, it's a broadcast
+      if (job.vendorId === null && !job.workerId) {
+        res = await workerService.acceptBroadcastJob(jobId);
+      } else {
+        res = await workerService.respondToJob(jobId, 'ACCEPTED');
+      }
+      
       if (res.success) {
         toast.success('Job Accepted Successfully!');
         onJobAccepted && onJobAccepted(jobId);
@@ -71,6 +78,13 @@ const WorkerJobAlertModal = ({ isOpen, jobId, onClose, onJobAccepted }) => {
 
   const handleReject = async () => {
     try {
+      if (job.vendorId === null && !job.workerId) {
+        // It's a broadcast. We can just close it (it will time out or be taken by someone else)
+        toast.success('Job Declined');
+        onClose();
+        return;
+      }
+
       const res = await workerService.respondToJob(jobId, 'REJECTED');
       if (res.success) {
         toast.success('Job Declined');

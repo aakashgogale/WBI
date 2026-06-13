@@ -22,9 +22,9 @@ const Support = () => {
         <div className="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50 space-y-4">
           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-2">Contact Us</h3>
           
-          <a href="tel:+919876543210" className="flex items-center justify-between p-4 bg-teal-50 rounded-2xl border border-teal-100 hover:bg-teal-100 transition-colors active:scale-[0.98]">
+          <a href="tel:+919876543210" className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100 transition-colors active:scale-[0.98]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-teal-600 shadow-sm">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-sm">
                 <FiPhoneCall />
               </div>
               <div>
@@ -32,12 +32,12 @@ const Support = () => {
                 <p className="text-xs font-medium text-gray-500 mt-0.5">Available 9 AM - 6 PM</p>
               </div>
             </div>
-            <FiChevronRight className="text-teal-400" />
+            <FiChevronRight className="text-gray-400" />
           </a>
 
-          <a href="mailto:support@wbi.com" className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100 hover:bg-blue-100 transition-colors active:scale-[0.98]">
+          <a href="mailto:support@wbi.com" className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100 transition-colors active:scale-[0.98]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-sm">
                 <FiMail />
               </div>
               <div>
@@ -45,12 +45,12 @@ const Support = () => {
                 <p className="text-xs font-medium text-gray-500 mt-0.5">support@wbi.com</p>
               </div>
             </div>
-            <FiChevronRight className="text-blue-400" />
+            <FiChevronRight className="text-gray-400" />
           </a>
 
-          <div className="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100 hover:bg-green-100 transition-colors cursor-pointer active:scale-[0.98]">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100 transition-colors cursor-pointer active:scale-[0.98]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-sm">
                 <FiMessageCircle />
               </div>
               <div>
@@ -58,7 +58,7 @@ const Support = () => {
                 <p className="text-xs font-medium text-gray-500 mt-0.5">Instant resolution</p>
               </div>
             </div>
-            <FiChevronRight className="text-green-400" />
+            <FiChevronRight className="text-gray-400" />
           </div>
 
         </div>
@@ -66,7 +66,7 @@ const Support = () => {
         {/* FAQs */}
         <div className="bg-white p-5 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50">
           <div className="flex items-center gap-2 mb-4">
-            <FiHelpCircle className="text-teal-600" />
+            <FiHelpCircle className="text-gray-700" />
             <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Frequently Asked Questions</h3>
           </div>
           

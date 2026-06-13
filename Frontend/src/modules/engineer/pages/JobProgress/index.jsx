@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft, FiUpload, FiX, FiCheckCircle, FiPlus, FiDollarSign, FiClock, FiFileText, FiCamera } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { SkeletonCard } from '../../../../components/common/SkeletonLoaders';
 
 const JobProgress = () => {
@@ -45,7 +45,7 @@ const JobProgress = () => {
   const fetchProgressData = async () => {
     try {
       setLoading(true);
-      const res = await workerService.getJobProgress(id);
+      const res = await engineerService.getJobProgress(id);
       if (res.success) {
         setJob(res.data.job);
         setTimeline(res.data.timeline);
@@ -77,7 +77,7 @@ const JobProgress = () => {
     
     try {
       const payload = { workPhotos: base64Files };
-      await workerService.uploadJobMedia(id, payload);
+      await engineerService.uploadJobMedia(id, payload);
       setMediaFiles(prev => [...prev, ...base64Files]);
       toast.success('Media uploaded!');
     } catch (err) {
@@ -94,7 +94,7 @@ const JobProgress = () => {
 
   const handleSaveNotes = async () => {
     try {
-      await workerService.addJobNotes(id, { structuredNotes: notes });
+      await engineerService.addJobNotes(id, { structuredNotes: notes });
       toast.success('Notes saved');
     } catch (e) {
       toast.error('Failed to save notes');
@@ -104,7 +104,7 @@ const JobProgress = () => {
   const handleAddMaterial = async () => {
     if (!newMaterial.name || !newMaterial.cost) return;
     try {
-      await workerService.addJobMaterials(id, [newMaterial]);
+      await engineerService.addJobMaterials(id, [newMaterial]);
       setMaterials(prev => [...prev, { ...newMaterial, status: 'pending' }]);
       setNewMaterial({ name: '', quantity: 1, cost: '' });
       toast.success('Material added');
@@ -116,7 +116,7 @@ const JobProgress = () => {
   const handleAddExpense = async () => {
     if (!newExpense.amount || !newExpense.description) return;
     try {
-      await workerService.addJobExpenses(id, [newExpense]);
+      await engineerService.addJobExpenses(id, [newExpense]);
       setExpenses(prev => [...prev, { ...newExpense, status: 'pending' }]);
       setNewExpense({ expenseType: 'Travel', amount: '', description: '' });
       toast.success('Expense added');
@@ -184,9 +184,9 @@ const JobProgress = () => {
       setSubmitting(true);
       
       // Auto-save notes just in case
-      await workerService.addJobNotes(id, { structuredNotes: notes });
+      await engineerService.addJobNotes(id, { structuredNotes: notes });
 
-      await workerService.completeJob(id, { 
+      await engineerService.completeJob(id, { 
         workPhotos: allPhotos,
         customerSignature: signatureData 
       });

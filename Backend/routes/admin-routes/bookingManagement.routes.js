@@ -7,7 +7,8 @@ const {
   getAllBookings,
   getBookingById,
   cancelBooking,
-  getBookingAnalytics
+  getBookingAnalytics,
+  autoAssignProvider
 } = require('../../controllers/bookingControllers/adminBookingController');
 
 // Validation rules
@@ -21,5 +22,7 @@ router.get('/bookings/analytics', authenticate, isAdmin, getBookingAnalytics);
 router.get('/bookings/:id', authenticate, isAdmin, getBookingById);
 router.post('/bookings/:id/cancel', authenticate, isAdmin, cancelBookingValidation, cancelBooking);
 
-module.exports = router;
+// Auto-assign provider (forces the auto-escalation queue to run immediately)
+router.post('/bookings/:id/auto-assign', authenticate, isAdmin, autoAssignProvider);
 
+module.exports = router;

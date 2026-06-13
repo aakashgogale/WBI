@@ -39,8 +39,11 @@ const engineerAssignmentWorker = new Worker('engineer-assignment', async (job) =
     return { assignedEngineer: bestEngineer._id };
   } catch (error) {
     console.error('[Worker Error] engineerAssignmentWorker:', error);
-    throw error;
   }
 }, { connection: redisConnection });
+
+engineerAssignmentWorker.on('error', (err) => {
+  console.error('[engineerAssignmentWorker] ❌ Redis/Internal Error:', err.message);
+});
 
 module.exports = engineerAssignmentWorker;

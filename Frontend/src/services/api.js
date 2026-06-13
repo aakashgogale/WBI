@@ -35,8 +35,13 @@ const getTokenKeys = (url) => {
   if (url?.includes('/engineers/auth')) return { access: 'engineerAccessToken', refresh: 'engineerRefreshToken', role: 'engineer' };
   if (url?.includes('/workers/auth')) return { access: 'workerAccessToken', refresh: 'workerRefreshToken', role: 'worker' };
 
-  // 3. Fallback to user token (most common case for user app)
-  return { access: 'accessToken', refresh: 'refreshToken', role: 'user' };
+  // 3. Instead of fallback to user, check for exact match
+  if (window.location.pathname.startsWith('/user')) {
+    return { access: 'accessToken', refresh: 'refreshToken', role: 'user' };
+  }
+  
+  // Return null or default structure if no match
+  return { access: 'accessToken', refresh: 'refreshToken', role: null };
 };
 
 // Request interceptor - Add auth token
@@ -170,7 +175,14 @@ export const handleLogout = (role = null) => {
     else if (path.startsWith('/vendor')) role = 'vendor';
     else if (path.startsWith('/engineer')) role = 'engineer';
     else if (path.startsWith('/worker')) role = 'worker';
-    else role = 'user';
+    else if (path.startsWith('/user')) role = 'user';
+    else role = null; // No default role
+  }
+
+  if (!role) {
+    // If we still don't know the role, we can't properly clear tokens.
+    // We could clear all, but it's safer to just let the specific route handle it.
+    return;
   }
 
   // Clear role-specific tokens selectively
@@ -188,22 +200,22 @@ export const handleLogout = (role = null) => {
   if (role === 'vendor') {
     clearTokens('vendor');
     if (window.location.pathname !== '/vendor/login') {
-      window.location.href = '/vendor/login';
+      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/vendor/login' } }));
     }
   } else if (role === 'engineer') {
     clearTokens('engineer');
     if (window.location.pathname !== '/engineer/login') {
-      window.location.href = '/engineer/login';
+      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/engineer/login' } }));
     }
   } else if (role === 'worker') {
     clearTokens('worker');
     if (window.location.pathname !== '/worker/login') {
-      window.location.href = '/worker/login';
+      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/worker/login' } }));
     }
   } else if (role === 'admin') {
     clearTokens('admin');
     if (window.location.pathname !== '/admin/login') {
-      window.location.href = '/admin/login';
+      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/admin/login' } }));
     }
   } else {
     // User
@@ -214,7 +226,7 @@ export const handleLogout = (role = null) => {
     sessionStorage.removeItem('refreshToken');
     sessionStorage.removeItem('userData');
     if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/user/login';
+      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/user/login' } }));
     }
   }
 };

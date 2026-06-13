@@ -10,6 +10,7 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [wrongRoleRedirect, setWrongRoleRedirect] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -114,6 +115,10 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
         </div>
       </div>
     );
+  }
+
+  if (wrongRoleRedirect) {
+    return <Navigate to={wrongRoleRedirect} replace />;
   }
 
   if (isAuthenticated === false) {

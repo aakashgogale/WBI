@@ -120,13 +120,22 @@ const JobDetails = () => {
     setActionLoading(true);
     try {
       if (actionType === 'ACCEPT') {
-        await workerService.respondToJob(id, 'ACCEPTED');
+        if (job.vendorId === null && !job.workerId) {
+          await workerService.acceptBroadcastJob(id);
+        } else {
+          await workerService.respondToJob(id, 'ACCEPTED');
+        }
         toast.success('Job Accepted');
         fetchJobDetails();
       } else if (actionType === 'REJECT') {
+        if (job.vendorId === null && !job.workerId) {
+          toast.success('Job Rejected');
+          navigate('/worker/jobs');
+          return;
+        }
         await workerService.respondToJob(id, 'REJECTED');
         toast.success('Job Rejected');
-        navigate('/engineer/jobs');
+        navigate('/worker/jobs');
       } else if (actionType === 'MARK_ARRIVED') {
         await workerService.startJob(id);
         toast.success('Journey Started! Please verify OTP with customer upon arrival.');

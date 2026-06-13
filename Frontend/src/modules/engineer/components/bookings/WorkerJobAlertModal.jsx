@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiMapPin, FiClock, FiArrowRight, FiBell, FiBriefcase, FiMinimize2 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playAlertRing, stopAlertRing } from '../../../../utils/notificationSound';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { toast } from 'react-hot-toast';
 
 const WorkerJobAlertModal = ({ isOpen, jobId, onClose, onJobAccepted }) => {
@@ -42,7 +42,7 @@ const WorkerJobAlertModal = ({ isOpen, jobId, onClose, onJobAccepted }) => {
   const loadJobDetails = async () => {
     try {
       setLoading(true);
-      const res = await workerService.getJobById(jobId);
+      const res = await engineerService.getJobById(jobId);
       if (res.success) {
         setJob(res.data);
       }
@@ -56,7 +56,7 @@ const WorkerJobAlertModal = ({ isOpen, jobId, onClose, onJobAccepted }) => {
 
   const handleAccept = async () => {
     try {
-      const res = await workerService.respondToJob(jobId, 'ACCEPTED');
+      const res = await engineerService.respondToJob(jobId, 'ACCEPTED');
       if (res.success) {
         toast.success('Job Accepted Successfully!');
         onJobAccepted && onJobAccepted(jobId);
@@ -71,7 +71,7 @@ const WorkerJobAlertModal = ({ isOpen, jobId, onClose, onJobAccepted }) => {
 
   const handleReject = async () => {
     try {
-      const res = await workerService.respondToJob(jobId, 'REJECTED');
+      const res = await engineerService.respondToJob(jobId, 'REJECTED');
       if (res.success) {
         toast.success('Job Declined');
         onClose();

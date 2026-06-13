@@ -1,7 +1,6 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
-import PageTransition from '../components/common/PageTransition';
 import BottomNav from '../components/layout/BottomNav';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
@@ -24,7 +23,7 @@ const lazyLoad = (importFunc) => {
               <p className="text-gray-600 mb-4">Please refresh the page or try again later.</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
+                className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90 shadow-md"
                 style={{ backgroundColor: '#3B82F6' }}
               >
                 Refresh Page
@@ -50,7 +49,6 @@ const PersonalInfo = lazyLoad(() => import('../pages/Profile/PersonalInfo'));
 const BankDetails = lazyLoad(() => import('../pages/Profile/BankDetails'));
 const Documents = lazyLoad(() => import('../pages/Profile/Documents'));
 const WorkLocations = lazyLoad(() => import('../pages/Profile/WorkLocations'));
-const CustomDetails = lazyLoad(() => import('../pages/Profile/CustomDetails'));
 const NotificationSettings = lazyLoad(() => import('../pages/Profile/NotificationSettings'));
 const Support = lazyLoad(() => import('../pages/Profile/Support'));
 const Settings = lazyLoad(() => import('../pages/Settings'));
@@ -67,7 +65,7 @@ const Wallet = lazyLoad(() => import('../pages/Wallet'));
 const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
 
 const LoadingFallback = () => (
-  <LogoLoader />
+  <div className="min-h-screen"></div>
 );
 
 const WorkerRoutes = () => {
@@ -93,7 +91,6 @@ const WorkerRoutes = () => {
       {/* Main content area - leaves space for bottom nav when needed */}
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
         <Suspense fallback={<LoadingFallback />}>
-          <PageTransition>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<PublicRoute userType="worker"><Login /></PublicRoute>} />
@@ -120,14 +117,13 @@ const WorkerRoutes = () => {
               <Route path="/profile/bank-details" element={<ProtectedRoute userType="worker"><BankDetails /></ProtectedRoute>} />
               <Route path="/profile/documents" element={<ProtectedRoute userType="worker"><Documents /></ProtectedRoute>} />
               <Route path="/profile/work-locations" element={<ProtectedRoute userType="worker"><WorkLocations /></ProtectedRoute>} />
-              <Route path="/profile/custom-details" element={<ProtectedRoute userType="worker"><CustomDetails /></ProtectedRoute>} />
+
               <Route path="/profile/notifications" element={<ProtectedRoute userType="worker"><NotificationSettings /></ProtectedRoute>} />
               <Route path="/profile/support" element={<ProtectedRoute userType="worker"><Support /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute userType="worker"><Settings /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="worker"><Notifications /></ProtectedRoute>} />
               <Route path="/wallet" element={<ProtectedRoute userType="worker"><Wallet /></ProtectedRoute>} />
             </Routes>
-          </PageTransition>
         </Suspense>
       </div>
 

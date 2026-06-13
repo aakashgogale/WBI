@@ -52,88 +52,88 @@ const Profile = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      // Try to load from local storage first for immediate display
-      const storedVendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
-      if (storedVendorData && Object.keys(storedVendorData).length > 0) {
+  const fetchProfile = async () => {
+    // Try to load from local storage first for immediate display
+    const storedVendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+    if (storedVendorData && Object.keys(storedVendorData).length > 0) {
+      setProfile({
+        name: storedVendorData.name || 'Vendor Name',
+        businessName: storedVendorData.businessName || null,
+        phone: storedVendorData.phone || '',
+        email: storedVendorData.email || '',
+        address: storedVendorData.address ?
+          (typeof storedVendorData.address === 'string' ? storedVendorData.address :
+            `${storedVendorData.address.addressLine1 || ''} ${storedVendorData.address.addressLine2 || ''} ${storedVendorData.address.city || ''} ${storedVendorData.address.state || ''} ${storedVendorData.address.pincode || ''}`.trim() || 'Not set')
+          : 'Not set',
+        rating: storedVendorData.rating || 0,
+        totalJobs: storedVendorData.totalJobs || 0,
+        completionRate: storedVendorData.completionRate || 0,
+        serviceCategory: storedVendorData.service || '',
+        skills: [],
+        photo: storedVendorData.profilePhoto || null,
+        approvalStatus: storedVendorData.approvalStatus,
+        isPhoneVerified: storedVendorData.isPhoneVerified || false,
+        isEmailVerified: storedVendorData.isEmailVerified || false
+      });
+      setIsLoading(false); // Show content immediately
+    }
+
+    setError(null);
+    try {
+      const response = await vendorAuthService.getProfile();
+      if (response.success) {
+        const vendorData = response.vendor;
+        // Format address
+        const addressString = vendorData.address
+          ? (typeof vendorData.address === 'string' ? vendorData.address :
+            `${vendorData.address.addressLine1 || ''} ${vendorData.address.addressLine2 || ''} ${vendorData.address.city || ''} ${vendorData.address.state || ''} ${vendorData.address.pincode || ''}`.trim() || 'Not set')
+          : 'Not set';
+
         setProfile({
-          name: storedVendorData.name || 'Vendor Name',
-          businessName: storedVendorData.businessName || null,
-          phone: storedVendorData.phone || '',
-          email: storedVendorData.email || '',
-          address: storedVendorData.address ?
-            (typeof storedVendorData.address === 'string' ? storedVendorData.address :
-              `${storedVendorData.address.addressLine1 || ''} ${storedVendorData.address.addressLine2 || ''} ${storedVendorData.address.city || ''} ${storedVendorData.address.state || ''} ${storedVendorData.address.pincode || ''}`.trim() || 'Not set')
-            : 'Not set',
-          rating: storedVendorData.rating || 0,
-          totalJobs: storedVendorData.totalJobs || 0,
-          completionRate: storedVendorData.completionRate || 0,
-          serviceCategory: storedVendorData.service || '',
+          name: vendorData.name || 'Vendor Name',
+          businessName: vendorData.businessName || null,
+          phone: vendorData.phone || '',
+          email: vendorData.email || '',
+          address: addressString,
+          rating: vendorData.rating || 0,
+          totalJobs: vendorData.totalJobs || 0,
+          completionRate: vendorData.completionRate || 0,
+          serviceCategory: vendorData.service || '',
           skills: [],
-          photo: storedVendorData.profilePhoto || null,
-          approvalStatus: storedVendorData.approvalStatus,
-          isPhoneVerified: storedVendorData.isPhoneVerified || false,
-          isEmailVerified: storedVendorData.isEmailVerified || false
+          photo: vendorData.profilePhoto || null,
+          approvalStatus: vendorData.approvalStatus,
+          isPhoneVerified: vendorData.isPhoneVerified || false,
+          isEmailVerified: vendorData.isEmailVerified || false
         });
-        setIsLoading(false); // Show content immediately
-      }
-
-      setError(null);
-      try {
-        const response = await vendorAuthService.getProfile();
-        if (response.success) {
-          const vendorData = response.vendor;
-          // Format address
-          const addressString = vendorData.address
-            ? (typeof vendorData.address === 'string' ? vendorData.address :
-              `${vendorData.address.addressLine1 || ''} ${vendorData.address.addressLine2 || ''} ${vendorData.address.city || ''} ${vendorData.address.state || ''} ${vendorData.address.pincode || ''}`.trim() || 'Not set')
-            : 'Not set';
-
-          setProfile({
-            name: vendorData.name || 'Vendor Name',
-            businessName: vendorData.businessName || null,
-            phone: vendorData.phone || '',
-            email: vendorData.email || '',
-            address: addressString,
-            rating: vendorData.rating || 0,
-            totalJobs: vendorData.totalJobs || 0,
-            completionRate: vendorData.completionRate || 0,
-            serviceCategory: vendorData.service || '',
-            skills: [],
-            photo: vendorData.profilePhoto || null,
-            approvalStatus: vendorData.approvalStatus,
-            isPhoneVerified: vendorData.isPhoneVerified || false,
-            isEmailVerified: vendorData.isEmailVerified || false
-          });
-          localStorage.setItem('vendorData', JSON.stringify(vendorData));
-          
-          // Check for digital solutions category
-          const DIGITAL_CATEGORY_ID = '6a23fd15f2513e09a97eeb7f';
-          if (vendorData.categories && vendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
-            setIsDigitalVendor(true);
-          } else if (storedVendorData && storedVendorData.categories && storedVendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
-             setIsDigitalVendor(true);
-          }
-
-        } else {
-          // If API fails but we have local data, stick with it?
-          if (!storedVendorData || Object.keys(storedVendorData).length === 0) {
-            setError(response.message || 'Failed to fetch profile');
-            toast.error(response.message || 'Failed to fetch profile');
-          }
+        localStorage.setItem('vendorData', JSON.stringify(vendorData));
+        
+        // Check for digital solutions category
+        const DIGITAL_CATEGORY_ID = '6a23fd15f2513e09a97eeb7f';
+        if (vendorData.categories && vendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
+          setIsDigitalVendor(true);
+        } else if (storedVendorData && storedVendorData.categories && storedVendorData.categories.includes(DIGITAL_CATEGORY_ID)) {
+           setIsDigitalVendor(true);
         }
-      } catch (err) {
-        console.error('Error fetching vendor profile:', err);
+
+      } else {
+        // If API fails but we have local data, stick with it?
         if (!storedVendorData || Object.keys(storedVendorData).length === 0) {
-          setError(err.response?.data?.message || 'Failed to fetch profile');
-          toast.error(err.response?.data?.message || 'Failed to fetch profile');
+          setError(response.message || 'Failed to fetch profile');
+          toast.error(response.message || 'Failed to fetch profile');
         }
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching vendor profile:', err);
+      if (!storedVendorData || Object.keys(storedVendorData).length === 0) {
+        setError(err.response?.data?.message || 'Failed to fetch profile');
+        toast.error(err.response?.data?.message || 'Failed to fetch profile');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProfile();
     window.addEventListener('vendorDataUpdated', fetchProfile);
     window.addEventListener('vendorProfileUpdated', fetchProfile);
@@ -155,7 +155,7 @@ const Profile = () => {
           <h2 className="text-xl font-bold text-gray-800 mb-2">Error loading profile</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchProfile()}
             className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
             style={{ backgroundColor: themeColors.button }}
           >

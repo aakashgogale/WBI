@@ -1,6 +1,5 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import PageTransition from '../components/common/PageTransition';
 import BottomNav from '../components/layout/BottomNav';
 import Footer from '../components/layout/Footer';
 import ErrorBoundary from '../components/common/ErrorBoundary';
@@ -33,7 +32,7 @@ const lazyLoad = (importFunc) => {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => window.location.reload()}
-                  className="px-6 py-3 rounded-xl text-white font-bold transition-all duration-300 hover:opacity-90 active:scale-95 shadow-lg shadow-teal-500/20"
+                  className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90 active:scale-95 shadow-lg shadow-teal-500/20"
                   style={{ backgroundColor: '#00a6a6' }}
                 >
                   Refresh Page
@@ -119,11 +118,8 @@ const ElectricalSafetyTestEnquiry = lazyLoad(() => import('../pages/ElectricalSa
 const HcPreventiveMaintenanceEnquiry = lazyLoad(() => import('../pages/HcPreventiveMaintenanceEnquiry'));
 const HcAmcEnquiry = lazyLoad(() => import('../pages/HcAmcEnquiry'));
 
-// Loading fallback component
-import LogoLoader from '../../../components/common/LogoLoader';
-
 const LoadingFallback = () => (
-  <LogoLoader />
+  <div className="min-h-screen"></div>
 );
 
 // Import Live Booking Card
@@ -155,7 +151,6 @@ const UserRoutes = () => {
         {/* Main content area - leaves space for bottom nav when needed */}
         <div className={`flex-1 ${shouldShowBottomNav ? "pb-24" : ""}`}>
           <Suspense fallback={<LoadingFallback />}>
-          <PageTransition>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<PublicRoute userType="user"><Login /></PublicRoute>} />
@@ -223,7 +218,6 @@ const UserRoutes = () => {
               <Route path="/hc-pm-enquiry" element={<ProtectedRoute userType="user"><HcPreventiveMaintenanceEnquiry /></ProtectedRoute>} />
               <Route path="/hc-amc-enquiry" element={<ProtectedRoute userType="user"><HcAmcEnquiry /></ProtectedRoute>} />
             </Routes>
-          </PageTransition>
         </Suspense>
         </div>
 

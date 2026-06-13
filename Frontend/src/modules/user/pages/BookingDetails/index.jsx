@@ -329,7 +329,7 @@ const BookingDetails = () => {
 
           if (verifyResponse.success) {
             toast.success('Payment successful!');
-            window.location.reload();
+            loadBooking();
           } else {
             toast.error('Payment verification failed');
           }

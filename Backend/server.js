@@ -217,6 +217,7 @@ app.use('/api/vendors/catalog', require('./routes/vendor-routes/catalog.routes')
 app.use('/api/vendors/enquiries', require('./routes/vendor-routes/vendorEnquiry.routes'));
 app.use('/api/vendors/assignments', require('./routes/vendor-routes/engineerAssignment.routes'));
 app.use('/api/vendors/team', require('./routes/vendor-routes/team.routes'));
+app.use('/api/vendors/digital', require('./routes/vendor-routes/digital.routes'));
 
 // Worker routes
 app.use('/api/workers/auth', require('./routes/worker-routes/auth.routes'));
@@ -236,6 +237,7 @@ app.use('/api/engineers/wallet', require('./routes/engineer-routes/wallet.routes
 app.use('/api/engineers/fcm-tokens', require('./routes/engineer-routes/fcmToken.routes'));
 app.use('/api/engineers/projects', require('./routes/engineer-routes/project.routes'));
 app.use('/api/engineers/execution', require('./routes/engineer-routes/engineerJobExecution.routes'));
+app.use('/api/engineers/digital', require('./routes/engineer-routes/digital.routes'));
 
 // Admin routes
 app.use('/api/admin/auth', require('./routes/admin-routes/adminAuth.routes'));
@@ -248,6 +250,9 @@ app.use('/api/admin', require('./routes/admin-routes/engineerManagement.routes')
 app.use('/api/admin/service-categories', require('./routes/admin-routes/serviceCategoryManagement.routes'));
 app.use('/api/admin/sub-services', require('./routes/admin-routes/subServiceManagement.routes'));
 app.use('/api/admin/dynamic-form-configs', require('./routes/admin-routes/dynamicFormConfig.routes'));
+
+// Shared routes (e.g. unified forgot password)
+app.use('/api/auth', require('./routes/shared/auth.routes'));
 app.use('/api/admin/job-checklist-configs', require('./routes/admin-routes/jobChecklistConfig.routes'));
 app.use('/api/admin', require('./routes/admin-routes/categoryManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/brandManagement.routes'));
@@ -333,6 +338,7 @@ app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
 app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
 app.use('/api/public/banking-enquiries', require('./routes/public-routes/bankingEnquiry.routes'));
+app.use('/api/forms', require('./routes/public-routes/form.routes'));
 
 // --- PUBLIC ROUTES (No auth required) ---
 // app.use('/api/public/sub-service-management', require('./routes/public-routes/subServiceManagement.routes'));

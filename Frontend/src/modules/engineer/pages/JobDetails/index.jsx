@@ -6,7 +6,7 @@ import { workerTheme as themeColors } from '../../../../theme';
 import { SkeletonCard } from '../../../../components/common/SkeletonLoaders';
 
 const VisitVerificationModal = lazy(() => import('../../components/common/VisitVerificationModal'));
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { useLocationTracking } from '../../../../hooks/useLocationTracking';
@@ -51,8 +51,8 @@ const JobDetails = () => {
     try {
       setLoading(true);
       const [jobRes, timelineRes] = await Promise.all([
-        workerService.getJobById(id),
-        workerService.getJobTimeline(id)
+        engineerService.getJobById(id),
+        engineerService.getJobTimeline(id)
       ]);
       
       if (jobRes.success) {
@@ -120,27 +120,27 @@ const JobDetails = () => {
     setActionLoading(true);
     try {
       if (actionType === 'ACCEPT') {
-        await workerService.respondToJob(id, 'ACCEPTED');
+        await engineerService.respondToJob(id, 'ACCEPTED');
         toast.success('Job Accepted');
         fetchJobDetails();
       } else if (actionType === 'REJECT') {
-        await workerService.respondToJob(id, 'REJECTED');
+        await engineerService.respondToJob(id, 'REJECTED');
         toast.success('Job Rejected');
         navigate('/engineer/jobs');
       } else if (actionType === 'MARK_ARRIVED') {
-        await workerService.startJob(id);
+        await engineerService.startJob(id);
         toast.success('Journey Started! Please verify OTP with customer upon arrival.');
         fetchJobDetails();
       } else if (actionType === 'START_WORK') {
         if (job.status === 'journey_started') {
            setIsVisitModalOpen(true);
         } else {
-           await workerService.updateJobStatus(id, 'in_progress');
+           await engineerService.updateJobStatus(id, 'in_progress');
            toast.success('Work Started!');
            fetchJobDetails();
         }
       } else if (actionType === 'COMPLETE_WORK') {
-        await workerService.completeJob(id, { workPhotos: mediaFiles.photos });
+        await engineerService.completeJob(id, { workPhotos: mediaFiles.photos });
         toast.success('Work Completed!');
         fetchJobDetails();
       }
@@ -167,7 +167,7 @@ const JobDetails = () => {
     
     try {
       const payload = type === 'photo' ? { workPhotos: base64Files } : { progressVideos: base64Files };
-      await workerService.uploadJobMedia(id, payload);
+      await engineerService.uploadJobMedia(id, payload);
       setMediaFiles(prev => ({
         ...prev,
         [type === 'photo' ? 'photos' : 'videos']: [...prev[type === 'photo' ? 'photos' : 'videos'], ...base64Files]
@@ -184,7 +184,7 @@ const JobDetails = () => {
   const handleAddNotes = async () => {
     if (!progressNotes) return;
     try {
-      await workerService.addJobNotes(id, progressNotes);
+      await engineerService.addJobNotes(id, progressNotes);
       toast.success('Notes added');
       setProgressNotes('');
       fetchJobDetails();
@@ -197,7 +197,7 @@ const JobDetails = () => {
     if (!newMaterial.name || !newMaterial.cost) return;
     try {
       setIsAddingMaterial(true);
-      await workerService.addJobMaterials(id, [newMaterial]);
+      await engineerService.addJobMaterials(id, [newMaterial]);
       toast.success('Material requested');
       setNewMaterial({ name: '', quantity: 1, cost: '' });
       fetchJobDetails();

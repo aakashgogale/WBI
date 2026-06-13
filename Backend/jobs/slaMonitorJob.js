@@ -17,8 +17,11 @@ const slaMonitorWorker = new Worker('sla-monitor', async (job) => {
     return { status: 'SLA check completed' };
   } catch (error) {
     console.error('[Worker Error] slaMonitorWorker:', error);
-    throw error;
   }
 }, { connection: redisConnection });
+
+slaMonitorWorker.on('error', (err) => {
+  console.error('[slaMonitorWorker] ❌ Redis/Internal Error:', err.message);
+});
 
 module.exports = slaMonitorWorker;

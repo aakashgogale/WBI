@@ -38,6 +38,7 @@ const getAllCategories = async (req, res) => {
         imageUrl: cat.imageUrl,
         status: cat.status,
         isPopular: cat.isPopular,
+        providerType: cat.providerType || 'vendor',
         cityIds: cat.cityIds || [],
         metaTitle: cat.metaTitle,
         metaDescription: cat.metaDescription,
@@ -86,6 +87,7 @@ const getCategoryById = async (req, res) => {
         imageUrl: category.imageUrl,
         status: category.status,
         isPopular: category.isPopular,
+        providerType: category.providerType || 'vendor',
         metaTitle: category.metaTitle,
         metaDescription: category.metaDescription,
         createdAt: category.createdAt,
@@ -129,6 +131,7 @@ const createCategory = async (req, res) => {
       imageUrl,
       status,
       isPopular,
+      providerType,
       metaTitle,
       metaDescription,
       cityIds
@@ -191,6 +194,7 @@ const createCategory = async (req, res) => {
       imageUrl: imageUrl || null,
       status: status || SERVICE_STATUS.ACTIVE,
       isPopular: Boolean(isPopular),
+      providerType: providerType || 'vendor',
       metaTitle: metaTitle?.trim() || null,
       metaDescription: metaDescription?.trim() || null,
       cityIds: cityIds || [],
@@ -213,6 +217,7 @@ const createCategory = async (req, res) => {
         imageUrl: category.imageUrl,
         status: category.status,
         isPopular: category.isPopular,
+        providerType: category.providerType || 'vendor',
         createdAt: category.createdAt,
         updatedAt: category.updatedAt
       }
@@ -265,6 +270,7 @@ const updateCategory = async (req, res) => {
       isPopular,
       metaTitle,
       metaDescription,
+      providerType,
       cityIds: updateCityIds
     } = req.body;
 
@@ -323,6 +329,7 @@ const updateCategory = async (req, res) => {
     if (imageUrl !== undefined) category.imageUrl = imageUrl || null;
     if (status !== undefined) category.status = status;
     if (isPopular !== undefined) category.isPopular = Boolean(isPopular);
+    if (providerType !== undefined) category.providerType = providerType;
     if (metaTitle !== undefined) category.metaTitle = metaTitle?.trim() || null;
     if (metaDescription !== undefined) category.metaDescription = metaDescription?.trim() || null;
 
@@ -349,6 +356,7 @@ const updateCategory = async (req, res) => {
         imageUrl: category.imageUrl,
         status: category.status,
         isPopular: category.isPopular,
+        providerType: category.providerType || 'vendor',
         createdAt: category.createdAt,
         updatedAt: category.updatedAt
       }

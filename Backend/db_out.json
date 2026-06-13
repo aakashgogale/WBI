@@ -1,0 +1,479 @@
+[
+  {
+    "_id": "6a2cea582c381c939e764703",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "coreSkills",
+    "label": "Core Skills",
+    "type": "multiselect",
+    "required": true,
+    "options": [
+      {
+        "label": "Frontend Development",
+        "value": "Frontend Development",
+        "_id": "6a2cea582c381c939e764704"
+      },
+      {
+        "label": "Backend Development",
+        "value": "Backend Development",
+        "_id": "6a2cea582c381c939e764705"
+      },
+      {
+        "label": "Full Stack Development",
+        "value": "Full Stack Development",
+        "_id": "6a2cea582c381c939e764706"
+      },
+      {
+        "label": "Mobile App Development",
+        "value": "Mobile App Development",
+        "_id": "6a2cea582c381c939e764707"
+      },
+      {
+        "label": "UI/UX Design",
+        "value": "UI/UX Design",
+        "_id": "6a2cea582c381c939e764708"
+      },
+      {
+        "label": "CRM Development",
+        "value": "CRM Development",
+        "_id": "6a2cea582c381c939e764709"
+      },
+      {
+        "label": "DevOps",
+        "value": "DevOps",
+        "_id": "6a2cea582c381c939e76470a"
+      },
+      {
+        "label": "QA Testing",
+        "value": "QA Testing",
+        "_id": "6a2cea582c381c939e76470b"
+      },
+      {
+        "label": "Digital Marketing",
+        "value": "Digital Marketing",
+        "_id": "6a2cea582c381c939e76470c"
+      },
+      {
+        "label": "Project Management",
+        "value": "Project Management",
+        "_id": "6a2cea582c381c939e76470d"
+      }
+    ],
+    "order": 1,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.121Z",
+    "updatedAt": "2026-06-13T05:27:52.121Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e76470e",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "technologies",
+    "label": "Technologies",
+    "type": "multiselect",
+    "required": true,
+    "options": [
+      {
+        "label": "React.js",
+        "value": "React.js",
+        "_id": "6a2cea582c381c939e76470f"
+      },
+      {
+        "label": "Next.js",
+        "value": "Next.js",
+        "_id": "6a2cea582c381c939e764710"
+      },
+      {
+        "label": "Vue.js",
+        "value": "Vue.js",
+        "_id": "6a2cea582c381c939e764711"
+      },
+      {
+        "label": "Angular",
+        "value": "Angular",
+        "_id": "6a2cea582c381c939e764712"
+      },
+      {
+        "label": "Node.js",
+        "value": "Node.js",
+        "_id": "6a2cea582c381c939e764713"
+      },
+      {
+        "label": "Express.js",
+        "value": "Express.js",
+        "_id": "6a2cea582c381c939e764714"
+      },
+      {
+        "label": "NestJS",
+        "value": "NestJS",
+        "_id": "6a2cea582c381c939e764715"
+      },
+      {
+        "label": "Laravel",
+        "value": "Laravel",
+        "_id": "6a2cea582c381c939e764716"
+      },
+      {
+        "label": "Django",
+        "value": "Django",
+        "_id": "6a2cea582c381c939e764717"
+      },
+      {
+        "label": "Flutter",
+        "value": "Flutter",
+        "_id": "6a2cea582c381c939e764718"
+      },
+      {
+        "label": "React Native",
+        "value": "React Native",
+        "_id": "6a2cea582c381c939e764719"
+      },
+      {
+        "label": "Android",
+        "value": "Android",
+        "_id": "6a2cea582c381c939e76471a"
+      },
+      {
+        "label": "iOS",
+        "value": "iOS",
+        "_id": "6a2cea582c381c939e76471b"
+      },
+      {
+        "label": "MongoDB",
+        "value": "MongoDB",
+        "_id": "6a2cea582c381c939e76471c"
+      },
+      {
+        "label": "MySQL",
+        "value": "MySQL",
+        "_id": "6a2cea582c381c939e76471d"
+      },
+      {
+        "label": "PostgreSQL",
+        "value": "PostgreSQL",
+        "_id": "6a2cea582c381c939e76471e"
+      },
+      {
+        "label": "Firebase",
+        "value": "Firebase",
+        "_id": "6a2cea582c381c939e76471f"
+      },
+      {
+        "label": "AWS",
+        "value": "AWS",
+        "_id": "6a2cea582c381c939e764720"
+      },
+      {
+        "label": "Azure",
+        "value": "Azure",
+        "_id": "6a2cea582c381c939e764721"
+      },
+      {
+        "label": "Google Cloud",
+        "value": "Google Cloud",
+        "_id": "6a2cea582c381c939e764722"
+      }
+    ],
+    "order": 2,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e764723",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "experienceLevel",
+    "label": "Experience Level",
+    "type": "select",
+    "required": true,
+    "options": [
+      {
+        "label": "Fresher (0-1 Year)",
+        "value": "Fresher (0-1 Year)",
+        "_id": "6a2cea582c381c939e764724"
+      },
+      {
+        "label": "Junior (1-3 Years)",
+        "value": "Junior (1-3 Years)",
+        "_id": "6a2cea582c381c939e764725"
+      },
+      {
+        "label": "Mid-Level (3-5 Years)",
+        "value": "Mid-Level (3-5 Years)",
+        "_id": "6a2cea582c381c939e764726"
+      },
+      {
+        "label": "Senior (5-8 Years)",
+        "value": "Senior (5-8 Years)",
+        "_id": "6a2cea582c381c939e764727"
+      },
+      {
+        "label": "Expert (8+ Years)",
+        "value": "Expert (8+ Years)",
+        "_id": "6a2cea582c381c939e764728"
+      }
+    ],
+    "order": 3,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e764729",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "preferredProjectTypes",
+    "label": "Preferred Project Types",
+    "type": "multiselect",
+    "required": true,
+    "options": [
+      {
+        "label": "Website Development",
+        "value": "Website Development",
+        "_id": "6a2cea582c381c939e76472a"
+      },
+      {
+        "label": "Ecommerce Development",
+        "value": "Ecommerce Development",
+        "_id": "6a2cea582c381c939e76472b"
+      },
+      {
+        "label": "Mobile App Development",
+        "value": "Mobile App Development",
+        "_id": "6a2cea582c381c939e76472c"
+      },
+      {
+        "label": "CRM Development",
+        "value": "CRM Development",
+        "_id": "6a2cea582c381c939e76472d"
+      },
+      {
+        "label": "ERP Development",
+        "value": "ERP Development",
+        "_id": "6a2cea582c381c939e76472e"
+      },
+      {
+        "label": "Admin Panels",
+        "value": "Admin Panels",
+        "_id": "6a2cea582c381c939e76472f"
+      },
+      {
+        "label": "SaaS Products",
+        "value": "SaaS Products",
+        "_id": "6a2cea582c381c939e764730"
+      },
+      {
+        "label": "API Development",
+        "value": "API Development",
+        "_id": "6a2cea582c381c939e764731"
+      },
+      {
+        "label": "UI/UX Design",
+        "value": "UI/UX Design",
+        "_id": "6a2cea582c381c939e764732"
+      },
+      {
+        "label": "Digital Marketing",
+        "value": "Digital Marketing",
+        "_id": "6a2cea582c381c939e764733"
+      }
+    ],
+    "order": 4,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e764734",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "availabilityStatus",
+    "label": "Availability Status",
+    "type": "select",
+    "required": true,
+    "options": [
+      {
+        "label": "Available Immediately",
+        "value": "Available Immediately",
+        "_id": "6a2cea582c381c939e764735"
+      },
+      {
+        "label": "Available in 7 Days",
+        "value": "Available in 7 Days",
+        "_id": "6a2cea582c381c939e764736"
+      },
+      {
+        "label": "Available in 15 Days",
+        "value": "Available in 15 Days",
+        "_id": "6a2cea582c381c939e764737"
+      },
+      {
+        "label": "Part Time",
+        "value": "Part Time",
+        "_id": "6a2cea582c381c939e764738"
+      },
+      {
+        "label": "Full Time",
+        "value": "Full Time",
+        "_id": "6a2cea582c381c939e764739"
+      }
+    ],
+    "order": 5,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e76473a",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "workingMode",
+    "label": "Working Mode",
+    "type": "multiselect",
+    "required": true,
+    "options": [
+      {
+        "label": "Remote",
+        "value": "Remote",
+        "_id": "6a2cea582c381c939e76473b"
+      },
+      {
+        "label": "Hybrid",
+        "value": "Hybrid",
+        "_id": "6a2cea582c381c939e76473c"
+      },
+      {
+        "label": "On Site",
+        "value": "On Site",
+        "_id": "6a2cea582c381c939e76473d"
+      }
+    ],
+    "order": 6,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e76473e",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "portfolioLinks",
+    "label": "Portfolio Links (GitHub, LinkedIn, Website, Behance)",
+    "type": "textarea",
+    "required": false,
+    "order": 7,
+    "isActive": true,
+    "options": [],
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e76473f",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "certifications",
+    "label": "Certifications",
+    "type": "multiselect",
+    "required": false,
+    "options": [
+      {
+        "label": "AWS",
+        "value": "AWS",
+        "_id": "6a2cea582c381c939e764740"
+      },
+      {
+        "label": "Google",
+        "value": "Google",
+        "_id": "6a2cea582c381c939e764741"
+      },
+      {
+        "label": "Microsoft",
+        "value": "Microsoft",
+        "_id": "6a2cea582c381c939e764742"
+      },
+      {
+        "label": "Meta",
+        "value": "Meta",
+        "_id": "6a2cea582c381c939e764743"
+      },
+      {
+        "label": "Other",
+        "value": "Other",
+        "_id": "6a2cea582c381c939e764744"
+      }
+    ],
+    "order": 8,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  },
+  {
+    "_id": "6a2cea582c381c939e764745",
+    "role": "engineer",
+    "formType": "skills",
+    "step": 1,
+    "fieldKey": "languagesKnown",
+    "label": "Languages Known",
+    "type": "multiselect",
+    "required": true,
+    "options": [
+      {
+        "label": "English",
+        "value": "English",
+        "_id": "6a2cea582c381c939e764746"
+      },
+      {
+        "label": "Hindi",
+        "value": "Hindi",
+        "_id": "6a2cea582c381c939e764747"
+      },
+      {
+        "label": "Marathi",
+        "value": "Marathi",
+        "_id": "6a2cea582c381c939e764748"
+      },
+      {
+        "label": "Gujarati",
+        "value": "Gujarati",
+        "_id": "6a2cea582c381c939e764749"
+      },
+      {
+        "label": "Tamil",
+        "value": "Tamil",
+        "_id": "6a2cea582c381c939e76474a"
+      },
+      {
+        "label": "Telugu",
+        "value": "Telugu",
+        "_id": "6a2cea582c381c939e76474b"
+      },
+      {
+        "label": "Others",
+        "value": "Others",
+        "_id": "6a2cea582c381c939e76474c"
+      }
+    ],
+    "order": 9,
+    "isActive": true,
+    "__v": 0,
+    "createdAt": "2026-06-13T05:27:52.123Z",
+    "updatedAt": "2026-06-13T05:27:52.123Z"
+  }
+]

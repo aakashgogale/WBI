@@ -4,7 +4,7 @@ import { FiCheck, FiClock, FiUser, FiMapPin, FiTool, FiDollarSign, FiCheckCircle
 import { workerTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import { CashCollectionModal, WorkCompletionModal } from '../../components/common';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { toast } from 'react-hot-toast';
 
 const JobTimeline = () => {
@@ -41,7 +41,7 @@ const JobTimeline = () => {
 
   const fetchJobDetails = async () => {
     try {
-      const response = await workerService.getJobById(id);
+      const response = await engineerService.getJobById(id);
       if (response.success) {
         const apiData = response.data;
         setJob(apiData);
@@ -84,7 +84,7 @@ const JobTimeline = () => {
     try {
       setActionLoading(true);
       if (type === 'start') {
-        const res = await workerService.startJob(id);
+        const res = await engineerService.startJob(id);
         if (res.success) {
           toast.success('Journey Started');
           fetchJobDetails();
@@ -108,7 +108,7 @@ const JobTimeline = () => {
     if (window.confirm("Confirm that you have received all payments and finalize this job?")) {
       try {
         setActionLoading(true);
-        await workerService.updateJobStatus(id, job.status, { finalSettlementStatus: 'DONE' });
+        await engineerService.updateJobStatus(id, job.status, { finalSettlementStatus: 'DONE' });
         toast.success('Final settlement confirmed');
         fetchJobDetails();
       } catch (e) {
@@ -132,7 +132,7 @@ const JobTimeline = () => {
     navigator.geolocation.getCurrentPosition(async (position) => {
       try {
         const location = { lat: position.coords.latitude, lng: position.coords.longitude };
-        const response = await workerService.verifyVisit(id, otp, location);
+        const response = await engineerService.verifyVisit(id, otp, location);
         if (response.success) {
           toast.success('Visit Verified');
           setIsVisitModalOpen(false);
@@ -153,7 +153,7 @@ const JobTimeline = () => {
     }
     try {
       setActionLoading(true);
-      const response = await workerService.completeJob(id, { workPhotos: workPhotos.length > 0 ? workPhotos : ['https://placehold.co/400'] });
+      const response = await engineerService.completeJob(id, { workPhotos: workPhotos.length > 0 ? workPhotos : ['https://placehold.co/400'] });
       if (response.success) {
         toast.success('Work marked done');
         setIsWorkDoneModalOpen(false);
@@ -169,7 +169,7 @@ const JobTimeline = () => {
   const handleInitiateOTP = async (totalAmount, extraItems = []) => {
     try {
       setActionLoading(true);
-      const res = await workerService.initiateCashCollection(id, totalAmount, extraItems);
+      const res = await engineerService.initiateCashCollection(id, totalAmount, extraItems);
       if (res.success) {
         return res;
       } else {
@@ -186,7 +186,7 @@ const JobTimeline = () => {
   const handleCollectCash = async (totalAmount, extraItems, otp) => {
     try {
       setActionLoading(true);
-      const response = await workerService.collectCash(id, otp, totalAmount, extraItems);
+      const response = await engineerService.collectCash(id, otp, totalAmount, extraItems);
       if (response.success) {
         toast.success('Payment Collected & Job Completed!');
         setIsPaymentModalOpen(false);
@@ -435,7 +435,7 @@ const JobTimeline = () => {
         onComplete={async (photos) => {
           try {
             setActionLoading(true);
-            const response = await workerService.completeJob(id, { workPhotos: photos });
+            const response = await engineerService.completeJob(id, { workPhotos: photos });
             if (response.success) {
               toast.success('Work marked done');
               setIsWorkDoneModalOpen(false);

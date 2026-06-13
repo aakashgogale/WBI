@@ -11,10 +11,9 @@ const engineerSchema = new mongoose.Schema({
   email: {
     type: String,
     unique: true,
-    sparse: true, // Allow multiple nulls
+    sparse: true, // Allow multiple nulls/missing
     trim: true,
-    lowercase: true,
-    default: null
+    lowercase: true
   },
   phone: {
     type: String,
@@ -139,6 +138,9 @@ const engineerSchema = new mongoose.Schema({
   serviceCategories: [{
     type: String
   }],
+  subServices: [{
+    type: String
+  }],
   primaryCategory: {
     type: String,
     default: null
@@ -152,7 +154,7 @@ const engineerSchema = new mongoose.Schema({
   }],
   skills: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'SubService'
+    ref: 'Skill'
   }],
   availability: {
     type: String,
@@ -185,7 +187,8 @@ const engineerSchema = new mongoose.Schema({
     city: String,
     state: String,
     pincode: String,
-    landmark: String
+    landmark: String,
+    fullAddress: String
   },
   rating: {
     type: Number,
@@ -268,6 +271,8 @@ const engineerSchema = new mongoose.Schema({
     aadhaar: String,
     pan: String,
     certificates: [String],
+    aadhaarFrontUrl: String,
+    aadhaarBackUrl: String,
     status: {
       type: String,
       enum: ['Pending', 'Approved', 'Rejected'],
@@ -369,8 +374,7 @@ const engineerSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true,
-    trim: true,
-    default: null
+    trim: true
   },
   preferredLoginMethod: {
     type: String,

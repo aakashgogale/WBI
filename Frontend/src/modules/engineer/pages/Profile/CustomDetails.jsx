@@ -34,8 +34,9 @@ const CustomDetails = () => {
 
       const profileRes = await engineerAuthService.getProfile();
       
-      if (profileRes.success) {
-        setEngineerData(profileRes.worker.customFields || {});
+      if (profileRes.success && (profileRes.engineer || profileRes.worker)) {
+        const loadedProfile = profileRes.engineer || profileRes.worker;
+        setEngineerData(loadedProfile.customFields || {});
         setConfig(combinedConfig);
       }
     } catch (error) {

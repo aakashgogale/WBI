@@ -17,6 +17,7 @@ const categorySchema = z.object({
   homeBadge: z.string().optional(),
   hasSaleBadge: z.boolean(),
   showOnHome: z.boolean(),
+  providerType: z.enum(['vendor', 'worker', 'both']).optional().default('vendor'),
 });
 
 const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
@@ -31,6 +32,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
     homeBadge: "",
     hasSaleBadge: false,
     showOnHome: true,
+    providerType: "vendor",
   });
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [showReorderModal, setShowReorderModal] = useState(false);
@@ -62,6 +64,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             homeBadge: cat.homeBadge || "",
             hasSaleBadge: cat.hasSaleBadge || false,
             showOnHome: cat.showOnHome !== false,
+            providerType: cat.providerType || "vendor",
           }));
 
           // Update catalog with fetched categories
@@ -89,6 +92,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
         homeBadge: "",
         hasSaleBadge: false,
         showOnHome: true,
+        providerType: "vendor",
       });
       return;
     }
@@ -100,6 +104,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       homeBadge: safe.homeBadge || "",
       hasSaleBadge: Boolean(safe.hasSaleBadge),
       showOnHome: safe.showOnHome !== false,
+      providerType: safe.providerType || "vendor",
     });
   }, [editing]);
 
@@ -114,6 +119,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       homeBadge: "",
       hasSaleBadge: false,
       showOnHome: true,
+      providerType: "vendor",
     });
     setIsModalOpen(false);
   };
@@ -128,7 +134,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       homeIconUrl: form.homeIconUrl.trim(),
       homeBadge: form.homeBadge.trim(),
       hasSaleBadge: Boolean(form.hasSaleBadge),
-      showOnHome: Boolean(form.showOnHome)
+      showOnHome: Boolean(form.showOnHome),
+      providerType: form.providerType || 'vendor'
     });
 
     if (!validationResult.success) {
@@ -138,7 +145,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
       return;
     }
 
-    const { title, slug, homeIconUrl, homeBadge, hasSaleBadge, showOnHome } = validationResult.data;
+    const { title, slug, homeIconUrl, homeBadge, hasSaleBadge, showOnHome, providerType } = validationResult.data;
 
     try {
       setLoading(true);
@@ -167,6 +174,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
         hasSaleBadge,
         showOnHome,
         homeOrder,
+        providerType,
         cityIds: selectedCity ? [selectedCity] : [],
       };
 
@@ -461,6 +469,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Name</th>
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Slug</th>
                   <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Badge</th>
+                  <th className="text-left py-3 px-4 text-sm font-bold text-gray-700">Provider</th>
                   <th className="text-center py-3 px-4 text-sm font-bold text-gray-700 w-20">
                     Order
                     <button
@@ -500,6 +509,9 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                       ) : (
                         <span className="text-sm text-gray-400">â€”</span>
                       )}
+                    </td>
+                    <td className="py-4 px-4 text-sm font-medium text-gray-700 capitalize">
+                      {c.providerType || 'vendor'}
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -641,17 +653,31 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <input
-              id="showOnHome"
-              type="checkbox"
-              checked={form.showOnHome}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+            <div>
+              <label className="block text-base font-bold text-gray-900 mb-2">Provider Type</label>
+              <select
+                value={form.providerType}
+                onChange={(e) => setForm((p) => ({ ...p, providerType: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="vendor">Vendor</option>
+                <option value="worker">Worker (One-Time Service)</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-3 pt-8">
+              <input
+                id="showOnHome"
+                type="checkbox"
+                checked={form.showOnHome}
               onChange={(e) => setForm((p) => ({ ...p, showOnHome: e.target.checked }))}
               className="h-4 w-4"
             />
             <label htmlFor="showOnHome" className="text-base font-semibold text-gray-800">
               Show this category on home
             </label>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

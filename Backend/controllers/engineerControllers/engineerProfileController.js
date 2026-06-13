@@ -69,7 +69,11 @@ const updateProfile = async (req, res) => {
     }
 
     const engineerId = req.user.id;
-    const { name, serviceCategories, serviceCategory, skills, address, status, profilePhoto } = req.body;
+    const { 
+      name, serviceCategories, serviceCategory, subServices, skills, address, status, profilePhoto,
+      dob, gender, bankDetails, documents, workLocations, uploadedDocuments, aadhar,
+      experience, qualification, specialization
+    } = req.body;
 
     const engineer = await Engineer.findById(engineerId);
 
@@ -82,12 +86,24 @@ const updateProfile = async (req, res) => {
 
     // Update fields
     if (name) engineer.name = name.trim();
+    if (req.body.email) {
+      engineer.email = req.body.email.trim();
+    } else if (req.body.email === '') {
+      engineer.email = undefined;
+    }
+    if (req.body.phone) {
+      engineer.phone = req.body.phone.trim();
+    }
 
     // Handle categories: prefer array, fallback to single legacy string
     if (serviceCategories && Array.isArray(serviceCategories)) {
       engineer.serviceCategories = serviceCategories;
     } else if (serviceCategory) {
       engineer.serviceCategories = [serviceCategory.trim()];
+    }
+
+    if (subServices && Array.isArray(subServices)) {
+      engineer.subServices = subServices;
     }
 
     if (skills && Array.isArray(skills)) engineer.skills = skills;
@@ -98,11 +114,11 @@ const updateProfile = async (req, res) => {
         city: address.city || engineer.address?.city || '',
         state: address.state || engineer.address?.state || '',
         pincode: address.pincode || engineer.address?.pincode || '',
-        landmark: address.landmark || engineer.address?.landmark || ''
+        landmark: address.landmark || engineer.address?.landmark || '',
+        fullAddress: address.fullAddress || engineer.address?.fullAddress || ''
       };
     }
     if (status) engineer.status = status;
-    // Update profile photo - upload to Cloudinary if it's a base64 string
     if (profilePhoto !== undefined) {
       if (profilePhoto && profilePhoto.startsWith('data:')) {
         const uploadRes = await cloudinaryService.uploadFile(profilePhoto, { folder: 'engineers/profiles' });
@@ -114,8 +130,41 @@ const updateProfile = async (req, res) => {
       }
     }
 
+    if (dob !== undefined) engineer.dob = dob;
+    if (gender !== undefined) engineer.gender = gender;
+    
+    if (bankDetails) {
+      engineer.bankDetails = { ...engineer.bankDetails, ...bankDetails };
+    }
+    
+    if (documents) {
+      engineer.documents = { ...engineer.documents, ...documents };
+    }
+    
+    if (workLocations) {
+      engineer.workLocations = { ...engineer.workLocations, ...workLocations };
+    }
+    
+    if (uploadedDocuments) {
+      engineer.uploadedDocuments = { ...engineer.uploadedDocuments, ...uploadedDocuments };
+    }
+    
+    if (aadhar) {
+      engineer.aadhar = { ...engineer.aadhar, ...aadhar };
+    }
+
+    if (experience !== undefined) engineer.experience = experience;
+    if (qualification !== undefined) engineer.qualification = qualification;
+    if (specialization !== undefined) engineer.specialization = specialization;
+
     if (req.body.customFields) {
-      engineer.customFields = { ...engineer.customFields, ...req.body.customFields };
+      let currentCustomFields = {};
+      if (engineer.customFields) {
+        currentCustomFields = engineer.customFields instanceof Map 
+          ? Object.fromEntries(engineer.customFields) 
+          : engineer.customFields;
+      }
+      engineer.customFields = { ...currentCustomFields, ...req.body.customFields };
     }
 
     if (req.body.settings) {
@@ -148,7 +197,18 @@ const updateProfile = async (req, res) => {
         settings: engineer.settings,
         isPhoneVerified: engineer.isPhoneVerified,
         isEmailVerified: engineer.isEmailVerified,
-        customFields: engineer.customFields || {}
+        customFields: engineer.customFields || {},
+        dob: engineer.dob,
+        gender: engineer.gender,
+        bankDetails: engineer.bankDetails,
+        documents: engineer.documents,
+        workLocations: engineer.workLocations,
+        uploadedDocuments: engineer.uploadedDocuments,
+        aadhar: engineer.aadhar,
+        subServices: engineer.subServices,
+        experience: engineer.experience,
+        qualification: engineer.qualification,
+        specialization: engineer.specialization
       }
     });
   } catch (error) {
@@ -197,19 +257,68 @@ const getProfileCompletion = async (req, res) => {
     let score = 0;
     
     // Personal Info (20%)
-    if (engineer.name && engineer.phone && engineer.email && engineer.address?.city) score += 20;
+    if (engineer.name && engineer.phone && (engineer.email || engineer.address?.city)) score += 20;
     
-    // Bank Details (20%)
-    if (engineer.bankDetails?.accountNumber && engineer.bankDetails?.ifscCode) score += 20;
+    // Bank Details (15%)
+    if (engineer.bankDetails?.accountNumber && engineer.bankDetails?.ifscCode) score += 15;
     
-    // Documents (25%)
-    if (engineer.documents?.aadhaar || engineer.aadhar?.document) score += 25;
+    // Documents (20%)
+    if (engineer.documents?.aadhaar || engineer.aadhar?.document || (engineer.uploadedDocuments && engineer.uploadedDocuments.length > 0)) score += 20;
     
-    // Work Locations (20%)
-    if (engineer.workLocations?.primaryArea || engineer.serviceCategories?.length > 0) score += 20;
+    // Work Locations (15%)
+    if (engineer.workLocations?.primaryArea || engineer.serviceCategories?.length > 0 || (engineer.workLocations?.availableCities && engineer.workLocations.availableCities.length > 0)) score += 15;
     
     // Profile Photo (15%)
     if (engineer.profilePhoto) score += 15;
+
+    // Custom Details (15%)
+    // Calculate dynamically based on required FormConfig fields
+    const FormConfig = require('../../models/FormConfig');
+    try {
+      const requiredDynamicFields = await FormConfig.find({ 
+        role: 'engineer', 
+        required: true 
+      });
+
+      let customFieldsScore = 0;
+      if (requiredDynamicFields.length > 0) {
+        let filledRequiredFields = 0;
+        
+        // Convert customFields to a plain object
+        let customFieldsObj = {};
+        if (engineer.customFields) {
+          customFieldsObj = engineer.customFields instanceof Map 
+            ? Object.fromEntries(engineer.customFields) 
+            : engineer.customFields;
+        }
+
+        requiredDynamicFields.forEach(field => {
+          const value = customFieldsObj[field.fieldKey];
+          if (value !== undefined && value !== null && value !== '' && (!Array.isArray(value) || value.length > 0)) {
+            filledRequiredFields++;
+          }
+        });
+
+        // Add proportional score (max 15%)
+        customFieldsScore = Math.floor((filledRequiredFields / requiredDynamicFields.length) * 15);
+      } else {
+        // Fallback
+        const hasCustomFields = engineer.customFields && (
+          (engineer.customFields instanceof Map && engineer.customFields.size > 0) || 
+          (typeof engineer.customFields === 'object' && Object.keys(engineer.customFields).length > 0)
+        );
+        if (hasCustomFields) customFieldsScore = 15;
+      }
+      score += customFieldsScore;
+    } catch (err) {
+      console.error('Error calculating dynamic customFields score:', err);
+      // Fallback
+      const hasCustomFields = engineer.customFields && (
+        (engineer.customFields instanceof Map && engineer.customFields.size > 0) || 
+        (typeof engineer.customFields === 'object' && Object.keys(engineer.customFields).length > 0)
+      );
+      if (hasCustomFields) score += 15;
+    }
 
     res.status(200).json({ success: true, data: { completionPercentage: score } });
   } catch (error) {

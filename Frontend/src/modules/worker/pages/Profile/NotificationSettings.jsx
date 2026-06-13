@@ -56,7 +56,7 @@ const NotificationSettings = () => {
   const Toggle = ({ label, icon, value, onChange, description }) => (
     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
       <div className="flex items-start gap-3">
-        <div className="mt-1 text-orange-500">
+        <div className="mt-1 text-gray-700">
           {icon}
         </div>
         <div>
@@ -66,7 +66,7 @@ const NotificationSettings = () => {
       </div>
       <button 
         onClick={onChange}
-        className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${value ? 'bg-orange-500' : 'bg-gray-200'}`}
+        className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out ${value ? 'bg-gray-900' : 'bg-gray-200'}`}
       >
         <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ease-in-out ${value ? 'translate-x-6' : 'translate-x-0'}`} />
       </button>
@@ -76,7 +76,7 @@ const NotificationSettings = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FCFC] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -88,9 +88,9 @@ const NotificationSettings = () => {
       <main className="px-5 pt-6 max-w-md mx-auto space-y-6">
         
         {/* Banner */}
-        <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl flex items-start gap-3">
-          <FiBell className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-orange-800 font-medium leading-relaxed">
+        <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl flex items-start gap-3">
+          <FiBell className="w-5 h-5 text-gray-700 shrink-0 mt-0.5" />
+          <p className="text-xs text-gray-700 font-medium leading-relaxed">
             Stay updated with new job requests. We recommend keeping these turned on so you never miss an earning opportunity.
           </p>
         </div>
@@ -118,7 +118,7 @@ const NotificationSettings = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(249,115,22,0.3)] disabled:opacity-70 disabled:active:scale-100"
+          className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.15)] disabled:opacity-70 disabled:active:scale-100"
         >
           {saving ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

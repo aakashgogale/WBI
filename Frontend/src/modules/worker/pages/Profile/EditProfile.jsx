@@ -19,16 +19,6 @@ const workerProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().optional(), // Read-only but good to have in schema
   email: z.string().email("Invalid email address").optional().or(z.literal('')),
-  serviceCategories: z.array(z.string()).min(1, "Select at least one category"),
-  address: z.object({
-    addressLine1: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    pincode: z.string().optional(),
-    fullAddress: z.string().optional()
-  }).refine((data) => {
-    return (data.fullAddress && data.fullAddress.length > 5) || (data.addressLine1 && data.addressLine1.length > 0);
-  }, { message: "Address is required" })
 });
 
 const EditProfile = () => {
@@ -43,19 +33,11 @@ const EditProfile = () => {
     name: '',
     phone: '',
     email: '',
-    address: {
-      addressLine1: '',
-      city: '',
-      state: '',
-      pincode: '',
-    },
-    serviceCategories: [],
     profilePhoto: null,
     status: 'OFFLINE'
   });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleNativeCamera = async () => {
@@ -82,21 +64,11 @@ const EditProfile = () => {
             name: w.name || '',
             phone: w.phone || '',
             email: w.email || '',
-            address: {
-              addressLine1: w.address?.addressLine1 || '',
-              city: w.address?.city || '',
-              state: w.address?.state || '',
-              pincode: w.address?.pincode || '',
-            },
-            serviceCategories: w.serviceCategories || (w.serviceCategory ? [w.serviceCategory] : []),
             profilePhoto: w.profilePhoto || null,
             status: w.status || 'OFFLINE'
           });
         }
 
-        if (catalogRes.success) {
-          setCategories(catalogRes.categories || []);
-        }
       } catch (error) {
         console.error('Init error:', error);
         toast.error('Failed to load data');
@@ -154,60 +126,14 @@ const EditProfile = () => {
     }
   };
 
-  const handleCategoryChange = (val) => {
-    setFormData(prev => {
-      const current = prev.serviceCategories || [];
-      const updated = current.includes(val)
-        ? current.filter(c => c !== val)
-        : [...current, val];
 
-      return {
-        ...prev,
-        serviceCategories: updated
-      };
-    });
-  };
-
-
-  const handleAddressSave = (houseNumber, location) => {
-    // Extract components from Google Maps location
-    let city = '';
-    let state = '';
-    let pincode = '';
-    let addressLine2 = '';
-
-    if (location.components) {
-      location.components.forEach(comp => {
-        if (comp.types.includes('locality')) city = comp.long_name;
-        if (comp.types.includes('administrative_area_level_1')) state = comp.long_name;
-        if (comp.types.includes('postal_code')) pincode = comp.long_name;
-        if (comp.types.includes('sublocality')) addressLine2 = comp.long_name;
-      });
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        addressLine1: houseNumber || prev.address.addressLine1,
-        addressLine2: addressLine2,
-        city: city || prev.address.city,
-        state: state || prev.address.state,
-        pincode: pincode || prev.address.pincode,
-        fullAddress: location.address // Store the full formatted address string
-      }
-    }));
-    setIsAddressModalOpen(false);
-  };
 
   const handleSubmit = async () => {
     // Zod Validation
     const validationResult = workerProfileSchema.safeParse({
       name: formData.name,
       phone: formData.phone,
-      email: formData.email,
-      serviceCategories: formData.serviceCategories,
-      address: formData.address
+      email: formData.email
     });
 
     if (!validationResult.success) {
@@ -221,9 +147,6 @@ const EditProfile = () => {
       const payload = {
         name: formData.name,
         email: formData.email,
-        serviceCategories: formData.serviceCategories,
-        serviceCategory: formData.serviceCategories[0], // Fallback
-        address: formData.address,
         status: formData.status
       };
 
@@ -250,7 +173,7 @@ const EditProfile = () => {
         profilePhoto: payload.profilePhoto || currentWorker.profilePhoto
       }));
 
-      navigate('/engineer/profile');
+      navigate(`${window.location.pathname.startsWith('/engineer') ? '/engineer' : '/worker'}/profile`);
     } catch (error) {
       console.error('Update failed:', error);
       toast.error(error.response?.data?.message || 'Update failed');
@@ -263,7 +186,7 @@ const EditProfile = () => {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-sm text-gray-500 font-medium">Loading...</p>
       </div>
     </div>
@@ -292,7 +215,7 @@ const EditProfile = () => {
             </div>
             {/* Camera Icon */}
             <div
-              className="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full text-white ring-2 ring-white shadow-sm cursor-pointer"
+              className="absolute bottom-0 right-0 p-2 bg-gray-900 rounded-full text-white ring-2 ring-white shadow-sm cursor-pointer"
               onClick={() => flutterBridge.isFlutter ? handleNativeCamera() : document.getElementById('photo-upload').click()}
             >
               <FiCamera className="w-4 h-4" />
@@ -313,7 +236,7 @@ const EditProfile = () => {
         {/* Availability Status */}
         <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">
           <div className="flex items-center gap-2 mb-2">
-            <FiCheck className="text-blue-600" />
+            <FiCheck className="text-gray-900" />
             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Availability</h2>
           </div>
 
@@ -345,7 +268,7 @@ const EditProfile = () => {
         {/* Personal Details */}
         <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">
           <div className="flex items-center gap-2 mb-2">
-            <FiUser className="text-blue-600" />
+            <FiUser className="text-gray-900" />
             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Personal Details</h2>
           </div>
 
@@ -356,7 +279,7 @@ const EditProfile = () => {
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errors.name ? 'border-red-500' : 'border-gray-200'}`}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all ${errors.name ? 'border-red-500' : 'border-gray-200'}`}
                 placeholder="Enter name"
               />
               {errors.name && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.name}</p>}
@@ -368,7 +291,7 @@ const EditProfile = () => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
                 placeholder="email@example.com"
               />
             </div>
@@ -390,97 +313,14 @@ const EditProfile = () => {
           </div>
         </div>
 
-        {/* Address Details */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <FiMapPin className="text-blue-600" />
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Address Details</h2>
-          </div>
 
-          <div className="space-y-3">
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="text-sm font-medium text-gray-700">
-                {formData.address?.fullAddress ||
-                  `${formData.address?.addressLine1 || ''} ${formData.address?.city || ''} ${formData.address?.state || ''} ${formData.address?.pincode || ''}`
-                }
-              </p>
-              {!formData.address?.fullAddress && !formData.address?.addressLine1 && (
-                <p className="text-xs text-gray-400 italic mt-1">No address set</p>
-              )}
-            </div>
-
-            <button
-              onClick={() => setIsAddressModalOpen(true)}
-              className="w-full py-3 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm border border-blue-100 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
-            >
-              <FiMapPin className="w-4 h-4" />
-              Build/Change Location on Map
-            </button>
-          </div>
-        </div>
-
-        {/* Work Category */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <FiBriefcase className="text-blue-600" />
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Work Profile</h2>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-gray-500 mb-2 block uppercase tracking-wide">
-              Categories
-            </label>
-            <div className="relative">
-              <div
-                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                className="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between cursor-pointer"
-              >
-                <div className="flex flex-wrap gap-2">
-                  {formData.serviceCategories && formData.serviceCategories.length > 0 ? (
-                    formData.serviceCategories.map((cat, idx) => (
-                      <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">
-                        {cat}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-400">Select Categories</span>
-                  )}
-                </div>
-                <FiChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
-              </div>
-
-              {isCategoryOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 max-h-60 overflow-y-auto">
-                  {categories.map((cat, index) => {
-                    const isSelected = formData.serviceCategories.includes(cat.title);
-                    return (
-                      <div
-                        key={cat._id || index}
-                        onClick={() => {
-                          handleCategoryChange(cat.title);
-                          // Don't close immediately for multi-select
-                        }}
-                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 font-medium text-gray-700 flex justify-between items-center"
-                      >
-                        <span>{cat.title}</span>
-                        {isSelected && <FiCheck className="text-blue-600 w-4 h-4" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            {errors.serviceCategories && <p className="text-red-500 text-[10px] mt-1">{errors.serviceCategories}</p>}
-          </div>
-
-        </div>
 
         {/* Action Buttons */}
         <div className="pt-2 flex flex-col gap-3">
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm uppercase tracking-wider shadow-lg shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm uppercase tracking-wider shadow-lg shadow-gray-200 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             {saving ? (
               <>
@@ -496,7 +336,7 @@ const EditProfile = () => {
           </button>
 
           <button
-            onClick={() => navigate('/engineer/profile')}
+            onClick={() => navigate(`${window.location.pathname.startsWith('/engineer') ? '/engineer' : '/worker'}/profile`)}
             className="w-full py-3.5 bg-white text-gray-500 border border-gray-200 rounded-2xl font-bold text-sm uppercase tracking-wider active:scale-95 transition-all"
           >
             Cancel
@@ -507,14 +347,7 @@ const EditProfile = () => {
 
 
 
-      <AddressSelectionModal
-        isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
-        address={formData.address?.fullAddress || ''} // Passing for initial view if supported later
-        houseNumber={formData.address?.addressLine1 || ''}
-        onHouseNumberChange={(val) => handleInputChange('address.addressLine1', val)}
-        onSave={handleAddressSave}
-      />
+
 
       
     </div >

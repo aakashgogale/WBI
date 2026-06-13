@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiBell, FiCheck, FiBriefcase, FiChevronRight, FiTrash2, FiX } from 'react-icons/fi';
 import { workerTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { toast } from 'react-hot-toast';
 
 const Notifications = () => {
@@ -33,7 +33,7 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await workerService.getNotifications();
+      const response = await engineerService.getNotifications();
       if (response.success) {
         setNotifications(response.data);
       }
@@ -59,7 +59,7 @@ const Notifications = () => {
 
   const handleMarkAsRead = async (id) => {
     try {
-      const response = await workerService.markNotificationAsRead(id);
+      const response = await engineerService.markNotificationAsRead(id);
       if (response.success) {
         setNotifications(notifications.map(n =>
           n._id === id ? { ...n, isRead: true } : n
@@ -72,7 +72,7 @@ const Notifications = () => {
 
   const handleMarkAllRead = async () => {
     try {
-      const response = await workerService.markAllNotificationsAsRead();
+      const response = await engineerService.markAllNotificationsAsRead();
       if (response.success) {
         setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         toast.success('All marked as read');
@@ -86,7 +86,7 @@ const Notifications = () => {
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     try {
-      const response = await workerService.deleteNotification(id);
+      const response = await engineerService.deleteNotification(id);
       if (response.success) {
         setNotifications(prev => prev.filter(n => n._id !== id));
         toast.success('Notification removed');
@@ -104,7 +104,7 @@ const Notifications = () => {
 
   const confirmClearAll = async () => {
     try {
-      const response = await workerService.deleteAllNotifications();
+      const response = await engineerService.deleteAllNotifications();
       if (response.success) {
         setNotifications([]);
         toast.success('All notifications cleared');

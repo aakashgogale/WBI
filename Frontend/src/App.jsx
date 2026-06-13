@@ -8,6 +8,7 @@ import { CartProvider } from './context/CartContext';
 import { CityProvider } from './context/CityContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
 import { LocationPermissionChecker } from './components/common';
+import NavigationProgress from './components/common/NavigationProgress';
 
 function App() {
   // Initialize push notifications on app load
@@ -41,6 +42,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <NavigationProgress />
       <SocketProvider>
         <CityProvider>
           <CartProvider>

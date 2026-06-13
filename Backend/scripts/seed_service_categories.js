@@ -5,13 +5,15 @@ const ServiceCategory = require('../models/ServiceCategory');
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/WBI';
 
 const seedData = [
+  // --- ENGINEER CATEGORIES ---
   {
     name: 'Digital Solutions',
     description: 'IT services, computer repair, networking & more',
     icon: 'FiMonitor',
     displayOrder: 1,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Security Solutions',
@@ -19,7 +21,8 @@ const seedData = [
     icon: 'FiShield',
     displayOrder: 2,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Banking Solutions',
@@ -27,7 +30,8 @@ const seedData = [
     icon: 'FiBriefcase',
     displayOrder: 3,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Energy Solutions',
@@ -35,7 +39,8 @@ const seedData = [
     icon: 'FiZap',
     displayOrder: 4,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Healthcare Solutions',
@@ -43,7 +48,8 @@ const seedData = [
     icon: 'FiHeart',
     displayOrder: 5,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Appliance Solutions',
@@ -51,7 +57,8 @@ const seedData = [
     icon: 'FiSettings',
     displayOrder: 6,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Automation Solutions',
@@ -59,7 +66,8 @@ const seedData = [
     icon: 'FiCpu',
     displayOrder: 7,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
   },
   {
     name: 'Fire and Safety',
@@ -67,7 +75,100 @@ const seedData = [
     icon: 'FiAlertCircle',
     displayOrder: 8,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['engineer']
+  },
+  
+  // --- WORKER CATEGORIES ---
+  {
+    name: 'AC Service / Repair',
+    description: 'Installation, uninstallation, repair and gas filling',
+    icon: 'FiWind',
+    displayOrder: 9,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Washing Machine Repair',
+    description: 'Fully automatic, semi-automatic repair and installation',
+    icon: 'FiSettings',
+    displayOrder: 10,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Geyser Repair',
+    description: 'Water heater installation, service and repair',
+    icon: 'FiThermometer',
+    displayOrder: 11,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'RO Purifier Service',
+    description: 'Installation, filter replacement and repair',
+    icon: 'FiDroplet',
+    displayOrder: 12,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Microwave Repair',
+    description: 'Diagnosis, spare parts and fixing issues',
+    icon: 'FiClock',
+    displayOrder: 13,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Dishwasher Repair',
+    description: 'Service and repair for all dishwashers',
+    icon: 'FiTool',
+    displayOrder: 14,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'LED / TV Repair',
+    description: 'Wall mount, panel repair, component level service',
+    icon: 'FiMonitor',
+    displayOrder: 15,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Kitchen Chimney Service',
+    description: 'Deep cleaning, motor repair and installation',
+    icon: 'FiWind',
+    displayOrder: 16,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Refrigerator Repair',
+    description: 'Gas charging, compressor replacement, service',
+    icon: 'FiBox',
+    displayOrder: 17,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
+  },
+  {
+    name: 'Cooler Repair',
+    description: 'Motor repair, pump replacement and pad change',
+    icon: 'FiCloudSnow',
+    displayOrder: 18,
+    isActive: true,
+    showOnApp: true,
+    roles: ['worker']
   }
 ];
 

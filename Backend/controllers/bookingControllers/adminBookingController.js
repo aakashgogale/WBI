@@ -288,10 +288,47 @@ const getBookingAnalytics = async (req, res) => {
   }
 };
 
+const autoAssignProvider = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    if (booking.status !== BOOKING_STATUS.PENDING) {
+      return res.status(400).json({
+        success: false,
+        message: `Booking is currently in ${booking.status} status. Only PENDING bookings can be auto-assigned.`
+      });
+    }
+
+    // Add to bookingDispatchQueue with 0 delay
+    const { bookingDispatchQueue } = require('../../jobs/queueSetup');
+    await bookingDispatchQueue.add('auto-escalate', { bookingId: booking._id }, { delay: 0 });
+
+    res.status(200).json({
+      success: true,
+      message: 'Booking successfully queued for auto-assignment. Workers will be notified immediately.'
+    });
+  } catch (error) {
+    console.error('Auto assign provider error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to auto assign provider. Please try again.'
+    });
+  }
+};
+
 module.exports = {
   getAllBookings,
   getBookingById,
   cancelBooking,
-  getBookingAnalytics
+  getBookingAnalytics,
+  autoAssignProvider
 };
 

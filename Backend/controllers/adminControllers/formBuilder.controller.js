@@ -61,7 +61,7 @@ exports.getFormConfigs = async (req, res) => {
     if (role) query.role = role;
     if (formType) query.formType = formType;
     
-    const configs = await FormConfig.find(query).populate('fields').sort({ displayOrder: 1 });
+    const configs = await FormConfig.find(query).sort({ order: 1 });
     res.json({ success: true, data: configs });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
@@ -88,7 +88,7 @@ exports.createFormConfig = async (req, res) => {
 // @access  Private/Admin
 exports.updateFormConfig = async (req, res) => {
   try {
-    const config = await FormConfig.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).populate('fields');
+    const config = await FormConfig.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!config) return res.status(404).json({ success: false, message: 'Form config not found' });
     res.json({ success: true, data: config });
   } catch (error) {

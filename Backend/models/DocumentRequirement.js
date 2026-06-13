@@ -9,6 +9,7 @@ const documentRequirementSchema = new mongoose.Schema({
   requiresBackSide: { type: Boolean, default: false },
   acceptedFormats: [{ type: String }], // e.g., ['pdf', 'jpg', 'png']
   maxSizeMB: { type: Number, default: 5 },
+  order: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

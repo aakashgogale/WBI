@@ -5,6 +5,7 @@ const { sendOTP: sendSMSOTP } = require('../../services/smsService');
 const cloudinaryService = require('../../services/cloudinaryService');
 const { USER_ROLES, ENGINEER_STATUS } = require('../../utils/constants');
 const { validationResult } = require('express-validator');
+const Worker = require('../../models/Worker');
 
 /**
  * Send OTP for engineer registration/login
@@ -155,22 +156,21 @@ const register = async (req, res) => {
 
     const { 
       name, email, phone, password,
-      serviceCategories, skills,
-      availability,
-      address, workLocations, location,
+      serviceCategories, subServices, skills,
       uploadedDocuments,
-      // Comprehensive Fields
-      dob, gender, roleType, experience, workType,
-      workingDays, workingHours, emergencyService,
-      workTools, engineerDetails, customFields,
-      // New 4-Step Fields
-      registrationType, companyDetails, whatsappNumber,
-      primarySkill, secondarySkills, totalExperienceYears,
-      experienceLevel, canWorkIndependently, willingToTravel, preferredWorkType,
-      panNumber, highestEducation, fieldOfStudy,
-      skillCertificates, governmentCertifications,
-      username, preferredLoginMethod, referralCode, heardAboutWbi
+      skillCertificates,
+      roleType, role,
+      experience, qualification, specialization, city, pincode,
+      ...customFields // Capture all other dynamic fields here
     } = req.body;
+
+    const currentRole = (role || roleType || '').toLowerCase();
+    if (currentRole !== 'engineer') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role payload for engineer registration'
+      });
+    }
 
     // Check existing
     const existingEngineer = await Engineer.findOne({ $or: [{ phone }, { email }] });
@@ -178,6 +178,15 @@ const register = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Engineer already exists with this phone or email. Please login.'
+      });
+    }
+
+    // Check Worker collection for same phone
+    const existingWorker = await Worker.findOne({ phone });
+    if (existingWorker) {
+      return res.status(400).json({
+        success: false,
+        message: 'This mobile number is already registered as a Worker. Duplicate roles with the same number are not allowed.'
       });
     }
 
@@ -226,60 +235,30 @@ const register = async (req, res) => {
     const engineer = await Engineer.create({
       name, email, phone, password,
       serviceCategories: serviceCategories || [],
+      subServices: subServices || [],
       skills: skills || [],
-      availability: availability || 'Full Time',
-      address: address || {},
-      workLocations: workLocations || { primaryArea: '', serviceRadius: 10 },
-      location: location || null,
       uploadedDocuments: processedDocuments,
-      
-      // Basic Info
-      dob: dob || null,
-      gender: gender || '',
-      roleType: roleType || 'Engineer',
-      registrationType: registrationType || 'Individual Engineer / Technician',
-      companyDetails: companyDetails || {},
-      whatsappNumber: whatsappNumber || null,
-      
-      // Skills & Exp
-      primarySkill: primarySkill || '',
-      secondarySkills: secondarySkills || [],
-      totalExperienceYears: totalExperienceYears || 0,
-      experienceLevel: experienceLevel || '',
-      canWorkIndependently: canWorkIndependently !== undefined ? canWorkIndependently : true,
-      willingToTravel: willingToTravel !== undefined ? willingToTravel : true,
-      preferredWorkType: preferredWorkType || 'Both',
-      experience: experience || '',
-      workType: workType || '',
-      
-      // Old fields
-      workingDays: workingDays || [],
-      workingHours: workingHours || { start: '09:00 AM', end: '06:00 PM' },
-      emergencyService: emergencyService || false,
-      workTools: workTools || { ownTools: false, vehicleAvailable: false, vehicleType: '', drivingLicense: '' },
-      engineerDetails: engineerDetails || { qualification: '', degree: '', specialization: '', projectExperience: '', portfolio: '', certifications: [], previousCompany: '', canHandleMilestones: false },
+      roleType: 'Engineer',
+      experience: experience || 0,
+      qualification: qualification || '',
+      specialization: specialization || '',
+      address: {
+        city: city || '',
+        pincode: pincode || ''
+      },
       customFields: customFields || {},
       
-      // Documents
+      // Documents fallback
       pan: {
-        number: panNumber || '',
+        number: customFields?.panNumber || '',
         document: panDoc?.url || null
       },
-      highestEducation: highestEducation || '',
-      fieldOfStudy: fieldOfStudy || '',
       skillCertificates: processedCertificates,
-      governmentCertifications: governmentCertifications || [],
       documents: {
         aadhaar: aadhaarDoc?.url || null,
         pan: panDoc?.url || null,
         status: 'Pending'
       },
-      
-      // Account Info
-      username: username || null,
-      preferredLoginMethod: preferredLoginMethod || 'Both',
-      referralCode: referralCode || '',
-      heardAboutWbi: heardAboutWbi || '',
       
       status: ENGINEER_STATUS.OFFLINE,
       approvalStatus: 'pending' // Admin needs to approve

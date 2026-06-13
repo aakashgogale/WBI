@@ -106,14 +106,14 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
             </button>
           </div>
 
-          {/* Info Card - Styled with Brand Colors */}
+          {/* Info Card - Styled with Neutral Colors */}
           <div className="px-4 pt-4 shrink-0">
-            <div className="rounded-xl p-3 mb-2 border" style={{ backgroundColor: `${themeColors.brand.teal}0D`, borderColor: `${themeColors.brand.teal}1A` }}>
+            <div className="rounded-xl p-3 mb-2 border bg-gray-50 border-gray-200">
               <div className="flex items-start gap-3">
-                <FiMapPin className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: themeColors.button }} />
+                <FiMapPin className="w-5 h-5 mt-0.5 flex-shrink-0 text-gray-700" />
                 <div>
-                  <h3 className="font-semibold mb-1 text-sm" style={{ color: themeColors.button }}>Set Delivery Location</h3>
-                  <p className="text-xs" style={{ color: `${themeColors.brand.teal}CC` }}>
+                  <h3 className="font-semibold mb-1 text-sm text-gray-800">Set Delivery Location</h3>
+                  <p className="text-xs text-gray-600">
                     Place the pin accurately on the map to help the professional find you easily.
                   </p>
                 </div>
@@ -205,11 +205,7 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
             <button
               onClick={() => onSave(houseNumber, selectedLocation)}
               disabled={!mapAddress}
-              className="w-full py-4 rounded-xl font-black text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl mb-12 uppercase tracking-wider text-xs"
-              style={{
-                backgroundColor: themeColors.button,
-                boxShadow: `0 8px 16px ${themeColors.button}30`
-              }}
+              className="w-full py-4 rounded-xl font-black text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_16px_rgba(0,0,0,0.15)] mb-12 uppercase tracking-wider text-xs bg-gray-900 hover:bg-black"
             >
               Verify & Save Address
             </button>

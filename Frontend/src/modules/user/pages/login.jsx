@@ -174,7 +174,7 @@ const Login = () => {
           });
         } else {
           toast.success('Welcome back!');
-          navigate('/user', { replace: true });
+          navigate(response.redirectTo || '/user', { replace: true });
         }
       } else {
         setIsLoading(false);

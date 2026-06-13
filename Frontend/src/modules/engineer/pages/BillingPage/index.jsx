@@ -7,7 +7,7 @@ import { workerTheme as themeColors } from '../../../../theme';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { OtpVerificationModal, ScanAndPayModal } from '../../components/common';
 import workerBillService from '../../../../services/workerBillService';
-import workerService from '../../../../services/workerService';
+import engineerService from '../../../../services/engineerService';
 import { publicCatalogService } from '../../../../services/catalogService';
 
 const BillingPage = () => {
@@ -107,7 +107,7 @@ const BillingPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const jobRes = await workerService.getJobById(id);
+      const jobRes = await engineerService.getJobById(id);
       const jobData = jobRes.data || jobRes;
       setJob(jobData);
 
@@ -396,7 +396,7 @@ const BillingPage = () => {
         applyPartsGST
       });
 
-      const res = await workerService.initiateCashCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const res = await engineerService.initiateCashCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
       if (res.success) {
         setIsOtpSent(true);
         setShowOtpModal(true);
@@ -417,7 +417,7 @@ const BillingPage = () => {
   const handleVerifyOTP = async (code) => {
     try {
       setOtpLoading(true);
-      const res = await workerService.collectCash(id, code, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const res = await engineerService.collectCash(id, code, calculations.finalBillAmount, [...selectedParts, ...customItems]);
       if (res.success) {
         setShowOtpModal(false);
         toast.success('Payment verified successfully!');
@@ -448,7 +448,7 @@ const BillingPage = () => {
         applyPartsGST
       });
 
-      const res = await workerService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
+      const res = await engineerService.initiateOnlineCollection(id, calculations.finalBillAmount, [...selectedParts, ...customItems]);
       if (res.success) {
         setOnlinePaymentData(res.data);
         setShowQrModal(true);
@@ -469,7 +469,7 @@ const BillingPage = () => {
   const checkPaymentStatus = async () => {
     try {
       setQrLoading(true);
-      const res = await workerService.verifyOnlineCollection(id);
+      const res = await engineerService.verifyOnlineCollection(id);
       if (res.success) {
         setShowQrModal(false);
         toast.success('Payment verified successfully!');

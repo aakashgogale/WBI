@@ -69,7 +69,10 @@ const updateProfile = async (req, res) => {
     }
 
     const workerId = req.user.id;
-    const { name, serviceCategories, serviceCategory, skills, address, status, profilePhoto } = req.body;
+    const { 
+      name, serviceCategories, serviceCategory, skills, address, status, profilePhoto,
+      dob, gender, bankDetails, documents, workLocations, uploadedDocuments, aadhar 
+    } = req.body;
 
     const worker = await Worker.findById(workerId);
 
@@ -82,6 +85,11 @@ const updateProfile = async (req, res) => {
 
     // Update fields
     if (name) worker.name = name.trim();
+    if (req.body.email) {
+      worker.email = req.body.email.trim();
+    } else if (req.body.email === '') {
+      worker.email = undefined;
+    }
 
     // Handle categories: prefer array, fallback to single legacy string
     if (serviceCategories && Array.isArray(serviceCategories)) {
@@ -98,11 +106,11 @@ const updateProfile = async (req, res) => {
         city: address.city || worker.address?.city || '',
         state: address.state || worker.address?.state || '',
         pincode: address.pincode || worker.address?.pincode || '',
-        landmark: address.landmark || worker.address?.landmark || ''
+        landmark: address.landmark || worker.address?.landmark || '',
+        fullAddress: address.fullAddress || worker.address?.fullAddress || ''
       };
     }
     if (status) worker.status = status;
-    // Update profile photo - upload to Cloudinary if it's a base64 string
     if (profilePhoto !== undefined) {
       if (profilePhoto && profilePhoto.startsWith('data:')) {
         const uploadRes = await cloudinaryService.uploadFile(profilePhoto, { folder: 'workers/profiles' });
@@ -114,8 +122,37 @@ const updateProfile = async (req, res) => {
       }
     }
 
+    if (dob !== undefined) worker.dob = dob;
+    if (gender !== undefined) worker.gender = gender;
+    
+    if (bankDetails) {
+      worker.bankDetails = { ...worker.bankDetails, ...bankDetails };
+    }
+    
+    if (documents) {
+      worker.documents = { ...worker.documents, ...documents };
+    }
+    
+    if (workLocations) {
+      worker.workLocations = { ...worker.workLocations, ...workLocations };
+    }
+    
+    if (uploadedDocuments) {
+      worker.uploadedDocuments = uploadedDocuments;
+    }
+    
+    if (aadhar) {
+      worker.aadhar = { ...worker.aadhar, ...aadhar };
+    }
+
     if (req.body.customFields) {
-      worker.customFields = { ...worker.customFields, ...req.body.customFields };
+      let currentCustomFields = {};
+      if (worker.customFields) {
+        currentCustomFields = worker.customFields instanceof Map 
+          ? Object.fromEntries(worker.customFields) 
+          : worker.customFields;
+      }
+      worker.customFields = { ...currentCustomFields, ...req.body.customFields };
     }
 
     if (req.body.settings) {
@@ -148,7 +185,14 @@ const updateProfile = async (req, res) => {
         settings: worker.settings,
         isPhoneVerified: worker.isPhoneVerified,
         isEmailVerified: worker.isEmailVerified,
-        customFields: worker.customFields || {}
+        customFields: worker.customFields || {},
+        dob: worker.dob,
+        gender: worker.gender,
+        bankDetails: worker.bankDetails,
+        documents: worker.documents,
+        workLocations: worker.workLocations,
+        uploadedDocuments: worker.uploadedDocuments,
+        aadhar: worker.aadhar
       }
     });
   } catch (error) {
@@ -197,19 +241,68 @@ const getProfileCompletion = async (req, res) => {
     let score = 0;
     
     // Personal Info (20%)
-    if (worker.name && worker.phone && worker.email && worker.address?.city) score += 20;
+    if (worker.name && worker.phone && (worker.email || worker.address?.city)) score += 20;
     
-    // Bank Details (20%)
-    if (worker.bankDetails?.accountNumber && worker.bankDetails?.ifscCode) score += 20;
+    // Bank Details (15%)
+    if (worker.bankDetails?.accountNumber && worker.bankDetails?.ifscCode) score += 15;
     
-    // Documents (25%)
-    if (worker.documents?.aadhaar || worker.aadhar?.document) score += 25;
+    // Documents (20%)
+    if (worker.documents?.aadhaar || worker.aadhar?.document || (worker.uploadedDocuments && worker.uploadedDocuments.length > 0)) score += 20;
     
-    // Work Locations (20%)
-    if (worker.workLocations?.primaryArea || worker.serviceCategories?.length > 0) score += 20;
+    // Work Locations (15%)
+    if (worker.workLocations?.primaryArea || worker.serviceCategories?.length > 0 || (worker.workLocations?.availableCities && worker.workLocations.availableCities.length > 0)) score += 15;
     
     // Profile Photo (15%)
     if (worker.profilePhoto) score += 15;
+
+    // Custom Details (15%)
+    // Calculate dynamically based on required FormConfig fields
+    const FormConfig = require('../../models/FormConfig');
+    try {
+      const requiredDynamicFields = await FormConfig.find({ 
+        role: 'worker', 
+        required: true 
+      });
+
+      let customFieldsScore = 0;
+      if (requiredDynamicFields.length > 0) {
+        let filledRequiredFields = 0;
+        
+        // Convert customFields to a plain object
+        let customFieldsObj = {};
+        if (worker.customFields) {
+          customFieldsObj = worker.customFields instanceof Map 
+            ? Object.fromEntries(worker.customFields) 
+            : worker.customFields;
+        }
+
+        requiredDynamicFields.forEach(field => {
+          const value = customFieldsObj[field.fieldKey];
+          if (value !== undefined && value !== null && value !== '' && (!Array.isArray(value) || value.length > 0)) {
+            filledRequiredFields++;
+          }
+        });
+
+        // Add proportional score (max 15%)
+        customFieldsScore = Math.floor((filledRequiredFields / requiredDynamicFields.length) * 15);
+      } else {
+        // Fallback
+        const hasCustomFields = worker.customFields && (
+          (worker.customFields instanceof Map && worker.customFields.size > 0) || 
+          (typeof worker.customFields === 'object' && Object.keys(worker.customFields).length > 0)
+        );
+        if (hasCustomFields) customFieldsScore = 15;
+      }
+      score += customFieldsScore;
+    } catch (err) {
+      console.error('Error calculating dynamic customFields score:', err);
+      // Fallback
+      const hasCustomFields = worker.customFields && (
+        (worker.customFields instanceof Map && worker.customFields.size > 0) || 
+        (typeof worker.customFields === 'object' && Object.keys(worker.customFields).length > 0)
+      );
+      if (hasCustomFields) score += 15;
+    }
 
     res.status(200).json({ success: true, data: { completionPercentage: score } });
   } catch (error) {

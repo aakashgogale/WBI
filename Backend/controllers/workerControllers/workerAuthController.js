@@ -5,6 +5,7 @@ const { sendOTP: sendSMSOTP } = require('../../services/smsService');
 const cloudinaryService = require('../../services/cloudinaryService');
 const { USER_ROLES, WORKER_STATUS } = require('../../utils/constants');
 const { validationResult } = require('express-validator');
+const Engineer = require('../../models/Engineer');
 
 /**
  * Send OTP for worker registration/login
@@ -156,14 +157,18 @@ const register = async (req, res) => {
     const { 
       name, email, phone, password,
       serviceCategories, skills,
-      availability,
-      address, workLocations, location,
       uploadedDocuments,
-      // New Comprehensive Fields
-      dob, gender, roleType, experience, workType,
-      workingDays, workingHours, emergencyService,
-      workTools, engineerDetails, customFields
+      roleType, role,
+      ...customFields // Capture all other dynamic fields here
     } = req.body;
+
+    const currentRole = (role || roleType || '').toLowerCase();
+    if (currentRole !== 'worker') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role payload for worker registration'
+      });
+    }
 
     // Check existing
     let orConditions = [{ phone }];
@@ -176,6 +181,15 @@ const register = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Worker already exists with this phone or email. Please login.'
+      });
+    }
+
+    // Check Engineer collection for same phone
+    const existingEngineer = await Engineer.findOne({ phone });
+    if (existingEngineer) {
+      return res.status(400).json({
+        success: false,
+        message: 'This mobile number is already registered as an Engineer. Duplicate roles with the same number are not allowed.'
       });
     }
 
@@ -212,22 +226,8 @@ const register = async (req, res) => {
       name, email: email && email.trim() !== '' ? email : undefined, phone, password,
       serviceCategories: serviceCategories || [],
       skills: skills || [],
-      availability: availability || 'Full Time',
-      address: address || {},
-      workLocations: workLocations || { primaryArea: '', serviceRadius: 10 },
-      location: location || null,
       uploadedDocuments: processedDocuments,
-      // New fields
-      dob: dob || null,
-      gender: gender || '',
-      roleType: roleType || 'Worker',
-      experience: experience || '',
-      workType: workType || '',
-      workingDays: workingDays || [],
-      workingHours: workingHours || { start: '09:00 AM', end: '06:00 PM' },
-      emergencyService: emergencyService || false,
-      workTools: workTools || { ownTools: false, vehicleAvailable: false, vehicleType: '', drivingLicense: '' },
-      engineerDetails: engineerDetails || { qualification: '', degree: '', specialization: '', projectExperience: '', portfolio: '', certifications: [], previousCompany: '', canHandleMilestones: false },
+      roleType: 'Worker',
       customFields: customFields || {},
       documents: {
         aadhaar: aadhaarDoc?.url || null,

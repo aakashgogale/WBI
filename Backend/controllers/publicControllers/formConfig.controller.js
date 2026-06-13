@@ -12,8 +12,7 @@ exports.getPublicFormConfig = async (req, res) => {
     }
 
     const configs = await FormConfig.find({ role, formType, isActive: true })
-      .populate('fields')
-      .sort({ displayOrder: 1 })
+      .sort({ order: 1 })
       .lean();
       
     res.json({ success: true, data: configs });
