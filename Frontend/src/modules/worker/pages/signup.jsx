@@ -65,16 +65,13 @@ export default function WorkerSignup() {
     setFormData(prev => {
       const isSelected = prev.serviceCategories.includes(categoryId);
       if (isSelected) {
-        const subServicesToRemove = config?.subServices
-          ?.filter(sub => sub.categoryId === categoryId)
-          ?.map(sub => sub.id || sub._id) || [];
         return { 
           ...prev, 
-          serviceCategories: prev.serviceCategories.filter(id => id !== categoryId),
-          subServices: (prev.subServices || []).filter(id => !subServicesToRemove.includes(id))
+          serviceCategories: [],
+          subServices: []
         };
       } else {
-        return { ...prev, serviceCategories: [...prev.serviceCategories, categoryId] };
+        return { ...prev, serviceCategories: [categoryId], subServices: [] };
       }
     });
   };
@@ -85,12 +82,12 @@ export default function WorkerSignup() {
       if (isSelected) {
         return {
           ...prev,
-          subServices: prev.subServices.filter(id => id !== subServiceId)
+          subServices: []
         };
       } else {
         return {
           ...prev,
-          subServices: [...(prev.subServices || []), subServiceId]
+          subServices: [subServiceId]
         };
       }
     });

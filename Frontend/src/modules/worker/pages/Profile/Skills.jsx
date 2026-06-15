@@ -80,9 +80,9 @@ export default function WorkerSkills() {
     setSelectedSubServices(prev => {
       const exists = prev.find(s => s.subServiceId === subService._id);
       if (exists) {
-        return prev.filter(s => s.subServiceId !== subService._id);
+        return [];
       } else {
-        return [...prev, {
+        return [{
           subServiceId: subService._id,
           name: subService.name,
           skills: [],
