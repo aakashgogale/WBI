@@ -270,9 +270,6 @@ const register = async (req, res) => {
   }
 };
 
-/**
- * Login worker with Password
- */
 const login = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -286,17 +283,25 @@ const login = async (req, res) => {
 
     const { phone, password } = req.body;
 
-    // Find worker
-    const worker = await Worker.findOne({ phone }).select('+password');
+    // Check both worker and engineer
+    let worker = await Worker.findOne({ phone }).select('+password');
+    let engineer = null;
     if (!worker) {
+      engineer = await Engineer.findOne({ phone }).select('+password');
+    }
+    
+    if (!worker && !engineer) {
       return res.status(404).json({
         success: false,
-        message: 'Worker not found. Please register first.'
+        message: 'Account not found. Please register first.'
       });
     }
 
+    const user = worker || engineer;
+    const role = worker ? USER_ROLES.WORKER : USER_ROLES.ENGINEER;
+
     // Verify Password
-    const isMatch = await worker.comparePassword(password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -304,34 +309,52 @@ const login = async (req, res) => {
       });
     }
 
-
-
-    if (!worker.isActive) {
+    if (!user.isActive) {
       return res.status(403).json({ success: false, message: 'Account deactivated.' });
     }
     const loginSessionId = Date.now().toString();
-    await Worker.findByIdAndUpdate(worker._id, { 
+    const Model = worker ? Worker : Engineer;
+    await Model.findByIdAndUpdate(user._id, { 
       loginSessionId,
       $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens
     });
 
     const tokens = generateTokenPair({
-      userId: worker._id,
-      role: USER_ROLES.WORKER,
+      userId: user._id,
+      role: role,
       loginSessionId
     });
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      worker: {
-        id: worker._id,
-        name: worker.name,
-        email: worker.email,
-        phone: worker.phone,
-        status: worker.status,
-        serviceCategories: worker.serviceCategories || []
+      role,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        role,
+        serviceCategories: user.serviceCategories || []
       },
+      worker: worker ? {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        serviceCategories: user.serviceCategories || []
+      } : undefined,
+      engineer: engineer ? {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        serviceCategories: user.serviceCategories || []
+      } : undefined,
+      redirectTo: worker ? '/worker/dashboard' : '/engineer/dashboard',
       ...tokens
     });
   } catch (error) {

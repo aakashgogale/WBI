@@ -53,7 +53,11 @@ const WorkerLogin = () => {
 
     setIsLoading(true);
     try {
-      const response = await sharedAuthService.unifiedLogin(formData);
+      const loginPayload = {
+        mobile: formData.phone,
+        password: formData.password
+      };
+      const response = await sharedAuthService.unifiedLogin(loginPayload);
       if (response.success) {
         toast.success(`Welcome Back! Logged in as ${response.user.role}`);
         navigate(response.redirectTo, { replace: true });

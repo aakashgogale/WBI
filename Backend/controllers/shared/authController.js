@@ -331,15 +331,16 @@ exports.resetPassword = async (req, res) => {
 
 exports.unifiedLogin = async (req, res) => {
   try {
-    const { mobile, password } = req.body;
+    const mobileOrPhone = req.body.mobile || req.body.phone;
+    const password = req.body.password;
 
-    if (!mobile || !password) {
-      return res.status(400).json({ success: false, message: 'Mobile and password are required' });
+    if (!mobileOrPhone || !password) {
+      return res.status(400).json({ success: false, message: 'Mobile/Phone and password are required' });
     }
 
     // Determine if input is email or mobile
-    const isEmail = mobile.includes('@');
-    const query = isEmail ? { email: mobile } : { phone: mobile };
+    const isEmail = mobileOrPhone.includes('@');
+    const query = isEmail ? { email: mobileOrPhone } : { phone: mobileOrPhone };
     
     // Admin uses 'email' field always, while others use 'phone' or 'email'. 
     // If it is NOT an email, Admin might not be found. 
