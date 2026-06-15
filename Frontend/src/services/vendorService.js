@@ -4,12 +4,18 @@ const vendorService = {
   // Get vendor profile
   getProfile: async () => {
     const response = await api.get('/vendors/profile');
+    if (response.data.success && response.data.vendor) {
+      localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+    }
     return response.data;
   },
 
   // Update vendor profile
   updateProfile: async (profileData) => {
     const response = await api.put('/vendors/profile', profileData);
+    if (response.data.success && response.data.vendor) {
+      localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+    }
     return response.data;
   },
 

@@ -150,7 +150,24 @@ const engineerSchema = new mongoose.Schema({
     type: String
   }],
   subServices: [{
-    type: String
+    subServiceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubService',
+      required: true
+    },
+    name: String,
+    skills: [{
+      type: String
+    }],
+    customSkills: [{
+      name: { type: String, required: true },
+      status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+    }],
+    tools: [{
+      type: String
+    }],
+    experienceLevel: String,
+    yearsOfExperience: Number
   }],
   primaryCategory: {
     type: String,

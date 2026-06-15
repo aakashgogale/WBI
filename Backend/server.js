@@ -177,6 +177,8 @@ app.get('/api/test/redis', async (req, res) => {
 // API Routes
 
 app.use('/api/service-categories', require('./routes/public-routes/serviceCategory.routes'));
+app.use('/api/sub-services', require('./routes/public-routes/subServicesPublic.routes'));
+app.use('/api/skills', require('./routes/public-routes/skillsPublic.routes'));
 app.use('/api/public/cities', require('./routes/public-routes/city.routes.js'));
 app.use('/api/public/crm-enquiries', require('./routes/public-routes/crmEnquiry.routes'));
 app.use('/api/public/marketing-enquiries', require('./routes/public-routes/marketingEnquiry.routes'));
@@ -249,6 +251,8 @@ app.use('/api/admin', require('./routes/admin-routes/workerManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/engineerManagement.routes'));
 app.use('/api/admin/service-categories', require('./routes/admin-routes/serviceCategoryManagement.routes'));
 app.use('/api/admin/sub-services', require('./routes/admin-routes/subServiceManagement.routes'));
+app.use('/api/admin/custom-skills', require('./routes/admin-routes/customSkillManagement.routes'));
+app.use('/api/admin/skills', require('./routes/admin-routes/skillManagement.routes'));
 app.use('/api/admin/dynamic-form-configs', require('./routes/admin-routes/dynamicFormConfig.routes'));
 
 // Shared routes (e.g. unified forgot password)

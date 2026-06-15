@@ -10,10 +10,12 @@ const ServiceCategory = require('../../models/ServiceCategory');
 const getRegistrationConfig = async (req, res) => {
   try {
     // 1. Fetch Categories (where engineers can register)
-    const categories = await ServiceCategory.find({ isActive: true }).select('name icon').lean();
+    const categories = await ServiceCategory.find({ isActive: true, roles: 'engineer' }).select('name icon').lean();
 
-    // 2. Fetch SubServices (with their specific required skills)
-    const subServices = await SubService.find({ isActive: true }).select('name categoryId icon requiredSkills').lean();
+    // 2. Fetch SubServices (with their specific required skills and tools)
+    const subServices = await SubService.find({ isActive: true })
+      .select('name categoryId icon requiredSkills suggestedTools')
+      .lean();
 
     // 3. Fetch Document Requirements
     const documents = await WorkerDocumentConfig.find({ isActive: true }).sort({ order: 1 }).lean();
@@ -40,13 +42,24 @@ const getRegistrationConfig = async (req, res) => {
       config: {
         isRegistrationEnabled: registrationConfig.isRegistrationEnabled,
         steps: registrationConfig.steps.filter(s => s.isActive).sort((a,b) => a.stepNumber - b.stepNumber),
-        categories: categories.map(c => ({ id: c._id.toString(), title: c.name, icon: c.icon })),
-        subServices: subServices.map(s => ({ 
-          id: s._id.toString(), 
-          name: s.name, 
-          categoryId: s.categoryId ? s.categoryId.toString() : null,
-          requiredSkills: s.requiredSkills || []
+        categories: categories.map(c => ({ 
+          id: c._id.toString(), 
+          _id: c._id.toString(), 
+          title: c.name, 
+          name: c.name, 
+          icon: c.icon 
         })),
+        subServices: subServices
+          .filter(s => categories.some(cat => cat._id.toString() === s.categoryId?.toString()))
+          .map(s => ({ 
+            id: s._id.toString(), 
+            _id: s._id.toString(), 
+            name: s.name, 
+            title: s.name, 
+            categoryId: s.categoryId ? s.categoryId.toString() : null,
+            requiredSkills: s.requiredSkills || [],
+            suggestedTools: s.suggestedTools || []
+          })),
         documents: documents.map(d => ({
           key: d.key,
           title: d.title,

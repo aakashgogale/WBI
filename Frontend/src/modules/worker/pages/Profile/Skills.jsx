@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiCheck, FiBriefcase, FiX, FiPlus, FiAlertCircle, FiSettings, FiTool, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import engineerService from '../../../../services/engineerService';
-import { engineerAuthService } from '../../../../services/authService';
+import workerService from '../../../../services/workerService';
+import { workerAuthService } from '../../../../services/authService';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
-export default function EngineerSkills() {
+export default function WorkerSkills() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -27,7 +27,7 @@ export default function EngineerSkills() {
     const fetchData = async () => {
       try {
         // 1. Fetch Config
-        const configRes = await engineerAuthService.getRegistrationConfig();
+        const configRes = await workerAuthService.getRegistrationConfig();
         let loadedCategories = [];
         if (configRes.success) {
           loadedCategories = configRes.config.categories || [];
@@ -36,41 +36,16 @@ export default function EngineerSkills() {
         }
 
         // 2. Fetch User Profile
-        const profileRes = await engineerService.getProfile();
-        if (profileRes.success && profileRes.engineer) {
-          const profile = profileRes.engineer;
+        const profileRes = await workerService.getProfile();
+        if (profileRes.success && profileRes.worker) {
+          const profile = profileRes.worker;
           
-          let resolvedCatId = '';
           if (profile.serviceCategories && profile.serviceCategories.length > 0) {
-            const profileCatStr = profile.serviceCategories[0]?.toString().trim().toLowerCase();
-            const cat = loadedCategories.find(c => {
-              const cName = (c.name || c.title || '').toString().trim().toLowerCase();
-              const cId = (c._id || c.id || '').toString().trim().toLowerCase();
-              return cName === profileCatStr || cId === profileCatStr;
-            });
+            const cat = loadedCategories.find(c => (c.name || c.title) === profile.serviceCategories[0]);
             if (cat) {
-              resolvedCatId = cat._id || cat.id;
+              setSelectedCategory(cat._id || cat.id);
+              setIsCategoryPreExisting(true);
             }
-          }
-          
-          // Fallback: Try resolving category from subServices configuration
-          if (!resolvedCatId && profile.subServices && profile.subServices.length > 0) {
-            const firstSubService = profile.subServices[0];
-            const firstSubId = firstSubService.subServiceId?._id || firstSubService.subServiceId || '';
-            if (firstSubId) {
-              const subConfig = configRes.config.subServices?.find(s => 
-                s._id?.toString() === firstSubId.toString() || 
-                s.id?.toString() === firstSubId.toString()
-              );
-              if (subConfig && subConfig.categoryId) {
-                resolvedCatId = subConfig.categoryId.toString();
-              }
-            }
-          }
-
-          if (resolvedCatId) {
-            setSelectedCategory(resolvedCatId);
-            setIsCategoryPreExisting(true);
           }
           
           if (profile.subServices && profile.subServices.length > 0) {
@@ -188,7 +163,7 @@ export default function EngineerSkills() {
 
   const handleSave = async () => {
     if (!selectedCategory) {
-      toast.error('Please select a domain category.');
+      toast.error('Please select a category.');
       return;
     }
     if (selectedSubServices.length === 0) {
@@ -206,16 +181,8 @@ export default function EngineerSkills() {
 
     try {
       setIsSaving(true);
-      const cat = categories.find(c => 
-        c._id?.toString() === selectedCategory?.toString() || 
-        c.id?.toString() === selectedCategory?.toString()
-      );
-      const catName = cat ? (cat.name || cat.title) : '';
-      if (!catName) {
-        toast.error('Invalid category selection.');
-        setIsSaving(false);
-        return;
-      }
+      const cat = categories.find(c => c._id === selectedCategory);
+      const catName = cat ? cat.name : '';
 
       const payload = {
         serviceCategories: [catName],
@@ -230,7 +197,7 @@ export default function EngineerSkills() {
         }))
       };
 
-      const res = await engineerService.updateSkillsProfile(payload);
+      const res = await workerService.updateSkillsProfile(payload);
       if (res.success) {
         toast.success('Profile skills updated successfully!');
         navigate(-1);
@@ -262,7 +229,7 @@ export default function EngineerSkills() {
         <button 
           onClick={handleSave}
           disabled={isSaving}
-          className="px-5 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors disabled:opacity-50 shadow-sm"
+          className="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 shadow-sm"
         >
           {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
@@ -275,12 +242,12 @@ export default function EngineerSkills() {
             <h2 className="text-base font-bold mb-1">Your Registered Category</h2>
             <p className="text-xs text-gray-500 mb-4">Your core category domain registered at WBI.</p>
             
-            <div className="flex items-center p-4 rounded-2xl border border-[#4F46E5]/20 bg-[#4F46E5]/5">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 bg-[#4F46E5] text-white">
+            <div className="flex items-center p-4 rounded-2xl border border-gray-200/50 bg-gray-50/50">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 bg-black text-white">
                 <FiBriefcase className="w-5 h-5" />
               </div>
               <div>
-                <span className="block font-bold text-sm text-[#4F46E5]">
+                <span className="block font-bold text-sm text-black">
                   {categories.find(c => c._id?.toString() === selectedCategory?.toString())?.name || 'Loading category...'}
                 </span>
                 <span className="block text-[10px] text-gray-500 mt-0.5">
@@ -302,20 +269,20 @@ export default function EngineerSkills() {
                     key={cat._id}
                     onClick={() => handleCategorySelect(cat._id)}
                     className={`flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
-                      isSelected ? 'border-[#4F46E5] bg-[#4F46E5]/5' : 'border-gray-100 hover:border-gray-200 bg-white'
+                      isSelected ? 'border-black bg-black/5' : 'border-gray-100 hover:border-gray-200 bg-white'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-3 ${
-                      isSelected ? 'bg-[#4F46E5] text-white' : 'bg-gray-50 text-gray-400'
+                      isSelected ? 'bg-black text-white' : 'bg-gray-50 text-gray-400'
                     }`}>
                       <FiBriefcase className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className={`block font-bold text-sm ${isSelected ? 'text-[#4F46E5]' : 'text-gray-800'}`}>
+                      <span className={`block font-bold text-sm ${isSelected ? 'text-black' : 'text-gray-800'}`}>
                         {cat.name}
                       </span>
                     </div>
-                    {isSelected && <FiCheck className="ml-auto text-[#4F46E5] w-5 h-5" />}
+                    {isSelected && <FiCheck className="ml-auto text-black w-5 h-5" />}
                   </button>
                 );
               })}
@@ -338,7 +305,7 @@ export default function EngineerSkills() {
                     onClick={() => toggleSubService(sub)}
                     className={`flex items-center px-4 py-2.5 rounded-full border transition-all text-xs font-semibold ${
                       isSelected 
-                        ? 'border-[#4F46E5] bg-[#4F46E5] text-white shadow-sm' 
+                        ? 'border-black bg-black text-white shadow-sm' 
                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -365,7 +332,7 @@ export default function EngineerSkills() {
                 <section key={subService.subServiceId} className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 space-y-6 animate-fadeIn">
                   <div className="flex items-center justify-between border-b pb-4 border-gray-100">
                     <h4 className="font-extrabold text-gray-800 text-base flex items-center gap-2">
-                      <FiSettings className="text-[#4F46E5] w-5 h-5" />
+                      <FiSettings className="text-black w-5 h-5" />
                       {subService.name}
                     </h4>
                     <button 
@@ -384,7 +351,7 @@ export default function EngineerSkills() {
                       <select
                         value={subService.experienceLevel}
                         onChange={(e) => updateSubServiceField(subService.subServiceId, 'experienceLevel', e.target.value)}
-                        className="block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/15 focus:border-[#4F46E5] transition-all bg-white"
+                        className="block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-black/15 focus:border-black transition-all bg-white"
                       >
                         <option value="">Select Level</option>
                         <option value="Fresher (0–1 year)">Fresher (0–1 year)</option>
@@ -403,7 +370,7 @@ export default function EngineerSkills() {
                         value={subService.yearsOfExperience || ''}
                         onChange={(e) => updateSubServiceField(subService.subServiceId, 'yearsOfExperience', e.target.value)}
                         placeholder="e.g. 3"
-                        className="block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/15 focus:border-[#4F46E5] transition-all"
+                        className="block w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-black/15 focus:border-black transition-all"
                       />
                     </div>
                   </div>
@@ -421,7 +388,7 @@ export default function EngineerSkills() {
                               onClick={() => toggleSkill(subService.subServiceId, skill)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
                                 isChecked 
-                                  ? 'bg-[#4F46E5]/10 text-[#4F46E5] border-[#4F46E5]/30' 
+                                  ? 'bg-black/5 text-black border-black/30' 
                                   : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                               }`}
                             >
@@ -438,7 +405,7 @@ export default function EngineerSkills() {
                   {availableTools.length > 0 && (
                     <div className="space-y-2">
                       <label className="block text-xs font-bold text-gray-600 ml-0.5 flex items-center gap-1">
-                        <FiTool className="w-3.5 h-3.5" /> Suggested Tools & Software
+                        <FiTool className="w-3.5 h-3.5" /> Suggested Tools & Equipment
                       </label>
                       <div className="flex flex-wrap gap-2">
                         {availableTools.map(tool => {
@@ -472,11 +439,11 @@ export default function EngineerSkills() {
                         value={customInputMap[subService.subServiceId] || ''}
                         onChange={(e) => setCustomInputMap(prev => ({ ...prev, [subService.subServiceId]: e.target.value }))}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomSkill(subService.subServiceId))}
-                        className="flex-1 px-3.5 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#4F46E5]/15 focus:border-[#4F46E5] transition-all"
+                        className="flex-1 px-3.5 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-black/15 focus:border-black transition-all"
                       />
                       <button
                         onClick={() => handleAddCustomSkill(subService.subServiceId)}
-                        className="px-4 py-2 bg-[#4F46E5] text-white text-xs font-semibold rounded-xl hover:bg-[#4338CA] transition-colors"
+                        className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition-colors"
                       >
                         Add
                       </button>

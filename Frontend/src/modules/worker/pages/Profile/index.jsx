@@ -79,6 +79,7 @@ const Profile = () => {
 
   const menuItems = [
     { id: 'personal', title: 'Personal Information', icon: <FiUser />, route: `${basePath}/profile/personal-info`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
+    { id: 'skills', title: 'Skills & Expertise', icon: <FiStar />, route: `${basePath}/profile/skills`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
     { id: 'bank', title: 'Bank Details', icon: <FiCreditCard />, route: `${basePath}/profile/bank-details`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
     { id: 'documents', title: 'Documents', icon: <FiFileText />, route: `${basePath}/profile/documents`, color: 'text-gray-800', bgColor: 'bg-gray-50' },
     { id: 'locations', title: 'Work Locations', icon: <FiMapPin />, route: `${basePath}/profile/work-locations`, color: 'text-gray-800', bgColor: 'bg-gray-50' },

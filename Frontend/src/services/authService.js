@@ -28,34 +28,41 @@ function getPlatformType() {
 }
 
 /**
+ * Dynamically save authentication tokens and user details based on role.
+ * @param {string} token
+ * @param {string} refreshToken
+ * @param {object} user
+ * @param {string} role
+ */
+export function saveAuthSession(token, refreshToken, user, role) {
+  // Save globally as requested
+  localStorage.setItem('token', token);
+  localStorage.setItem('role', role);
+
+  const prefix = ['worker', 'engineer', 'vendor', 'admin'].includes(role) ? role : '';
+  if (prefix) {
+    localStorage.setItem(`${prefix}AccessToken`, token);
+    localStorage.setItem(`${prefix}RefreshToken`, refreshToken);
+    localStorage.setItem(`${prefix}Data`, JSON.stringify(user));
+  } else {
+    // Default to user mapping
+    localStorage.setItem('accessToken', token);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('userData', JSON.stringify(user));
+  }
+}
+
+/**
  * Shared Authentication Service (Unified Login)
  */
 export const sharedAuthService = {
   unifiedLogin: async (data) => {
     const response = await api.post('/auth/login', data);
     if (response.data.success && response.data.token) {
-      const { role, token, refreshToken, user } = response.data;
+      const { token, refreshToken, user } = response.data;
+      const role = response.data.role || (user && user.role);
       
-      // Save globally as requested
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
-
-      // Save role specifically for backwards compatibility with ProtectedRoute and api.js
-      let prefix = '';
-      if (role === 'worker') prefix = 'worker';
-      else if (role === 'engineer') prefix = 'engineer';
-      else if (role === 'vendor') prefix = 'vendor';
-      else if (role === 'admin') prefix = 'admin';
-      
-      if (prefix) {
-        localStorage.setItem(`${prefix}AccessToken`, token);
-        localStorage.setItem(`${prefix}RefreshToken`, refreshToken);
-        localStorage.setItem(`${prefix}Data`, JSON.stringify(user));
-      } else if (role === 'user') {
-        localStorage.setItem('accessToken', token);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('userData', JSON.stringify(user));
-      }
+      saveAuthSession(token, refreshToken, user, role);
 
       notifyFlutterLogin(response.data);
       // Register FCM Token
@@ -67,27 +74,10 @@ export const sharedAuthService = {
     // data: { token, role }
     const response = await api.post('/auth/social-login', data);
     if (response.data.success && response.data.token) {
-      const { role, token, refreshToken, user } = response.data;
+      const { token, refreshToken, user } = response.data;
+      const role = response.data.role || (user && user.role);
       
-      // Save globally
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
-
-      let prefix = '';
-      if (role === 'worker') prefix = 'worker';
-      else if (role === 'engineer') prefix = 'engineer';
-      else if (role === 'vendor') prefix = 'vendor';
-      else if (role === 'admin') prefix = 'admin';
-      
-      if (prefix) {
-        localStorage.setItem(`${prefix}AccessToken`, token);
-        localStorage.setItem(`${prefix}RefreshToken`, refreshToken);
-        localStorage.setItem(`${prefix}Data`, JSON.stringify(user));
-      } else if (role === 'user') {
-        localStorage.setItem('accessToken', token);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('userData', JSON.stringify(user));
-      }
+      saveAuthSession(token, refreshToken, user, role);
 
       notifyFlutterLogin(response.data);
       registerFCMToken(role, true).catch(console.error);
@@ -112,24 +102,7 @@ export const userAuthService = {
     if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
       const { role, accessToken, refreshToken, user } = response.data;
       
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('role', role);
-
-      let prefix = '';
-      if (role === 'worker') prefix = 'worker';
-      else if (role === 'engineer') prefix = 'engineer';
-      else if (role === 'vendor') prefix = 'vendor';
-      else if (role === 'admin') prefix = 'admin';
-
-      if (prefix) {
-        localStorage.setItem(`${prefix}AccessToken`, accessToken);
-        localStorage.setItem(`${prefix}RefreshToken`, refreshToken);
-        localStorage.setItem(`${prefix}Data`, JSON.stringify(user));
-      } else {
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        localStorage.setItem('userData', JSON.stringify(user));
-      }
+      saveAuthSession(accessToken, refreshToken, user, role);
 
       notifyFlutterLogin(response.data);
       registerFCMToken(role || 'user', true).catch(console.error);

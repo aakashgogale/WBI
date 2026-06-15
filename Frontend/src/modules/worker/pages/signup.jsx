@@ -19,6 +19,7 @@ export default function WorkerSignup() {
     phone: '',
     password: '',
     serviceCategories: [],
+    subServices: [],
     address: { city: '', pincode: '' }
   });
 
@@ -64,9 +65,33 @@ export default function WorkerSignup() {
     setFormData(prev => {
       const isSelected = prev.serviceCategories.includes(categoryId);
       if (isSelected) {
-        return { ...prev, serviceCategories: prev.serviceCategories.filter(id => id !== categoryId) };
+        const subServicesToRemove = config?.subServices
+          ?.filter(sub => sub.categoryId === categoryId)
+          ?.map(sub => sub.id || sub._id) || [];
+        return { 
+          ...prev, 
+          serviceCategories: prev.serviceCategories.filter(id => id !== categoryId),
+          subServices: (prev.subServices || []).filter(id => !subServicesToRemove.includes(id))
+        };
       } else {
         return { ...prev, serviceCategories: [...prev.serviceCategories, categoryId] };
+      }
+    });
+  };
+
+  const handleSubServiceToggle = (subServiceId) => {
+    setFormData(prev => {
+      const isSelected = (prev.subServices || []).includes(subServiceId);
+      if (isSelected) {
+        return {
+          ...prev,
+          subServices: prev.subServices.filter(id => id !== subServiceId)
+        };
+      } else {
+        return {
+          ...prev,
+          subServices: [...(prev.subServices || []), subServiceId]
+        };
       }
     });
   };
@@ -116,14 +141,27 @@ export default function WorkerSignup() {
     setIsSubmitting(true);
     try {
       const categoryTitles = formData.serviceCategories.map(id => {
-        const cat = config?.categories?.find(c => c.id === id);
-        return cat ? cat.title : id;
+        const cat = config?.categories?.find(c => c.id === id || c._id === id);
+        return cat ? (cat.title || cat.name) : id;
+      });
+
+      const subServicesPayload = (formData.subServices || []).map(id => {
+        const sub = config?.subServices?.find(s => s.id === id || s._id === id);
+        return {
+          subServiceId: id,
+          name: sub ? (sub.name || sub.title) : '',
+          skills: [],
+          customSkills: [],
+          experienceLevel: '',
+          yearsOfExperience: 0
+        };
       });
 
       const payload = {
         ...formData,
         roleType: 'Worker',
         serviceCategories: categoryTitles,
+        subServices: subServicesPayload,
       };
 
       const response = await workerAuthService.register(payload);
@@ -275,20 +313,45 @@ export default function WorkerSignup() {
               <div className="space-y-6 animate-fadeIn">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-black text-gray-800">Services Offered</h2>
-                  <p className="text-sm text-gray-500 mt-2">Select the categories you specialize in</p>
+                  <p className="text-sm text-gray-500 mt-2">Select your category and specializations</p>
                 </div>
                 <div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {config?.categories?.map(cat => {
                       const isSelected = formData.serviceCategories.includes(cat.id || cat._id);
                       return (
                         <div 
-                          key={cat.id || cat._id} 
-                          onClick={() => handleCategoryToggle(cat.id || cat._id)}
-                          className={`px-4 py-3.5 border-2 rounded-2xl cursor-pointer transition-all flex flex-col items-center justify-center text-center gap-2 ${isSelected ? 'border-black bg-black/5 text-black shadow-sm' : 'border-gray-50 bg-gray-50 text-gray-600 hover:border-gray-100 hover:bg-gray-100'}`}
+                          key={cat.id || cat._id}
+                          className={`border-2 rounded-2xl p-4 transition-all flex flex-col ${isSelected ? 'border-black bg-black/5' : 'border-gray-100 bg-gray-50'}`}
                         >
-                          {cat.icon && <img src={cat.icon} className={`w-8 h-8 object-contain transition-all ${isSelected ? 'scale-110' : 'grayscale opacity-60'}`} alt=""/>}
-                          <span className="text-xs font-bold leading-tight">{cat.name || cat.title}</span>
+                          <div 
+                            onClick={() => handleCategoryToggle(cat.id || cat._id)}
+                            className="cursor-pointer flex items-center gap-3"
+                          >
+                            {cat.icon && <img src={cat.icon} className={`w-8 h-8 object-contain transition-all ${isSelected ? 'scale-110' : 'grayscale opacity-60'}`} alt=""/>}
+                            <span className="text-sm font-bold leading-tight">{cat.name || cat.title}</span>
+                          </div>
+                          
+                          {/* Sub Services */}
+                          {isSelected && config?.subServices?.some(sub => sub.categoryId === (cat.id || cat._id)) && (
+                            <div className="mt-3 pt-3 border-t border-gray-200/50 space-y-2">
+                              {config.subServices
+                                .filter(sub => sub.categoryId === (cat.id || cat._id))
+                                .map(sub => {
+                                  const isSubSelected = (formData.subServices || []).includes(sub.id || sub._id);
+                                  return (
+                                    <div 
+                                      key={sub.id || sub._id}
+                                      onClick={() => handleSubServiceToggle(sub.id || sub._id)}
+                                      className={`px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-between border ${isSubSelected ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                      <span>{sub.name}</span>
+                                      {isSubSelected && <FiCheckCircle className="w-4 h-4" />}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

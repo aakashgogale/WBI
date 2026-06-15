@@ -48,6 +48,7 @@ const EditProfile = lazyLoad(() => import('../pages/Profile/EditProfile'));
 const PersonalInfo = lazyLoad(() => import('../pages/Profile/PersonalInfo'));
 const BankDetails = lazyLoad(() => import('../pages/Profile/BankDetails'));
 const Documents = lazyLoad(() => import('../pages/Profile/Documents'));
+const Skills = lazyLoad(() => import('../pages/Profile/Skills'));
 const WorkLocations = lazyLoad(() => import('../pages/Profile/WorkLocations'));
 const NotificationSettings = lazyLoad(() => import('../pages/Profile/NotificationSettings'));
 const Support = lazyLoad(() => import('../pages/Profile/Support'));
@@ -116,6 +117,7 @@ const WorkerRoutes = () => {
               <Route path="/profile/personal-info" element={<ProtectedRoute userType="worker"><PersonalInfo /></ProtectedRoute>} />
               <Route path="/profile/bank-details" element={<ProtectedRoute userType="worker"><BankDetails /></ProtectedRoute>} />
               <Route path="/profile/documents" element={<ProtectedRoute userType="worker"><Documents /></ProtectedRoute>} />
+              <Route path="/profile/skills" element={<ProtectedRoute userType="worker"><Skills /></ProtectedRoute>} />
               <Route path="/profile/work-locations" element={<ProtectedRoute userType="worker"><WorkLocations /></ProtectedRoute>} />
 
               <Route path="/profile/notifications" element={<ProtectedRoute userType="worker"><NotificationSettings /></ProtectedRoute>} />

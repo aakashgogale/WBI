@@ -103,19 +103,16 @@ const verifyLogin = async (req, res) => {
         loginSessionId
       });
 
+      const engineerRes = engineer.toObject();
+      delete engineerRes.password;
+      delete engineerRes.__v;
+      engineerRes.id = engineer._id;
+
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
-        engineer: {
-          id: engineer._id,
-          name: engineer.name,
-          email: engineer.email,
-          phone: engineer.phone,
-          status: engineer.status,
-          status: engineer.status,
-          serviceCategories: engineer.serviceCategories || []
-        },
+        engineer: engineerRes,
         ...tokens
       });
 
@@ -156,7 +153,7 @@ const register = async (req, res) => {
 
     const { 
       name, email, phone, password,
-      serviceCategories, subServices, skills,
+      serviceCategories, subServices, skills, secondarySkills,
       uploadedDocuments,
       skillCertificates,
       roleType, role,
@@ -237,6 +234,7 @@ const register = async (req, res) => {
       serviceCategories: serviceCategories || [],
       subServices: subServices || [],
       skills: skills || [],
+      secondarySkills: secondarySkills || [],
       uploadedDocuments: processedDocuments,
       roleType: 'Engineer',
       experience: experience || 0,
@@ -274,17 +272,15 @@ const register = async (req, res) => {
       loginSessionId
     });
 
+    const engineerRes = engineer.toObject();
+    delete engineerRes.password;
+    delete engineerRes.__v;
+    engineerRes.id = engineer._id;
+
     res.status(201).json({
       success: true,
       message: 'Registration successful. Account pending approval.',
-      engineer: {
-        id: engineer._id,
-        name: engineer.name,
-        email: engineer.email,
-        phone: engineer.phone,
-        status: engineer.status,
-        approvalStatus: engineer.approvalStatus
-      },
+      engineer: engineerRes,
       ...tokens
     });
   } catch (error) {
@@ -351,35 +347,19 @@ const login = async (req, res) => {
       loginSessionId
     });
 
+    const userRes = user.toObject();
+    delete userRes.password;
+    delete userRes.__v;
+    userRes.id = user._id;
+    userRes.role = role;
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
       role,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        role,
-        serviceCategories: user.serviceCategories || []
-      },
-      engineer: engineer ? {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        serviceCategories: user.serviceCategories || []
-      } : undefined,
-      worker: worker ? {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        serviceCategories: user.serviceCategories || []
-      } : undefined,
+      user: userRes,
+      engineer: engineer ? userRes : undefined,
+      worker: worker ? userRes : undefined,
       redirectTo: engineer ? '/engineer/dashboard' : '/worker/dashboard',
       ...tokens
     });

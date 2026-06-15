@@ -27,7 +27,9 @@ const getProfile = async (req, res) => {
         phone: engineer.phone,
         serviceCategories: engineer.serviceCategories || [],
         serviceCategory: engineer.serviceCategories?.[0] || '', // Legacy support
+        subServices: engineer.subServices || [],
         skills: engineer.skills || [],
+        secondarySkills: engineer.secondarySkills || [],
         address: engineer.address || null,
         rating: engineer.rating || 0,
         totalJobs: engineer.totalJobs || 0,
@@ -41,6 +43,10 @@ const getProfile = async (req, res) => {
         documents: engineer.documents || {},
         workLocations: engineer.workLocations || {},
         customFields: engineer.customFields || {},
+        experience: engineer.experience || '',
+        experienceLevel: engineer.experienceLevel || '',
+        totalExperienceYears: engineer.totalExperienceYears || 0,
+        engineerDetails: engineer.engineerDetails || {},
         createdAt: engineer.createdAt,
         updatedAt: engineer.updatedAt
       }
@@ -70,9 +76,9 @@ const updateProfile = async (req, res) => {
 
     const engineerId = req.user.id;
     const { 
-      name, serviceCategories, serviceCategory, subServices, skills, address, status, profilePhoto,
+      name, serviceCategories, serviceCategory, subServices, skills, secondarySkills, address, status, profilePhoto,
       dob, gender, bankDetails, documents, workLocations, uploadedDocuments, aadhar,
-      experience, qualification, specialization
+      experience, qualification, specialization, experienceLevel, totalExperienceYears, engineerDetails
     } = req.body;
 
     const engineer = await Engineer.findById(engineerId);
@@ -107,6 +113,7 @@ const updateProfile = async (req, res) => {
     }
 
     if (skills && Array.isArray(skills)) engineer.skills = skills;
+    if (secondarySkills && Array.isArray(secondarySkills)) engineer.secondarySkills = secondarySkills;
     if (address) {
       engineer.address = {
         addressLine1: address.addressLine1 || engineer.address?.addressLine1 || '',
@@ -154,8 +161,17 @@ const updateProfile = async (req, res) => {
     }
 
     if (experience !== undefined) engineer.experience = experience;
+    if (experienceLevel !== undefined) engineer.experienceLevel = experienceLevel;
+    if (totalExperienceYears !== undefined) engineer.totalExperienceYears = totalExperienceYears;
     if (qualification !== undefined) engineer.qualification = qualification;
     if (specialization !== undefined) engineer.specialization = specialization;
+
+    if (engineerDetails) {
+      engineer.engineerDetails = {
+        ...engineer.engineerDetails,
+        ...engineerDetails
+      };
+    }
 
     if (req.body.customFields) {
       let currentCustomFields = {};
@@ -188,6 +204,7 @@ const updateProfile = async (req, res) => {
         serviceCategories: engineer.serviceCategories,
         serviceCategory: engineer.serviceCategories?.[0] || '',
         skills: engineer.skills,
+        secondarySkills: engineer.secondarySkills || [],
         address: engineer.address,
         rating: engineer.rating,
         totalJobs: engineer.totalJobs,
@@ -207,8 +224,11 @@ const updateProfile = async (req, res) => {
         aadhar: engineer.aadhar,
         subServices: engineer.subServices,
         experience: engineer.experience,
+        experienceLevel: engineer.experienceLevel,
+        totalExperienceYears: engineer.totalExperienceYears,
         qualification: engineer.qualification,
-        specialization: engineer.specialization
+        specialization: engineer.specialization,
+        engineerDetails: engineer.engineerDetails
       }
     });
   } catch (error) {
@@ -369,6 +389,97 @@ const updateDocuments = async (req, res) => {
   }
 };
 
+/**
+ * Update engineer skills profile (structured sub-services)
+ */
+const updateSkillsProfile = async (req, res) => {
+  try {
+    const engineerId = req.user.id;
+    const { subServices, serviceCategories } = req.body;
+
+    if (!Array.isArray(subServices)) {
+      return res.status(400).json({
+        success: false,
+        message: 'subServices must be an array'
+      });
+    }
+
+    const engineer = await Engineer.findById(engineerId);
+    if (!engineer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Engineer not found'
+      });
+    }
+
+    // Process subServices
+    const updatedSubServices = subServices.map(item => {
+      // Find matching existing subservice to preserve customSkills status
+      const existingSubService = engineer.subServices.find(
+        s => s.subServiceId.toString() === item.subServiceId.toString()
+      );
+      
+      const existingCustomSkills = existingSubService ? existingSubService.customSkills : [];
+      
+      // Process customSkills
+      const customSkillsPayload = item.customSkills || [];
+      const processedCustomSkills = customSkillsPayload.map(cs => {
+        const skillName = typeof cs === 'string' ? cs.trim() : (cs.name ? cs.name.trim() : '');
+        if (!skillName) return null;
+
+        const existing = existingCustomSkills.find(
+          ecs => ecs.name.toLowerCase() === skillName.toLowerCase()
+        );
+
+        if (existing) {
+          return {
+            _id: existing._id,
+            name: existing.name,
+            status: existing.status
+          };
+        } else {
+          return {
+            name: skillName,
+            status: 'pending'
+          };
+        }
+      }).filter(Boolean);
+
+      return {
+        subServiceId: item.subServiceId,
+        name: item.name,
+        skills: item.skills || [],
+        customSkills: processedCustomSkills,
+        tools: item.tools || [],
+        experienceLevel: item.experienceLevel || '',
+        yearsOfExperience: item.yearsOfExperience || 0
+      };
+    });
+
+    engineer.subServices = updatedSubServices;
+    
+    if (serviceCategories && Array.isArray(serviceCategories)) {
+      engineer.serviceCategories = serviceCategories;
+    }
+
+    await engineer.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Skills profile updated successfully',
+      subServices: engineer.subServices,
+      serviceCategories: engineer.serviceCategories
+    });
+  } catch (error) {
+    console.error('Update engineer skills profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update skills profile',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -376,6 +487,8 @@ module.exports = {
   getProfileCompletion,
   updateBankDetails,
   updateWorkLocations,
-  updateDocuments
+  updateDocuments,
+  updateSkillsProfile
 };
+
 

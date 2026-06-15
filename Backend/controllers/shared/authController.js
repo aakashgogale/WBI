@@ -339,8 +339,9 @@ exports.unifiedLogin = async (req, res) => {
     }
 
     // Determine if input is email or mobile
-    const isEmail = mobileOrPhone.includes('@');
-    const query = isEmail ? { email: mobileOrPhone } : { phone: mobileOrPhone };
+    const identifierString = String(mobileOrPhone);
+    const isEmail = identifierString.includes('@');
+    const query = isEmail ? { email: identifierString } : { phone: identifierString };
     
     // Admin uses 'email' field always, while others use 'phone' or 'email'. 
     // If it is NOT an email, Admin might not be found. 
@@ -351,7 +352,7 @@ exports.unifiedLogin = async (req, res) => {
       { role: 'engineer', model: Engineer, redirect: '/engineer/dashboard' },
       { role: 'vendor', model: Vendor, redirect: '/vendor/dashboard' },
       { role: 'user', model: User, redirect: '/user/dashboard' },
-      { role: 'admin', model: Admin, redirect: '/admin/dashboard', queryOverride: isEmail ? { email: mobile } : { email: mobile } } 
+      { role: 'admin', model: Admin, redirect: '/admin/dashboard', queryOverride: isEmail ? { email: identifierString } : { email: identifierString } } 
     ];
 
     let foundUser = null;
@@ -412,19 +413,20 @@ exports.unifiedLogin = async (req, res) => {
       loginSessionId
     });
 
+    const userResponse = foundUser.toObject();
+    delete userResponse.password;
+    delete userResponse.__v;
+    userResponse.id = foundUser._id;
+    userResponse.mobile = foundUser.phone || foundUser.mobile || null;
+    userResponse.role = foundRoleInfo.role;
+    userResponse.status = foundUser.status || foundUser.approvalStatus || undefined;
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: foundUser._id,
-        name: foundUser.name,
-        mobile: foundUser.phone || foundUser.mobile || null,
-        email: foundUser.email,
-        role: foundRoleInfo.role,
-        status: foundUser.status || foundUser.approvalStatus || undefined
-      },
+      user: userResponse,
       redirectTo: foundRoleInfo.redirect
     });
 
@@ -544,20 +546,21 @@ exports.socialLogin = async (req, res) => {
       loginSessionId
     });
 
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.__v;
+    userResponse.id = user._id;
+    userResponse.mobile = user.phone || user.mobile || null;
+    userResponse.role = targetRoleInfo.role;
+    userResponse.status = user.status || user.approvalStatus || undefined;
+
     res.status(200).json({
       success: true,
       message: 'Social Login successful',
       isNewUser,
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        mobile: user.phone || user.mobile || null,
-        email: user.email,
-        role: targetRoleInfo.role,
-        status: user.status || user.approvalStatus || undefined
-      },
+      user: userResponse,
       redirectTo: targetRoleInfo.redirect
     });
 

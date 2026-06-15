@@ -165,17 +165,24 @@ export default function EngineerSignup() {
         return cat ? (cat.title || cat.name) : id;
       });
 
-      const subServiceTitles = formData.subServices.map(id => {
-        const sub = config?.subServices?.find(c => c.id === id || c._id === id);
-        return sub ? (sub.title || sub.name) : id;
-      });
+      const subServicesPayload = formData.subServices.map(name => {
+        const sub = config?.subServices?.find(s => s.name === name || s.title === name);
+        return {
+          subServiceId: sub ? (sub.id || sub._id) : null,
+          name: name,
+          skills: [],
+          customSkills: [],
+          experienceLevel: '',
+          yearsOfExperience: 0
+        };
+      }).filter(s => s.subServiceId !== null);
 
       const payload = {
         ...formData,
         roleType: 'Engineer',
         serviceCategories: categoryTitles,
-        subServices: subServiceTitles,
-        skills: formData.skills,
+        subServices: subServicesPayload,
+        secondarySkills: [],
       };
 
       const response = await engineerAuthService.register(payload);
@@ -353,45 +360,6 @@ export default function EngineerSignup() {
                     })}
                   </div>
                 </div>
-
-                {/* Technical Skills based on selected subServices */}
-                {(() => {
-                  const availableSkills = Array.from(new Set(
-                    (config?.subServices || [])
-                      .filter(s => formData.subServices.includes(s.name))
-                      .flatMap(s => s.requiredSkills || [])
-                  ));
-
-                  if (availableSkills.length === 0) return null;
-
-                  return (
-                    <div className="mt-8 border-t border-gray-100 pt-6">
-                      <label className="block text-xs font-medium text-gray-700 mb-3">Technical Skills & Expertise</label>
-                      <p className="text-[11px] text-gray-500 mb-3 -mt-1">Select the specific technologies and skills you are proficient in.</p>
-                      <div className="flex flex-wrap gap-2">
-                        {availableSkills.map(skill => {
-                          const isSelected = formData.secondarySkills?.includes(skill);
-                          return (
-                            <div 
-                              key={skill}
-                              onClick={() => {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  secondarySkills: isSelected
-                                    ? prev.secondarySkills.filter(s => s !== skill)
-                                    : [...(prev.secondarySkills || []), skill]
-                                }));
-                              }}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 border ${isSelected ? 'bg-[#10B981] text-white border-[#10B981] shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-[#10B981]/30 hover:bg-[#10B981]/5'}`}
-                            >
-                              {skill}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
             )}
 

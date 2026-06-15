@@ -115,12 +115,14 @@ api.interceptors.response.use(
       }
 
       try {
-        // Determine correct refresh endpoint based on current path
-        let refreshEndpoint = '/users/auth/refresh-token'; // Default to user
-        if (role === 'vendor') refreshEndpoint = '/vendors/auth/refresh-token';
-        else if (role === 'engineer') refreshEndpoint = '/engineers/auth/refresh-token';
-        else if (role === 'worker') refreshEndpoint = '/workers/auth/refresh-token';
-        else if (role === 'admin') refreshEndpoint = '/admin/auth/refresh-token';
+        // Determine correct refresh endpoint dynamically
+        const refreshEndpoints = {
+          vendor: '/vendors/auth/refresh-token',
+          engineer: '/engineers/auth/refresh-token',
+          worker: '/workers/auth/refresh-token',
+          admin: '/admin/auth/refresh-token'
+        };
+        const refreshEndpoint = refreshEndpoints[role] || '/users/auth/refresh-token';
 
         // Try to refresh the token
         const response = await axios.post(`${API_BASE_URL}${refreshEndpoint}`, {
@@ -197,25 +199,11 @@ export const handleLogout = (role = null) => {
     localStorage.removeItem(`${prefix}Data`);
   };
 
-  if (role === 'vendor') {
-    clearTokens('vendor');
-    if (window.location.pathname !== '/vendor/login') {
-      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/vendor/login' } }));
-    }
-  } else if (role === 'engineer') {
-    clearTokens('engineer');
-    if (window.location.pathname !== '/engineer/login') {
-      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/engineer/login' } }));
-    }
-  } else if (role === 'worker') {
-    clearTokens('worker');
-    if (window.location.pathname !== '/worker/login') {
-      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/worker/login' } }));
-    }
-  } else if (role === 'admin') {
-    clearTokens('admin');
-    if (window.location.pathname !== '/admin/login') {
-      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: '/admin/login' } }));
+  if (['vendor', 'engineer', 'worker', 'admin'].includes(role)) {
+    clearTokens(role);
+    const loginPath = `/${role}/login`;
+    if (window.location.pathname !== loginPath) {
+      window.dispatchEvent(new CustomEvent('auth:redirect', { detail: { path: loginPath } }));
     }
   } else {
     // User

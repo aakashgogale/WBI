@@ -139,17 +139,17 @@ const verifyLogin = async (req, res) => {
         loginSessionId
       });
 
+      const userRes = foundUser.toObject();
+      delete userRes.password;
+      delete userRes.__v;
+      userRes.id = foundUser._id;
+      userRes.role = foundRoleInfo.role;
+
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
-        user: {
-          id: foundUser._id,
-          name: foundUser.name,
-          email: foundUser.email,
-          phone: foundUser.phone,
-          role: foundRoleInfo.role
-        },
+        user: userRes,
         role: foundRoleInfo.role,
         redirectTo: foundRoleInfo.redirect,
         ...tokens
@@ -247,17 +247,15 @@ const register = async (req, res) => {
       loginSessionId
     });
 
+    const userRes = user.toObject();
+    delete userRes.password;
+    delete userRes.__v;
+    userRes.id = user._id;
+
     res.status(201).json({
       success: true,
       message: 'Registration successful',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        isPhoneVerified: user.isPhoneVerified,
-        isEmailVerified: user.isEmailVerified
-      },
+      user: userRes,
       ...tokens
     });
   } catch (error) {
@@ -323,17 +321,15 @@ const login = async (req, res) => {
       loginSessionId
     });
 
+    const userRes = user.toObject();
+    delete userRes.password;
+    delete userRes.__v;
+    userRes.id = user._id;
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        isPhoneVerified: user.isPhoneVerified,
-        isEmailVerified: user.isEmailVerified
-      },
+      user: userRes,
       ...tokens
     });
   } catch (error) {

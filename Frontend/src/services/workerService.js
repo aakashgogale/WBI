@@ -4,11 +4,25 @@ const workerService = {
   // Profile
   getProfile: async () => {
     const response = await api.get('/workers/profile');
+    if (response.data.success && response.data.worker) {
+      localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+    }
     return response.data;
   },
 
   updateProfile: async (profileData) => {
     const response = await api.put('/workers/profile', profileData);
+    if (response.data.success && response.data.worker) {
+      localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+    }
+    return response.data;
+  },
+
+  updateSkillsProfile: async (payload) => {
+    const response = await api.put('/workers/profile/skills', payload);
+    if (response.data.success && response.data.worker) {
+      localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+    }
     return response.data;
   },
 

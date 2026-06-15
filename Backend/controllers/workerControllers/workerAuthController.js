@@ -103,19 +103,16 @@ const verifyLogin = async (req, res) => {
         loginSessionId
       });
 
+      const workerRes = worker.toObject();
+      delete workerRes.password;
+      delete workerRes.__v;
+      workerRes.id = worker._id;
+
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
-        worker: {
-          id: worker._id,
-          name: worker.name,
-          email: worker.email,
-          phone: worker.phone,
-          status: worker.status,
-          status: worker.status,
-          serviceCategories: worker.serviceCategories || []
-        },
+        worker: workerRes,
         ...tokens
       });
 
@@ -156,7 +153,7 @@ const register = async (req, res) => {
 
     const { 
       name, email, phone, password,
-      serviceCategories, skills,
+      serviceCategories, subServices, skills, secondarySkills,
       uploadedDocuments,
       roleType, role,
       ...customFields // Capture all other dynamic fields here
@@ -225,7 +222,9 @@ const register = async (req, res) => {
     const worker = await Worker.create({
       name, email: email && email.trim() !== '' ? email : undefined, phone, password,
       serviceCategories: serviceCategories || [],
+      subServices: subServices || [],
       skills: skills || [],
+      secondarySkills: secondarySkills || [],
       uploadedDocuments: processedDocuments,
       roleType: 'Worker',
       customFields: customFields || {},
@@ -248,17 +247,15 @@ const register = async (req, res) => {
       loginSessionId
     });
 
+    const workerRes = worker.toObject();
+    delete workerRes.password;
+    delete workerRes.__v;
+    workerRes.id = worker._id;
+
     res.status(201).json({
       success: true,
       message: 'Registration successful. Account pending approval.',
-      worker: {
-        id: worker._id,
-        name: worker.name,
-        email: worker.email,
-        phone: worker.phone,
-        status: worker.status,
-        approvalStatus: worker.approvalStatus
-      },
+      worker: workerRes,
       ...tokens
     });
   } catch (error) {
@@ -325,35 +322,19 @@ const login = async (req, res) => {
       loginSessionId
     });
 
+    const userRes = user.toObject();
+    delete userRes.password;
+    delete userRes.__v;
+    userRes.id = user._id;
+    userRes.role = role;
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
       role,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        role,
-        serviceCategories: user.serviceCategories || []
-      },
-      worker: worker ? {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        serviceCategories: user.serviceCategories || []
-      } : undefined,
-      engineer: engineer ? {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: user.status,
-        serviceCategories: user.serviceCategories || []
-      } : undefined,
+      user: userRes,
+      worker: worker ? userRes : undefined,
+      engineer: engineer ? userRes : undefined,
       redirectTo: worker ? '/worker/dashboard' : '/engineer/dashboard',
       ...tokens
     });

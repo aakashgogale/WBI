@@ -1,7 +1,7 @@
-const WorkerSkill = require('../../models/WorkerSkill');
+const SubService = require('../../models/SubService');
 const WorkerDocumentConfig = require('../../models/WorkerDocumentConfig');
 const WorkerRegistrationConfig = require('../../models/WorkerRegistrationConfig');
-const Category = require('../../models/Category');
+const ServiceCategory = require('../../models/ServiceCategory');
 
 /**
  * Get unified dynamic configuration payload for Worker Registration flow
@@ -10,10 +10,12 @@ const Category = require('../../models/Category');
 const getRegistrationConfig = async (req, res) => {
   try {
     // 1. Fetch Categories (where workers can register)
-    const categories = await Category.find({ status: 'active' }).select('title slug homeIconUrl iconUrl').lean();
+    const categories = await ServiceCategory.find({ isActive: true, roles: 'worker' }).select('name icon').lean();
 
-    // 2. Fetch Skills
-    const skills = await WorkerSkill.find({ isActive: true }).select('name categoryId').lean();
+    // 2. Fetch SubServices (with their specific required skills and tools)
+    const subServices = await SubService.find({ isActive: true })
+      .select('name categoryId icon requiredSkills suggestedTools')
+      .lean();
 
     // 3. Fetch Document Requirements
     const documents = await WorkerDocumentConfig.find({ isActive: true }).sort({ order: 1 }).lean();
@@ -40,8 +42,24 @@ const getRegistrationConfig = async (req, res) => {
       config: {
         isRegistrationEnabled: registrationConfig.isRegistrationEnabled,
         steps: registrationConfig.steps.filter(s => s.isActive).sort((a,b) => a.stepNumber - b.stepNumber),
-        categories: categories.map(c => ({ id: c._id.toString(), title: c.title, icon: c.homeIconUrl || c.iconUrl })),
-        skills: skills.map(s => ({ id: s._id.toString(), name: s.name, categoryId: s.categoryId })),
+        categories: categories.map(c => ({ 
+          id: c._id.toString(), 
+          _id: c._id.toString(), 
+          title: c.name, 
+          name: c.name, 
+          icon: c.icon 
+        })),
+        subServices: subServices
+          .filter(s => categories.some(cat => cat._id.toString() === s.categoryId?.toString()))
+          .map(s => ({ 
+            id: s._id.toString(), 
+            _id: s._id.toString(), 
+            name: s.name, 
+            title: s.name, 
+            categoryId: s.categoryId ? s.categoryId.toString() : null,
+            requiredSkills: s.requiredSkills || [],
+            suggestedTools: s.suggestedTools || []
+          })),
         documents: documents.map(d => ({
           key: d.key,
           title: d.title,

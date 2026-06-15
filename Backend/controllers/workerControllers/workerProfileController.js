@@ -28,6 +28,7 @@ const getProfile = async (req, res) => {
         serviceCategories: worker.serviceCategories || [],
         serviceCategory: worker.serviceCategories?.[0] || '', // Legacy support
         skills: worker.skills || [],
+        secondarySkills: worker.secondarySkills || [],
         address: worker.address || null,
         rating: worker.rating || 0,
         totalJobs: worker.totalJobs || 0,
@@ -70,7 +71,7 @@ const updateProfile = async (req, res) => {
 
     const workerId = req.user.id;
     const { 
-      name, serviceCategories, serviceCategory, skills, address, status, profilePhoto,
+      name, serviceCategories, serviceCategory, skills, secondarySkills, address, status, profilePhoto,
       dob, gender, bankDetails, documents, workLocations, uploadedDocuments, aadhar 
     } = req.body;
 
@@ -99,6 +100,7 @@ const updateProfile = async (req, res) => {
     }
 
     if (skills && Array.isArray(skills)) worker.skills = skills;
+    if (secondarySkills && Array.isArray(secondarySkills)) worker.secondarySkills = secondarySkills;
     if (address) {
       worker.address = {
         addressLine1: address.addressLine1 || worker.address?.addressLine1 || '',
@@ -176,6 +178,7 @@ const updateProfile = async (req, res) => {
         serviceCategories: worker.serviceCategories,
         serviceCategory: worker.serviceCategories?.[0] || '',
         skills: worker.skills,
+        secondarySkills: worker.secondarySkills || [],
         address: worker.address,
         rating: worker.rating,
         totalJobs: worker.totalJobs,
@@ -353,6 +356,97 @@ const updateDocuments = async (req, res) => {
   }
 };
 
+/**
+ * Update worker skills profile (structured sub-services)
+ */
+const updateSkillsProfile = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+    const { subServices, serviceCategories } = req.body;
+
+    if (!Array.isArray(subServices)) {
+      return res.status(400).json({
+        success: false,
+        message: 'subServices must be an array'
+      });
+    }
+
+    const worker = await Worker.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        message: 'Worker not found'
+      });
+    }
+
+    // Process subServices
+    const updatedSubServices = subServices.map(item => {
+      // Find matching existing subservice to preserve customSkills status
+      const existingSubService = worker.subServices.find(
+        s => s.subServiceId.toString() === item.subServiceId.toString()
+      );
+      
+      const existingCustomSkills = existingSubService ? existingSubService.customSkills : [];
+      
+      // Process customSkills
+      const customSkillsPayload = item.customSkills || [];
+      const processedCustomSkills = customSkillsPayload.map(cs => {
+        const skillName = typeof cs === 'string' ? cs.trim() : (cs.name ? cs.name.trim() : '');
+        if (!skillName) return null;
+
+        const existing = existingCustomSkills.find(
+          ecs => ecs.name.toLowerCase() === skillName.toLowerCase()
+        );
+
+        if (existing) {
+          return {
+            _id: existing._id,
+            name: existing.name,
+            status: existing.status
+          };
+        } else {
+          return {
+            name: skillName,
+            status: 'pending'
+          };
+        }
+      }).filter(Boolean);
+
+      return {
+        subServiceId: item.subServiceId,
+        name: item.name,
+        skills: item.skills || [],
+        customSkills: processedCustomSkills,
+        tools: item.tools || [],
+        experienceLevel: item.experienceLevel || '',
+        yearsOfExperience: item.yearsOfExperience || 0
+      };
+    });
+
+    worker.subServices = updatedSubServices;
+    
+    if (serviceCategories && Array.isArray(serviceCategories)) {
+      worker.serviceCategories = serviceCategories;
+    }
+
+    await worker.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Skills profile updated successfully',
+      subServices: worker.subServices,
+      serviceCategories: worker.serviceCategories
+    });
+  } catch (error) {
+    console.error('Update worker skills profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update skills profile',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -360,6 +454,8 @@ module.exports = {
   getProfileCompletion,
   updateBankDetails,
   updateWorkLocations,
-  updateDocuments
+  updateDocuments,
+  updateSkillsProfile
 };
+
 

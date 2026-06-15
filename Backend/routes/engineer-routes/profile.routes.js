@@ -5,7 +5,7 @@ const { authenticate } = require('../../middleware/authMiddleware');
 const { isEngineer } = require('../../middleware/roleMiddleware');
 const { 
   getProfile, updateProfile, updateLocation,
-  getProfileCompletion, updateBankDetails, updateWorkLocations, updateDocuments 
+  getProfileCompletion, updateBankDetails, updateWorkLocations, updateDocuments, updateSkillsProfile 
 } = require('../../controllers/engineerControllers/engineerProfileController');
 
 // Validation rules
@@ -18,6 +18,7 @@ const updateProfileValidation = [
 // Routes
 router.get('/profile', authenticate, isEngineer, getProfile);
 router.put('/profile', authenticate, isEngineer, updateProfileValidation, updateProfile);
+router.put('/profile/skills', authenticate, isEngineer, updateSkillsProfile);
 router.put('/profile/location', authenticate, isEngineer, updateLocation);
 
 router.get('/profile/completion', authenticate, isEngineer, getProfileCompletion);

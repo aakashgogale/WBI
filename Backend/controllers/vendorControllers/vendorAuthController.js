@@ -135,20 +135,16 @@ const verifyLogin = async (req, res) => {
         loginSessionId
       });
 
+      const vendorRes = vendor.toObject();
+      delete vendorRes.password;
+      delete vendorRes.__v;
+      vendorRes.id = vendor._id;
+
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
-        vendor: {
-          id: vendor._id,
-          name: vendor.name,
-          email: vendor.email,
-          phone: vendor.phone,
-          businessName: vendor.businessName,
-          categories: vendor.categories,
-          service: vendor.service,
-          approvalStatus: vendor.approvalStatus
-        },
+        vendor: vendorRes,
         ...tokens
       });
 
@@ -391,18 +387,15 @@ const login = async (req, res) => {
       loginSessionId
     });
 
+    const vendorRes = vendor.toObject();
+    delete vendorRes.password;
+    delete vendorRes.__v;
+    vendorRes.id = vendor._id;
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      vendor: {
-        id: vendor._id,
-        name: vendor.name,
-        email: vendor.email,
-        phone: vendor.phone,
-        businessName: vendor.businessName,
-        categories: vendor.categories,
-        service: vendor.service
-      },
+      vendor: vendorRes,
       ...tokens
     });
   } catch (error) {

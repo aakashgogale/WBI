@@ -89,9 +89,32 @@ const workerSchema = new mongoose.Schema({
   serviceCategories: [{
     type: String
   }],
+  subServices: [{
+    subServiceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SubService',
+      required: true
+    },
+    name: String,
+    skills: [{
+      type: String
+    }],
+    customSkills: [{
+      name: { type: String, required: true },
+      status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+    }],
+    tools: [{
+      type: String
+    }],
+    experienceLevel: String,
+    yearsOfExperience: Number
+  }],
   skills: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Skill'
+  }],
+  secondarySkills: [{
+    type: String
   }],
   availability: {
     type: String,

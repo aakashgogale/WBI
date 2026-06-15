@@ -52,7 +52,14 @@ const CustomDetails = () => {
       const isEngineer = window.location.pathname.startsWith('/engineer');
       const role = isEngineer ? 'engineers' : 'workers';
       // workerAuthService calls `/api/workers`, so we can use api.put directly for engineers or workers
-      await api.put(`/${role}/profile`, { customFields: formData });
+      const response = await api.put(`/${role}/profile`, { customFields: formData });
+      if (response.data.success) {
+        const key = isEngineer ? 'engineerData' : 'workerData';
+        const profile = response.data.engineer || response.data.worker;
+        if (profile) {
+          localStorage.setItem(key, JSON.stringify(profile));
+        }
+      }
       toast.success('Custom details updated successfully');
       navigate(-1);
     } catch (error) {
