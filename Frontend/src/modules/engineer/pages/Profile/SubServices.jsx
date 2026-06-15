@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiSave, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { engineerService } from '../../../../services/engineerService';
+import engineerService from '../../../../services/engineerService';
 import { engineerAuthService } from '../../../../services/authService';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
