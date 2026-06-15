@@ -29,7 +29,7 @@ const AppRoutes = () => {
   return (
     <Routes location={location}>
       <Route path="/Home" element={
-        <Suspense fallback={<LogoLoader fullScreen={true} />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
           <LandingPage />
         </Suspense>
       } />
@@ -37,31 +37,31 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/user" replace />} />
 
       <Route path="/user/*" element={
-        <Suspense fallback={<LogoLoader fullScreen={true} />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
           <UserRoutes />
         </Suspense>
       } />
 
       <Route path="/vendor/*" element={
-        <Suspense fallback={<LogoLoader fullScreen={true} />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
           <VendorRoutes />
         </Suspense>
       } />
 
       <Route path="/worker/*" element={
-        <Suspense fallback={<LogoLoader fullScreen={true} />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
           <WorkerRoutes />
         </Suspense>
       } />
       
       <Route path="/engineer/*" element={
-        <Suspense fallback={<LogoLoader fullScreen={true} />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
           <EngineerRoutes />
         </Suspense>
       } />
 
       <Route path="/admin/*" element={
-        <Suspense fallback={<LogoLoader fullScreen={true} />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
           <AdminRoutes />
         </Suspense>
       } />

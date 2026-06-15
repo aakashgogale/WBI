@@ -15,9 +15,20 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, 'Please provide a phone number'],
+    required: false,
+    sparse: true,
     unique: true,
     trim: true
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
+  appleId: {
+    type: String,
+    sparse: true,
+    unique: true
   },
   role: {
     type: String,

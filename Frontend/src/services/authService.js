@@ -62,6 +62,37 @@ export const sharedAuthService = {
       registerFCMToken(role, true).catch(console.error);
     }
     return response.data;
+  },
+  socialLogin: async (data) => {
+    // data: { token, role }
+    const response = await api.post('/auth/social-login', data);
+    if (response.data.success && response.data.token) {
+      const { role, token, refreshToken, user } = response.data;
+      
+      // Save globally
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+
+      let prefix = '';
+      if (role === 'worker') prefix = 'worker';
+      else if (role === 'engineer') prefix = 'engineer';
+      else if (role === 'vendor') prefix = 'vendor';
+      else if (role === 'admin') prefix = 'admin';
+      
+      if (prefix) {
+        localStorage.setItem(`${prefix}AccessToken`, token);
+        localStorage.setItem(`${prefix}RefreshToken`, refreshToken);
+        localStorage.setItem(`${prefix}Data`, JSON.stringify(user));
+      } else if (role === 'user') {
+        localStorage.setItem('accessToken', token);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('userData', JSON.stringify(user));
+      }
+
+      notifyFlutterLogin(response.data);
+      registerFCMToken(role, true).catch(console.error);
+    }
+    return response.data;
   }
 };
 

@@ -9,6 +9,7 @@ import { sharedAuthService } from '../../../services/authService';
 import LogoLoader from '../../../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
 import ForgotPasswordFlow from '../../../components/auth/ForgotPasswordFlow';
+import { auth, GoogleAuthProvider, OAuthProvider, signInWithPopup } from '../../../firebase';
 
 const VendorLogin = () => {
   const navigate = useNavigate();
@@ -60,6 +61,34 @@ const VendorLogin = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (providerName) => {
+    try {
+      setIsLoading(true);
+      let provider;
+      if (providerName === 'google') {
+        provider = new GoogleAuthProvider();
+      } else if (providerName === 'apple') {
+        provider = new OAuthProvider('apple.com');
+      }
+      
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+      
+      const response = await sharedAuthService.socialLogin({ token, role: 'vendor' });
+      if (response.success) {
+        toast.success(`Welcome Back! Logged in as ${response.user.role}`);
+        navigate(response.redirectTo, { replace: true });
+      } else {
+        toast.error(response.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Social login error:', error);
+      toast.error(error?.response?.data?.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
     }
@@ -275,13 +304,15 @@ const VendorLogin = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <button type="button" onClick={() => toast("Google Auth coming soon!")} className="flex items-center justify-center w-full py-2.5 px-4 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+                <button type="button" onClick={() => handleSocialLogin('google')} className="flex items-center justify-center w-full py-2.5 px-4 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
                   <FcGoogle className="w-5 h-5 mr-2" />
                   Google
                 </button>
-                <button type="button" onClick={() => toast("LinkedIn Auth coming soon!")} className="flex items-center justify-center w-full py-2.5 px-4 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-                  <FaLinkedin className="w-5 h-5 mr-2 text-[#0A66C2]" />
-                  LinkedIn
+                <button type="button" onClick={() => handleSocialLogin('apple')} className="flex items-center justify-center w-full py-2.5 px-4 border border-gray-300 rounded-xl bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="black" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.05 20.28c-.98.68-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 13.25 4.51 5.96 9.05 5.68c1.3.07 2.45.81 3.05.81.65 0 2.06-.88 3.55-.74 1.3.06 2.5.64 3.3 1.68-2.8 1.67-2.3 5.48.51 6.6-1.07 2.4-2.14 4.58-2.41 6.25zM12.03 5.09c-.06-1.74 1.34-3.32 3.1-3.4 1.14 1.94-.96 3.84-3.1 3.4z" />
+                  </svg>
+                  Apple
                 </button>
               </div>
 

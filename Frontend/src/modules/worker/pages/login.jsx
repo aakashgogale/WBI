@@ -8,6 +8,7 @@ import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
 import ForgotPasswordFlow from '../../../components/auth/ForgotPasswordFlow';
 import { z } from "zod";
+import { auth, GoogleAuthProvider, OAuthProvider, signInWithPopup } from '../../../firebase';
 
 // Zod schema for Password Login
 const loginSchema = z.object({
@@ -61,6 +62,34 @@ const WorkerLogin = () => {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (providerName) => {
+    try {
+      setIsLoading(true);
+      let provider;
+      if (providerName === 'google') {
+        provider = new GoogleAuthProvider();
+      } else if (providerName === 'apple') {
+        provider = new OAuthProvider('apple.com');
+      }
+      
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+      
+      const response = await sharedAuthService.socialLogin({ token, role: 'worker' });
+      if (response.success) {
+        toast.success(`Welcome Back! Logged in as ${response.user.role}`);
+        navigate(response.redirectTo, { replace: true });
+      } else {
+        toast.error(response.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Social login error:', error);
+      toast.error(error?.response?.data?.message || 'Authentication failed');
     } finally {
       setIsLoading(false);
     }
@@ -191,6 +220,7 @@ const WorkerLogin = () => {
             <div className="mt-6 grid grid-cols-2 gap-4">
               <button
                 type="button"
+                onClick={() => handleSocialLogin('google')}
                 className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {/* Google SVG */}
@@ -204,6 +234,7 @@ const WorkerLogin = () => {
               </button>
               <button
                 type="button"
+                onClick={() => handleSocialLogin('apple')}
                 className="w-full inline-flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 {/* Apple SVG */}
@@ -219,7 +250,7 @@ const WorkerLogin = () => {
 
         <p className="mt-8 text-center text-sm text-gray-500 animate-fade-in animate-stagger-5">
           Don't have an account?{' '}
-          <Link to="/engineer/signup" className="font-semibold text-[#4F46E5] hover:text-[#3F37C9] transition-colors duration-300">
+          <Link to="/worker/signup" className="font-semibold text-[#4F46E5] hover:text-[#3F37C9] transition-colors duration-300">
             Register
           </Link>
         </p>

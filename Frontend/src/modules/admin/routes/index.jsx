@@ -69,9 +69,7 @@ const HcAmcEnquiries = lazy(() => import('../pages/HcAmcEnquiries'));
 
 import LogoLoader from '../../../components/common/LogoLoader';
 const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <LogoLoader inline={true} />
-  </div>
+  <div className="min-h-screen bg-[#F8FCFC]" />
 );
 
 const AdminRoutes = () => {

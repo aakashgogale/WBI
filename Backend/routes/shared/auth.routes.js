@@ -10,4 +10,7 @@ router.post('/reset-password', authController.resetPassword);
 // Unified Login Endpoint
 router.post('/login', authController.unifiedLogin);
 
+// Social Login Endpoint
+router.post('/social-login', authController.socialLogin);
+
 module.exports = router;

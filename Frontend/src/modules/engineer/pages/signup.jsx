@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiUser, FiMail, FiPhone, FiLock, FiCheckCircle, FiArrowRight, FiArrowLeft, FiChevronLeft, FiMapPin } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiLock, FiCheckCircle, FiArrowRight, FiArrowLeft, FiChevronLeft, FiMapPin, FiBriefcase } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { z } from 'zod';
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -58,44 +58,59 @@ export default function EngineerSignup() {
     }));
   };
 
-  const handleCategoryToggle = (categoryId) => {
+  const handleCategoryToggle = (categoryName) => {
     setFormData(prev => {
-      const isSelected = prev.serviceCategories.includes(categoryId);
+      const isSelected = prev.serviceCategories.includes(categoryName);
       if (isSelected) {
-        // Remove category and its sub-services
+        // Find category ID to clear its subservices
+        const catId = config?.categories?.find(c => c.title === categoryName || c.name === categoryName)?.id;
         const subServicesToRemove = config?.subServices
-          ?.filter(sub => sub.categoryId === categoryId)
-          ?.map(sub => sub.id || sub._id) || [];
+          ?.filter(sub => sub.categoryId === catId)
+          ?.map(sub => sub.name) || [];
+          
+        const newSubServices = prev.subServices.filter(name => !subServicesToRemove.includes(name));
+        
+        // Clean up skills that belong to removed subservices
+        const validSkills = new Set(
+          (config?.subServices || [])
+            .filter(s => newSubServices.includes(s.name))
+            .flatMap(s => s.requiredSkills || [])
+        );
+        
         return { 
           ...prev, 
-          serviceCategories: prev.serviceCategories.filter(id => id !== categoryId),
-          subServices: prev.subServices.filter(id => !subServicesToRemove.includes(id))
+          serviceCategories: prev.serviceCategories.filter(name => name !== categoryName),
+          subServices: newSubServices,
+          secondarySkills: (prev.secondarySkills || []).filter(skill => validSkills.has(skill))
         };
       } else {
-        return { ...prev, serviceCategories: [...prev.serviceCategories, categoryId] };
+        return { ...prev, serviceCategories: [...prev.serviceCategories, categoryName] };
       }
     });
   };
 
-  const handleSubServiceToggle = (subServiceId) => {
+  const handleSubServiceToggle = (subServiceName) => {
     setFormData(prev => {
-      const isSelected = prev.subServices.includes(subServiceId);
+      const isSelected = prev.subServices.includes(subServiceName);
+      let newSubServices;
       if (isSelected) {
-        return { ...prev, subServices: prev.subServices.filter(id => id !== subServiceId) };
+        newSubServices = prev.subServices.filter(name => name !== subServiceName);
       } else {
-        return { ...prev, subServices: [...prev.subServices, subServiceId] };
+        newSubServices = [...prev.subServices, subServiceName];
       }
-    });
-  };
-
-  const handleSkillToggle = (skillId) => {
-    setFormData(prev => {
-      const isSelected = prev.skills.includes(skillId);
-      if (isSelected) {
-        return { ...prev, skills: prev.skills.filter(id => id !== skillId) };
-      } else {
-        return { ...prev, skills: [...prev.skills, skillId] };
-      }
+      
+      // Clean up skills that belong to removed subservices
+      const validSkills = new Set(
+        (config?.subServices || [])
+          .filter(s => newSubServices.includes(s.name))
+          .flatMap(s => s.requiredSkills || [])
+      );
+      
+      return { 
+        ...prev, 
+        subServices: newSubServices,
+        secondarySkills: (prev.secondarySkills || []).filter(skill => validSkills.has(skill))
+      };
     });
   };
 
@@ -197,7 +212,7 @@ export default function EngineerSignup() {
     <div className="min-h-screen bg-gray-50 font-sans">
       <nav className="bg-white px-6 py-4 border-b flex items-center justify-between shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
+          <Link to="/engineer/login" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
             <FiArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <Logo />
@@ -293,14 +308,21 @@ export default function EngineerSignup() {
                   <label className="block text-xs font-medium text-gray-700 mb-2">Service Categories *</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {config?.categories?.map(cat => {
-                      const isSelected = formData.serviceCategories.includes(cat.id || cat._id);
+                      const isSelected = formData.serviceCategories.includes(cat.title || cat.name);
+                      
+                      const renderIcon = (iconStr) => {
+                        if (!iconStr) return <FiBriefcase className="w-4 h-4 mr-2" />;
+                        if (iconStr.includes('/') || iconStr.includes('.')) return <img src={iconStr} className={`w-5 h-5 mr-2 object-contain ${isSelected ? '' : 'grayscale opacity-60'}`} alt=""/>;
+                        return <FiBriefcase className={`w-4 h-4 mr-2 ${isSelected ? 'text-[#4F46E5]' : 'text-gray-400'}`} />;
+                      };
+
                       return (
                         <div key={cat.id || cat._id} className={`border rounded-xl transition-all flex flex-col overflow-hidden ${isSelected ? 'border-[#4F46E5] bg-[#4F46E5]/5 shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                           <div 
-                            onClick={() => handleCategoryToggle(cat.id || cat._id)}
+                            onClick={() => handleCategoryToggle(cat.title || cat.name)}
                             className="px-3 py-2.5 cursor-pointer flex items-center"
                           >
-                            {cat.icon && <img src={cat.icon} className={`w-5 h-5 mr-2 object-contain ${isSelected ? '' : 'grayscale opacity-60'}`} alt=""/>}
+                            {renderIcon(cat.icon)}
                             <span className={`text-xs font-semibold truncate ${isSelected ? 'text-[#4F46E5]' : 'text-gray-600'}`}>{cat.name || cat.title}</span>
                           </div>
                           
@@ -310,13 +332,13 @@ export default function EngineerSignup() {
                               {config.subServices
                                 .filter(sub => sub.categoryId === (cat.id || cat._id))
                                 .map(sub => {
-                                  const isSubSelected = formData.subServices.includes(sub.id || sub._id);
+                                  const isSubSelected = formData.subServices.includes(sub.name);
                                   return (
                                     <div 
                                       key={sub.id || sub._id}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleSubServiceToggle(sub.id || sub._id);
+                                        handleSubServiceToggle(sub.name);
                                       }}
                                       className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-all flex items-center ${isSubSelected ? 'bg-[#4F46E5] text-white shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'}`}
                                     >
@@ -332,26 +354,44 @@ export default function EngineerSignup() {
                   </div>
                 </div>
 
-                {config?.skills?.length > 0 && (
-                  <div className="mt-8 border-t border-gray-100 pt-6">
-                    <label className="block text-xs font-medium text-gray-700 mb-3">Skills & Expertise</label>
-                    <p className="text-[11px] text-gray-500 mb-3 -mt-1">Select the specific technologies and skills you are proficient in.</p>
-                    <div className="flex flex-wrap gap-2">
-                      {config?.skills?.map(skill => {
-                        const isSelected = formData.skills.includes(skill.id || skill._id);
-                        return (
-                          <div 
-                            key={skill.id || skill._id}
-                            onClick={() => handleSkillToggle(skill.id || skill._id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 border ${isSelected ? 'bg-[#4F46E5] text-white border-[#4F46E5] shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-[#4F46E5]/30 hover:bg-[#4F46E5]/5'}`}
-                          >
-                            {skill.name}
-                          </div>
-                        );
-                      })}
+                {/* Technical Skills based on selected subServices */}
+                {(() => {
+                  const availableSkills = Array.from(new Set(
+                    (config?.subServices || [])
+                      .filter(s => formData.subServices.includes(s.name))
+                      .flatMap(s => s.requiredSkills || [])
+                  ));
+
+                  if (availableSkills.length === 0) return null;
+
+                  return (
+                    <div className="mt-8 border-t border-gray-100 pt-6">
+                      <label className="block text-xs font-medium text-gray-700 mb-3">Technical Skills & Expertise</label>
+                      <p className="text-[11px] text-gray-500 mb-3 -mt-1">Select the specific technologies and skills you are proficient in.</p>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSkills.map(skill => {
+                          const isSelected = formData.secondarySkills?.includes(skill);
+                          return (
+                            <div 
+                              key={skill}
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  secondarySkills: isSelected
+                                    ? prev.secondarySkills.filter(s => s !== skill)
+                                    : [...(prev.secondarySkills || []), skill]
+                                }));
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 border ${isSelected ? 'bg-[#10B981] text-white border-[#10B981] shadow-sm' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-[#10B981]/30 hover:bg-[#10B981]/5'}`}
+                            >
+                              {skill}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 

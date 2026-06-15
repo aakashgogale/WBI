@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const admin = require('firebase-admin');
+require('../../services/firebaseAdmin');
+
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const PasswordResetToken = require('../../models/PasswordResetToken');
@@ -430,3 +433,135 @@ exports.unifiedLogin = async (req, res) => {
   }
 };
 
+exports.socialLogin = async (req, res) => {
+  try {
+    const { token, role } = req.body;
+    if (!token || !role) {
+      return res.status(400).json({ success: false, message: 'Token and role are required' });
+    }
+
+    // Verify Firebase token
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(token);
+    } catch (err) {
+      console.error('Firebase token verification failed:', err);
+      return res.status(401).json({ success: false, message: 'Invalid or expired authentication token' });
+    }
+
+    const { email, name, uid, firebase_sign_in_provider } = decodedToken;
+    const providerId = uid;
+    
+    // Determine target model
+    const collectionsToSearch = [
+      { role: 'worker', model: Worker, redirect: '/worker/dashboard' },
+      { role: 'engineer', model: Engineer, redirect: '/engineer/dashboard' },
+      { role: 'vendor', model: Vendor, redirect: '/vendor/dashboard' },
+      { role: 'user', model: User, redirect: '/user' },
+      { role: 'admin', model: Admin, redirect: '/admin/dashboard' }
+    ];
+
+    let targetRoleInfo = collectionsToSearch.find(c => c.role === role.toLowerCase());
+    
+    if (!targetRoleInfo && role.toLowerCase() === 'all') {
+      for (const item of collectionsToSearch) {
+         let existing = await item.model.findOne({ $or: [{ email }, { googleId: providerId }, { appleId: providerId }] });
+         if (existing) {
+             targetRoleInfo = item;
+             break;
+         }
+      }
+    }
+    
+    if (!targetRoleInfo && role.toLowerCase() !== 'all') {
+        targetRoleInfo = collectionsToSearch[0]; // fallback
+    }
+
+    if (!targetRoleInfo) {
+      return res.status(404).json({ success: false, message: 'Account not found across any role' });
+    }
+
+    const Model = targetRoleInfo.model;
+
+    // Check if user exists
+    let user = await Model.findOne({
+      $or: [
+        { email },
+        { googleId: providerId },
+        { appleId: providerId }
+      ]
+    });
+
+    let isNewUser = false;
+    if (!user) {
+      const newUserData = {
+        name: name || 'User',
+        email,
+        isActive: true,
+        isEmailVerified: true
+      };
+      
+      if (firebase_sign_in_provider === 'google.com') {
+        newUserData.googleId = providerId;
+      } else if (firebase_sign_in_provider === 'apple.com') {
+        newUserData.appleId = providerId;
+      }
+
+      user = new Model(newUserData);
+      await user.save();
+      isNewUser = true;
+    } else {
+      if (firebase_sign_in_provider === 'google.com' && !user.googleId) {
+        user.googleId = providerId;
+        await user.save();
+      } else if (firebase_sign_in_provider === 'apple.com' && !user.appleId) {
+        user.appleId = providerId;
+        await user.save();
+      }
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'Account is deactivated' });
+    }
+
+    const loginSessionId = Date.now().toString();
+    const updateQuery = { 
+      loginSessionId,
+      $set: { fcmTokens: [], fcmTokenMobile: [] }
+    };
+    if (targetRoleInfo.role === 'admin') {
+      updateQuery.lastLogin = new Date();
+    }
+    
+    await Model.findByIdAndUpdate(user._id, updateQuery).catch(() => {
+       return Model.findByIdAndUpdate(user._id, { loginSessionId });
+    });
+
+    const tokens = generateTokenPair({
+      userId: user._id,
+      role: targetRoleInfo.role,
+      loginSessionId
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Social Login successful',
+      isNewUser,
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        mobile: user.phone || user.mobile || null,
+        email: user.email,
+        role: targetRoleInfo.role,
+        status: user.status || user.approvalStatus || undefined
+      },
+      redirectTo: targetRoleInfo.redirect
+    });
+
+  } catch (error) {
+    console.error('Social login error:', error);
+    res.status(500).json({ success: false, message: 'Social login failed' });
+  }
+};

@@ -12,8 +12,8 @@ const getRegistrationConfig = async (req, res) => {
     // 1. Fetch Categories (where engineers can register)
     const categories = await ServiceCategory.find({ isActive: true }).select('name icon').lean();
 
-    // 2. Fetch Skills
-    const skills = await SubService.find({ isActive: true }).select('name categoryId icon').lean();
+    // 2. Fetch SubServices (with their specific required skills)
+    const subServices = await SubService.find({ isActive: true }).select('name categoryId icon requiredSkills').lean();
 
     // 3. Fetch Document Requirements
     const documents = await WorkerDocumentConfig.find({ isActive: true }).sort({ order: 1 }).lean();
@@ -41,7 +41,12 @@ const getRegistrationConfig = async (req, res) => {
         isRegistrationEnabled: registrationConfig.isRegistrationEnabled,
         steps: registrationConfig.steps.filter(s => s.isActive).sort((a,b) => a.stepNumber - b.stepNumber),
         categories: categories.map(c => ({ id: c._id.toString(), title: c.name, icon: c.icon })),
-        skills: skills.map(s => ({ id: s._id.toString(), name: s.name, categoryId: s.categoryId ? s.categoryId.toString() : null })),
+        subServices: subServices.map(s => ({ 
+          id: s._id.toString(), 
+          name: s.name, 
+          categoryId: s.categoryId ? s.categoryId.toString() : null,
+          requiredSkills: s.requiredSkills || []
+        })),
         documents: documents.map(d => ({
           key: d.key,
           title: d.title,

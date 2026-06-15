@@ -6,6 +6,7 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { getDatabase } from 'firebase/database';
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup } from 'firebase/auth';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -23,14 +24,16 @@ const firebaseConfig = {
 let app;
 let messaging;
 let db;
+let auth;
 
 try {
   app = initializeApp(firebaseConfig);
   messaging = getMessaging(app);
   db = getDatabase(app);
+  auth = getAuth(app);
   console.log('✅ Firebase initialized successfully');
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error);
 }
 
-export { app, messaging, db, getToken, onMessage };
+export { app, messaging, db, auth, getToken, onMessage, GoogleAuthProvider, OAuthProvider, signInWithPopup };
