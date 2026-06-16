@@ -106,6 +106,9 @@ const workerSchema = new mongoose.Schema({
     tools: [{
       type: String
     }],
+    brandsHandled: [{
+      type: String
+    }],
     experienceLevel: String,
     yearsOfExperience: Number
   }],
@@ -208,10 +211,10 @@ const workerSchema = new mongoose.Schema({
       default: 'en'
     }
   },
-  // Real-time Location
+  // Real-time Location (GeoJSON for 2dsphere proximity search)
   location: {
-    lat: Number,
-    lng: Number,
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: [0, 0] }, // [longitude, latitude] MUST BE IN THIS ORDER
     updatedAt: Date
   },
   // Bank Details
@@ -310,6 +313,7 @@ const workerSchema = new mongoose.Schema({
 workerSchema.index({ status: 1 });
 workerSchema.index({ serviceCategories: 1 });
 workerSchema.index({ vendorId: 1 });
+workerSchema.index({ location: '2dsphere' }); // Crucial for geospatial $near queries
 
 // Hash password before saving
 workerSchema.pre('save', async function (next) {

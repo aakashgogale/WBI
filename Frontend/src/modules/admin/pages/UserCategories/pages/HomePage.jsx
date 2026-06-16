@@ -142,6 +142,10 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", text: "", targetCategoryId: "", slug: "", targetServiceId: "", scrollToSection: "" });
   const [editingBannerId, setEditingBannerId] = useState(null);
 
+  const [isOfferBannerModalOpen, setIsOfferBannerModalOpen] = useState(false);
+  const [offerBannerForm, setOfferBannerForm] = useState({ imageUrl: "", targetCategoryId: "", slug: "", targetServiceId: "" });
+  const [editingOfferBannerId, setEditingOfferBannerId] = useState(null);
+
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const [promoForm, setPromoForm] = useState({ title: "", subtitle: "", buttonText: "Explore", gradientClass: "from-blue-600 to-blue-800", imageUrl: "", targetCategoryId: "", slug: "", targetServiceId: "", scrollToSection: "" });
   const [editingPromoId, setEditingPromoId] = useState(null);
@@ -228,12 +232,14 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
           const next = ensureIds(catalog);
           next.home = {
             banners: addIds(hc.banners || []),
+            offerBanners: addIds(hc.offerBanners || []),
             promoCarousel: addIds(hc.promos || []), // API returns 'promos', component expects 'promoCarousel'
             curatedServices: addIds(hc.curated || []), // API returns 'curated', component expects 'curatedServices'
             newAndNoteworthy: addIds(hc.noteworthy || []), // API returns 'noteworthy', component expects 'newAndNoteworthy'
             mostBooked: addIds(hc.booked || []), // API returns 'booked', component expects 'mostBooked'
             categorySections: addIds(hc.categorySections || []),
             isBannersVisible: hc.isBannersVisible ?? true,
+            isOfferBannersVisible: hc.isOfferBannersVisible ?? true,
             isPromosVisible: hc.isPromosVisible ?? true,
             isCuratedVisible: hc.isCuratedVisible ?? true,
             isNoteworthyVisible: hc.isNoteworthyVisible ?? true,
@@ -311,12 +317,14 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     try {
       const payload = {
         banners: homeData.banners,
+        offerBanners: homeData.offerBanners,
         promos: homeData.promoCarousel,
         curated: homeData.curatedServices,
         noteworthy: homeData.newAndNoteworthy,
         booked: homeData.mostBooked,
         categorySections: homeData.categorySections,
         isBannersVisible: homeData.isBannersVisible,
+        isOfferBannersVisible: homeData.isOfferBannersVisible,
         isPromosVisible: homeData.isPromosVisible,
         isCuratedVisible: homeData.isCuratedVisible,
         isNoteworthyVisible: homeData.isNoteworthyVisible,
@@ -371,6 +379,33 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     } catch (error) {
       // Error already toasted in sync function
     }
+  };
+
+  // Offer Banner handlers
+  const setHomeOfferBanners = async (offerBanners) => {
+    const next = ensureIds(catalog);
+    next.home = { ...(next.home || { offerBanners: [] }), offerBanners };
+    setCatalog(next);
+    saveCatalog(next);
+    return await syncHomeToBackend(next.home);
+  };
+
+  const resetOfferBannerForm = () => {
+    setEditingOfferBannerId(null);
+    setOfferBannerForm({ imageUrl: "", targetCategoryId: "", slug: "", targetServiceId: "" });
+    setIsOfferBannerModalOpen(false);
+  };
+
+  const saveOfferBanner = async () => {
+    try {
+      const offerBanners = home?.offerBanners || [];
+      if (editingOfferBannerId) {
+        await setHomeOfferBanners(offerBanners.map((b) => (b.id === editingOfferBannerId ? { ...b, ...offerBannerForm } : b)));
+      } else {
+        await setHomeOfferBanners([...offerBanners, { id: `hofr-${Date.now()}`, ...offerBannerForm }]);
+      }
+      resetOfferBannerForm();
+    } catch (error) {}
   };
 
   // Promo handlers
@@ -623,6 +658,108 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                           <button
                             type="button"
                             onClick={() => setHomeBanners((home.banners || []).filter((x) => x.id !== b.id))}
+                            className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            title="Delete"
+                          >
+                            <FiTrash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </CardShell>
+
+      <CardShell icon={FiGrid}>
+        <div className="space-y-4">
+          <div>
+            <div className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-3">
+              <div className="w-1.5 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full"></div>
+              <span>Offer Banners (Below Reviews)</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-end mb-3 gap-4">
+            <ToggleSwitch
+              label="Show Offer Banners"
+              checked={home?.isOfferBannersVisible !== false}
+              onChange={() => patchHome({ isOfferBannersVisible: !home?.isOfferBannersVisible })}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setOfferBannerForm({ imageUrl: "", targetCategoryId: "", slug: "", targetServiceId: "" });
+                setIsOfferBannerModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl text-white transition-all flex items-center gap-2 text-sm font-semibold shadow-md hover:shadow-lg relative z-10"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'linear-gradient(to right, #2874F0, #1e5fd4)',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <FiPlus className="w-4 h-4" style={{ display: 'block', color: '#ffffff' }} />
+              <span>Add Offer Banner</span>
+            </button>
+          </div>
+
+          {(home?.offerBanners || []).length === 0 ? (
+            <div className="text-base text-gray-500">No offer banners added</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700 w-12">#</th>
+                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700 w-24">Image</th>
+                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700">Redirect</th>
+                    <th className="text-center py-2 px-3 text-sm font-bold text-gray-700 w-32">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(home.offerBanners || []).map((b, idx) => (
+                    <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="py-2.5 px-3 text-sm font-semibold text-gray-600">{idx + 1}</td>
+                      <td className="py-2.5 px-3">
+                        {b.imageUrl ? (
+                          <img src={b.imageUrl} alt="Banner" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                        ) : (
+                          <div className="h-14 w-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                            <span className="text-[10px] text-gray-400">No img</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="text-sm text-gray-600">
+                          {b.slug
+                            ? `Service: ${allServices.find(s => s.slug === b.slug)?.title || b.slug}`
+                            : (b.targetCategoryId ? getCategoryTitle(b.targetCategoryId) : "—")
+                          }
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingOfferBannerId(b.id);
+                              setOfferBannerForm({ ...b });
+                              setIsOfferBannerModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                            title="Edit"
+                          >
+                            <FiEdit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHomeOfferBanners((home.offerBanners || []).filter((x) => x.id !== b.id))}
                             className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                             title="Delete"
                           >
@@ -2339,6 +2476,58 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
           </div>
         </div>
       </Modal>
+
+      {/* Offer Banner Modal */}
+      <Modal isOpen={isOfferBannerModalOpen} onClose={resetOfferBannerForm} title={editingOfferBannerId ? "Edit Offer Banner" : "Add Offer Banner"}>
+        <div className="space-y-5">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <label className="block text-sm font-bold text-gray-700 mb-3">Banner Image</label>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={offerBannerForm.imageUrl}
+                  onChange={(e) => setOfferBannerForm({ ...offerBannerForm, imageUrl: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
+                  placeholder="Image URL"
+                />
+              </div>
+            </div>
+            {offerBannerForm.imageUrl && (
+              <div className="mt-4 p-2 bg-white rounded-xl border border-gray-100 shadow-sm inline-block">
+                <img src={offerBannerForm.imageUrl} alt="Preview" className="h-24 object-contain rounded-lg" />
+              </div>
+            )}
+          </div>
+          <RedirectionSelector
+            categories={categories}
+            allServices={allServices}
+            targetCategoryId={offerBannerForm.targetCategoryId}
+            slug={offerBannerForm.slug}
+            onChange={(patch) => setOfferBannerForm({ ...offerBannerForm, ...patch })}
+          />
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={saveOfferBanner}
+              disabled={uploading || isSyncing}
+              className={`flex-1 py-3.5 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg ${(uploading || isSyncing) ? 'opacity-50 cursor-not-allowed bg-gray-400' : ''}`}
+              style={{ backgroundColor: (uploading || isSyncing) ? '#cbd5e1' : '#2874F0' }}
+            >
+              {uploading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              ) : <FiSave className="w-5 h-5" />}
+              {uploading ? "Uploading..." : "Save Banner"}
+            </button>
+            <button
+              onClick={resetOfferBannerForm}
+              className="px-6 py-3.5 text-gray-700 rounded-xl font-medium hover:bg-gray-100 transition-all border border-gray-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 };

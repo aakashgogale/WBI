@@ -47,6 +47,32 @@ const homeContentSchema = new mongoose.Schema({
     }
   }],
 
+  // Offer Banners (horizontal looping slider below reviews)
+  offerBanners: [{
+    imageUrl: {
+      type: String,
+      default: ''
+    },
+    targetCategoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null
+    },
+    slug: {
+      type: String,
+      default: ''
+    },
+    targetServiceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
+      default: null
+    },
+    order: {
+      type: Number,
+      default: 0
+    }
+  }],
+
   // Promo Carousel
   promos: [{
     title: {
@@ -275,6 +301,7 @@ const homeContentSchema = new mongoose.Schema({
 
   // Section Visibility
   isBannersVisible: { type: Boolean, default: true },
+  isOfferBannersVisible: { type: Boolean, default: true },
   isPromosVisible: { type: Boolean, default: true },
   isCuratedVisible: { type: Boolean, default: true },
   isNoteworthyVisible: { type: Boolean, default: true },

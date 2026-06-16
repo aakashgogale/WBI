@@ -30,29 +30,14 @@ const BottomNav = memo(() => {
       }
     };
 
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await api.get('/notifications/engineer');
-        if (res.data.success && typeof res.data.unreadCount === 'number') {
-          setUnreadNotificationsCount(res.data.unreadCount);
-        }
-      } catch (error) {
-        // Silent fail
-      }
-    };
-
     updatePendingCount();
-    fetchUnreadCount();
 
     window.addEventListener('storage', updatePendingCount);
     window.addEventListener('workerJobsUpdated', updatePendingCount);
 
-    const interval = setInterval(fetchUnreadCount, 60000);
-
     return () => {
       window.removeEventListener('storage', updatePendingCount);
       window.removeEventListener('workerJobsUpdated', updatePendingCount);
-      clearInterval(interval);
     };
   }, []);
 

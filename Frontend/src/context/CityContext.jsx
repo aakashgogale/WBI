@@ -13,6 +13,9 @@ export const CityProvider = ({ children }) => {
   // Load cities and restore selection on mount
   useEffect(() => {
     const initCity = async () => {
+      // Don't re-fetch if we already have them cached in state
+      if (cities.length > 0) return;
+
       try {
         setLoading(true);
         // Fetch active cities from public API

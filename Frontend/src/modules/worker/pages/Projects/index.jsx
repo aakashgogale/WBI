@@ -67,7 +67,7 @@ const Projects = () => {
 
   const fetchCounts = async () => {
     try {
-      const res = await api.get('/api/workers/projects/counts');
+      const res = await api.get('/workers/projects/counts');
       if (res.data.success) {
         setCounts(res.data.data);
       }
@@ -79,7 +79,7 @@ const Projects = () => {
   const fetchProjects = async (status) => {
     try {
       setLoading(true);
-      const url = status === 'All' ? '/api/workers/projects' : `/api/workers/projects?status=${status}`;
+      const url = status === 'All' ? '/workers/projects' : `/workers/projects?status=${status}`;
       const res = await api.get(url);
       if (res.data.success) {
         setProjects(res.data.data);

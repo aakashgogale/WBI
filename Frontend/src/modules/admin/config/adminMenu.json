@@ -134,6 +134,15 @@
     ]
   },
   {
+    "title": "One-Time Services",
+    "route": "/admin/one-time-services",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Premium Services",
     "route": "/admin/service-categories",
     "allowedRoles": [

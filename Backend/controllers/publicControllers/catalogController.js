@@ -315,6 +315,12 @@ const getPublicHomeContent = async (req, res) => {
         targetCategoryId: item.targetCategoryId?.toString() || null,
         targetServiceId: item.targetServiceId?.toString() || null,
       })),
+      offerBanners: (contentObj.offerBanners || []).map(item => ({
+        ...item,
+        id: item._id ? item._id.toString() : item.id,
+        targetCategoryId: item.targetCategoryId?.toString() || null,
+        targetServiceId: item.targetServiceId?.toString() || null,
+      })),
       promos: (contentObj.promos || []).map(item => ({
         ...item,
         id: item._id ? item._id.toString() : item.id,
@@ -356,6 +362,7 @@ const getPublicHomeContent = async (req, res) => {
         id: item._id ? item._id.toString() : item.id
       })),
       isBannersVisible: contentObj.isBannersVisible ?? true,
+      isOfferBannersVisible: contentObj.isOfferBannersVisible ?? true,
       isPromosVisible: contentObj.isPromosVisible ?? true,
       isCuratedVisible: contentObj.isCuratedVisible ?? true,
       isNoteworthyVisible: contentObj.isNoteworthyVisible ?? true,
@@ -431,6 +438,12 @@ const getPublicHomeData = async (req, res) => {
           slug: item.slug,
           order: item.order
         })),
+        offerBanners: (contentObj.offerBanners || []).map(item => ({
+          imageUrl: item.imageUrl,
+          targetCategoryId: item.targetCategoryId?.toString() || null,
+          slug: item.slug,
+          order: item.order
+        })),
         promos: (contentObj.promos || []).map(item => ({
           title: item.title,
           subtitle: item.subtitle,
@@ -476,6 +489,7 @@ const getPublicHomeData = async (req, res) => {
           order: item.order
         })),
         isBannersVisible: contentObj.isBannersVisible ?? true,
+        isOfferBannersVisible: contentObj.isOfferBannersVisible ?? true,
         isPromosVisible: contentObj.isPromosVisible ?? true,
         isCuratedVisible: contentObj.isCuratedVisible ?? true,
         isNoteworthyVisible: contentObj.isNoteworthyVisible ?? true,

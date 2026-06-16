@@ -17,6 +17,7 @@ const getHomeContent = async (req, res) => {
         id: homeContent._id,
         cityId: homeContent.cityId,
         banners: homeContent.banners || [],
+        offerBanners: homeContent.offerBanners || [],
         promos: homeContent.promos || [],
         curated: homeContent.curated || [],
         noteworthy: homeContent.noteworthy || [],
@@ -25,6 +26,7 @@ const getHomeContent = async (req, res) => {
         howItWorks: homeContent.howItWorks || [],
         isActive: homeContent.isActive,
         isBannersVisible: homeContent.isBannersVisible ?? true,
+        isOfferBannersVisible: homeContent.isOfferBannersVisible ?? true,
         isPromosVisible: homeContent.isPromosVisible ?? true,
         isCuratedVisible: homeContent.isCuratedVisible ?? true,
         isNoteworthyVisible: homeContent.isNoteworthyVisible ?? true,
@@ -74,6 +76,7 @@ const updateHomeContent = async (req, res) => {
         // Added 'hsec-' for category sections
         if (typeof newItem.id === 'string' && (
           newItem.id.startsWith('hbnr-') ||
+          newItem.id.startsWith('hofr-') ||
           newItem.id.startsWith('hprm-') ||
           newItem.id.startsWith('hcur-') ||
           newItem.id.startsWith('hnot-') ||
@@ -112,6 +115,7 @@ const updateHomeContent = async (req, res) => {
 
     // Update fields with sanitization
     if (req.body.banners !== undefined) homeContent.banners = sanitizeItems(req.body.banners);
+    if (req.body.offerBanners !== undefined) homeContent.offerBanners = sanitizeItems(req.body.offerBanners);
     if (req.body.promos !== undefined) homeContent.promos = sanitizeItems(req.body.promos);
     if (req.body.curated !== undefined) homeContent.curated = sanitizeItems(req.body.curated);
     if (req.body.noteworthy !== undefined) homeContent.noteworthy = sanitizeItems(req.body.noteworthy);
@@ -123,6 +127,7 @@ const updateHomeContent = async (req, res) => {
     if (req.body.howItWorks !== undefined) homeContent.howItWorks = sanitizeItems(req.body.howItWorks);
     if (req.body.isActive !== undefined) homeContent.isActive = req.body.isActive;
     if (req.body.isBannersVisible !== undefined) homeContent.isBannersVisible = req.body.isBannersVisible;
+    if (req.body.isOfferBannersVisible !== undefined) homeContent.isOfferBannersVisible = req.body.isOfferBannersVisible;
     if (req.body.isPromosVisible !== undefined) homeContent.isPromosVisible = req.body.isPromosVisible;
     if (req.body.isCuratedVisible !== undefined) homeContent.isCuratedVisible = req.body.isCuratedVisible;
     if (req.body.isNoteworthyVisible !== undefined) homeContent.isNoteworthyVisible = req.body.isNoteworthyVisible;
@@ -140,6 +145,7 @@ const updateHomeContent = async (req, res) => {
         id: homeContent._id,
         cityId: homeContent.cityId,
         banners: homeContent.banners,
+        offerBanners: homeContent.offerBanners,
         promos: homeContent.promos,
         curated: homeContent.curated,
         noteworthy: homeContent.noteworthy,
@@ -148,6 +154,7 @@ const updateHomeContent = async (req, res) => {
         howItWorks: homeContent.howItWorks,
         isActive: homeContent.isActive,
         isBannersVisible: homeContent.isBannersVisible,
+        isOfferBannersVisible: homeContent.isOfferBannersVisible,
         isPromosVisible: homeContent.isPromosVisible,
         isCuratedVisible: homeContent.isCuratedVisible,
         isNoteworthyVisible: homeContent.isNoteworthyVisible,

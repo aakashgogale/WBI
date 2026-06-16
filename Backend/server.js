@@ -199,6 +199,8 @@ app.use('/api/users/bookings', require('./routes/user-routes/booking.routes'));
 app.use('/api/users', require('./routes/user-routes/cart.routes'));
 app.use('/api/users/fcm-tokens', require('./routes/user-routes/fcmToken.routes'));
 app.use('/api/users/reviews', require('./routes/user-routes/review.routes'));
+app.use('/api/users/one-time-bookings', require('./routes/user-routes/oneTimeBooking.routes'));
+app.use('/api/users/one-time-services', require('./routes/user-routes/oneTimeService.routes'));
 
 // Scrap routes
 const scrapRoutes = require('./routes/scrap.routes');
@@ -219,6 +221,7 @@ app.use('/api/vendors/catalog', require('./routes/vendor-routes/catalog.routes')
 app.use('/api/vendors/enquiries', require('./routes/vendor-routes/vendorEnquiry.routes'));
 app.use('/api/vendors/assignments', require('./routes/vendor-routes/engineerAssignment.routes'));
 app.use('/api/vendors/team', require('./routes/vendor-routes/team.routes'));
+app.use('/api/workers/one-time-bookings', require('./routes/worker-routes/workerOneTimeBooking.routes'));
 app.use('/api/vendors/digital', require('./routes/vendor-routes/digital.routes'));
 
 // Worker routes
@@ -269,6 +272,7 @@ app.use('/api/admin', require('./routes/admin-routes/transactionManagement.route
 app.use('/api/admin', require('./routes/admin-routes/upload.routes'));
 app.use('/api/admin', require('./routes/admin-routes/planManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/settings.routes'));
+app.use('/api/admin/one-time-services', require('./routes/admin-routes/oneTimeServiceAdmin.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reviewManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/trustVideoManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reportManagement.routes'));
@@ -326,6 +330,8 @@ app.use('/api/bookings/cash', require('./routes/booking-routes/cashCollection.ro
 
 // Payment routes
 app.use('/api/payments', require('./routes/payment-routes/payment.routes'));
+app.use('/api/wallet', require('./routes/wallet.routes'));
+app.use('/api/payment', require('./routes/payment.routes'));
 
 // Notification routes
 app.use('/api/notifications', require('./routes/notification.routes'));
@@ -342,6 +348,7 @@ app.use('/api/public', require('./routes/public-routes/trustVideo.routes'));
 app.use('/api/public/reviews', require('./routes/public-routes/review.routes'));
 app.use('/api/public/web-enquiries', require('./routes/public-routes/webEnquiry.routes'));
 app.use('/api/public/banking-enquiries', require('./routes/public-routes/bankingEnquiry.routes'));
+app.use('/api/public/workers', require('./routes/public-routes/workerMatch.routes'));
 app.use('/api/forms', require('./routes/public-routes/form.routes'));
 
 // --- PUBLIC ROUTES (No auth required) ---

@@ -22,7 +22,7 @@ exports.getAllServiceCategories = catchAsync(async (req, res) => {
 });
 
 exports.createServiceCategory = catchAsync(async (req, res) => {
-  const { name, description, shortDescription, icon, image, bannerImage, trustPoints, displayOrder, isActive, showOnApp } = req.body;
+  const { name, description, shortDescription, icon, image, bannerImage, trustPoints, displayOrder, isActive, showOnApp, roles } = req.body;
   
   const category = await ServiceCategory.create({
     name,
@@ -34,7 +34,8 @@ exports.createServiceCategory = catchAsync(async (req, res) => {
     trustPoints: trustPoints || [],
     displayOrder: displayOrder || 0,
     isActive: isActive !== undefined ? isActive : true,
-    showOnApp: showOnApp !== undefined ? showOnApp : true
+    showOnApp: showOnApp !== undefined ? showOnApp : true,
+    roles: roles && roles.length > 0 ? roles : ['worker']
   });
 
   res.status(201).json({

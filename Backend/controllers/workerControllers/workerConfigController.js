@@ -14,7 +14,7 @@ const getRegistrationConfig = async (req, res) => {
 
     // 2. Fetch SubServices (with their specific required skills and tools)
     const subServices = await SubService.find({ isActive: true })
-      .select('name categoryId icon requiredSkills suggestedTools')
+      .select('name categoryId icon requiredSkills suggestedTools suggestedBrands')
       .lean();
 
     // 3. Fetch Document Requirements
@@ -58,7 +58,8 @@ const getRegistrationConfig = async (req, res) => {
             title: s.name, 
             categoryId: s.categoryId ? s.categoryId.toString() : null,
             requiredSkills: s.requiredSkills || [],
-            suggestedTools: s.suggestedTools || []
+            suggestedTools: s.suggestedTools || [],
+            suggestedBrands: s.suggestedBrands || []
           })),
         documents: documents.map(d => ({
           key: d.key,

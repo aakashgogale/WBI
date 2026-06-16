@@ -61,6 +61,7 @@ const Cart = lazyLoad(() => import('../pages/Cart'));
 const Services = lazyLoad(() => import('../pages/Services'));
 const CategoryDetails = lazyLoad(() => import('../pages/CategoryDetails'));
 const Checkout = lazyLoad(() => import('../pages/Checkout'));
+const OneTimeServiceCheckout = lazyLoad(() => import('../pages/OneTimeServiceCheckout'));
 const MyBookings = lazyLoad(() => import('../pages/MyBookings'));
 const BookingDetails = lazyLoad(() => import('../pages/BookingDetails'));
 const Calendar = lazyLoad(() => import('../pages/Calendar'));
@@ -110,6 +111,9 @@ const EvService = lazyLoad(() => import('../pages/EvService'));
 const AcPowerService = lazyLoad(() => import('../pages/AcPowerService'));
 const DcPowerService = lazyLoad(() => import('../pages/DcPowerService'));
 const PowerTestingService = lazyLoad(() => import('../pages/PowerTestingService'));
+const WorkerSelection = lazyLoad(() => import('../pages/WorkerSelection'));
+const OneTimeServiceDetail = lazyLoad(() => import('../pages/OneTimeServiceDetail'));
+const OneTimeServicePackages = lazyLoad(() => import('../pages/OneTimeServicePackages'));
 
 // Healthcare Solutions
 const MedicalEquipmentEnquiry = lazyLoad(() => import('../pages/MedicalEquipmentEnquiry'));
@@ -160,7 +164,12 @@ const UserRoutes = () => {
               {/* Protected routes (auth required) */}
               <Route path="/" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
               <Route path="/services" element={<ProtectedRoute userType="user"><Services /></ProtectedRoute>} />
+              <Route path="/service/:slug" element={<ProtectedRoute userType="user"><OneTimeServiceDetail /></ProtectedRoute>} />
+              <Route path="/service/:slug/packages" element={<ProtectedRoute userType="user"><OneTimeServicePackages /></ProtectedRoute>} />
+              <Route path="/one-time-checkout" element={<ProtectedRoute userType="user"><OneTimeServiceCheckout /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />
               <Route path="/categories/:slug" element={<ProtectedRoute userType="user"><CategoryDetails /></ProtectedRoute>} />
+              <Route path="/workers/match" element={<ProtectedRoute userType="user"><WorkerSelection /></ProtectedRoute>} />
               <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
 
               <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />

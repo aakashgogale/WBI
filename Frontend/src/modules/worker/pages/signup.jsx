@@ -65,13 +65,17 @@ export default function WorkerSignup() {
     setFormData(prev => {
       const isSelected = prev.serviceCategories.includes(categoryId);
       if (isSelected) {
+        const remainingCats = prev.serviceCategories.filter(id => id !== categoryId);
+        const validSubServiceIds = config?.subServices
+            ?.filter(s => remainingCats.includes(s.categoryId))
+            ?.map(s => s.id || s._id) || [];
         return { 
           ...prev, 
-          serviceCategories: [],
-          subServices: []
+          serviceCategories: remainingCats,
+          subServices: prev.subServices.filter(id => validSubServiceIds.includes(id))
         };
       } else {
-        return { ...prev, serviceCategories: [categoryId], subServices: [] };
+        return { ...prev, serviceCategories: [...prev.serviceCategories, categoryId] };
       }
     });
   };
@@ -149,6 +153,8 @@ export default function WorkerSignup() {
           name: sub ? (sub.name || sub.title) : '',
           skills: [],
           customSkills: [],
+          tools: [],
+          brandsHandled: [],
           experienceLevel: '',
           yearsOfExperience: 0
         };

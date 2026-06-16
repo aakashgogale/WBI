@@ -20,7 +20,8 @@ const ServiceCategories = () => {
     trustPoints: '',
     displayOrder: 0,
     isActive: true,
-    showOnApp: true
+    showOnApp: true,
+    roles: ['worker']
   });
 
   const fetchCategories = async () => {
@@ -52,12 +53,13 @@ const ServiceCategories = () => {
         trustPoints: cat.trustPoints ? cat.trustPoints.join(', ') : '',
         displayOrder: cat.displayOrder || 0,
         isActive: cat.isActive,
-        showOnApp: cat.showOnApp
+        showOnApp: cat.showOnApp,
+        roles: cat.roles || ['worker']
       });
     } else {
       setCurrentCategory(null);
       setFormData({
-        name: '', description: '', shortDescription: '', icon: '', bannerImage: '', trustPoints: '', displayOrder: 0, isActive: true, showOnApp: true
+        name: '', description: '', shortDescription: '', icon: '', bannerImage: '', trustPoints: '', displayOrder: 0, isActive: true, showOnApp: true, roles: ['worker']
       });
     }
     setIsModalOpen(true);
@@ -129,6 +131,7 @@ const ServiceCategories = () => {
               <tr>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Icon</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Name & Desc</th>
+                <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Roles</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Order</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase">Active</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase text-right">Actions</th>
@@ -145,6 +148,13 @@ const ServiceCategories = () => {
                   <td className="p-4">
                     <p className="font-bold text-gray-800">{cat.name}</p>
                     <p className="text-xs text-gray-500 line-clamp-1">{cat.description}</p>
+                  </td>
+                  <td className="p-4 text-sm font-medium">
+                    <div className="flex gap-1 flex-wrap">
+                      {(cat.roles || []).map(r => (
+                        <span key={r} className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded uppercase">{r}</span>
+                      ))}
+                    </div>
                   </td>
                   <td className="p-4 text-sm font-medium">{cat.displayOrder}</td>
                   <td className="p-4">
@@ -209,6 +219,39 @@ const ServiceCategories = () => {
                   <input type="checkbox" checked={formData.showOnApp} onChange={e => setFormData({...formData, showOnApp: e.target.checked})} className="w-4 h-4 text-[#10AFA5]" />
                   <span className="text-sm font-medium">Show on App</span>
                 </label>
+              </div>
+              <div className="pt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Available For (Roles)</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.roles.includes('worker')} 
+                      onChange={e => {
+                        const newRoles = e.target.checked 
+                          ? [...formData.roles, 'worker'] 
+                          : formData.roles.filter(r => r !== 'worker');
+                        setFormData({...formData, roles: newRoles});
+                      }} 
+                      className="w-4 h-4 text-[#10AFA5]" 
+                    />
+                    <span className="text-sm font-medium">Worker</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.roles.includes('engineer')} 
+                      onChange={e => {
+                        const newRoles = e.target.checked 
+                          ? [...formData.roles, 'engineer'] 
+                          : formData.roles.filter(r => r !== 'engineer');
+                        setFormData({...formData, roles: newRoles});
+                      }} 
+                      className="w-4 h-4 text-[#10AFA5]" 
+                    />
+                    <span className="text-sm font-medium">Engineer</span>
+                  </label>
+                </div>
               </div>
               <div className="pt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-lg text-gray-600">Cancel</button>

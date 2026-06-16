@@ -25,6 +25,7 @@ const TrustVideosSection = lazy(() => import('./components/TrustVideosSection'))
 const HowItWorks = lazy(() => import('./components/HowItWorks'));
 const CustomerReviews = lazy(() => import('../../components/reviews/CustomerReviews'));
 const ExtendedServiceCategories = lazy(() => import('./components/ExtendedServiceCategories'));
+const OfferBannerSlider = lazy(() => import('./components/OfferBannerSlider'));
 import TrustStrip from './components/TrustStrip';
 import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
@@ -318,6 +319,19 @@ const Home = () => {
   };
 
   const handleCategoryClick = (category) => {
+    // Route to new dynamic One-Time Service flow
+    const dynamicSlugs = ['ac-service', 'washing-machine', 'geyser-repair', 'ro-service', 'microwave', 'electrician', 'plumber', 'cctv-repair'];
+    
+    // Also handle fallback category IDs
+    if (
+      (category.slug && dynamicSlugs.includes(category.slug)) || 
+      (category.id && ['ac', 'washing', 'geyser', 'ro'].includes(category.id))
+    ) {
+      const targetSlug = category.slug || (category.id === 'ac' ? 'ac-service' : category.id === 'washing' ? 'washing-machine' : category.id === 'geyser' ? 'geyser-repair' : 'ro-service');
+      navigate(`/user/service/${targetSlug}`);
+      return;
+    }
+
     setSelectedCategory(category);
     setIsCategoryModalOpen(true);
   };
@@ -609,6 +623,21 @@ const Home = () => {
                   <CustomerReviews serviceId="all" />
                 </Suspense>
               </div>
+
+              {/* 6.5. Offer Banners */}
+              {homeContent?.isOfferBannersVisible !== false && (
+                <div className="relative z-10 mt-2">
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                    <OfferBannerSlider 
+                      banners={(homeContent?.offerBanners || []).sort((a,b) => (a.order||0) - (b.order||0)).map(b => ({
+                        ...b,
+                        imageUrl: b.imageUrl ? toAssetUrl(b.imageUrl) : null
+                      }))}
+                      onBannerClick={handleServiceClick}
+                    />
+                  </Suspense>
+                </div>
+              )}
 
               {/* 7. Extended Service Categories (Digital First) */}
               {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || []).sort((a,b) => (a.order||0) - (b.order||0)).map((section, idx) => (

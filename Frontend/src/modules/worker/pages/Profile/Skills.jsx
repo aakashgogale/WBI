@@ -16,9 +16,11 @@ export default function WorkerSkills() {
   const [allSubServices, setAllSubServices] = useState([]);
   
   // Selections
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedSubServices, setSelectedSubServices] = useState([]);
   const [isCategoryPreExisting, setIsCategoryPreExisting] = useState(false);
+  const [secondarySkills, setSecondarySkills] = useState([]);
+  const [newSecondarySkill, setNewSecondarySkill] = useState('');
   
   // Custom tag input field state for each subservice
   const [customInputMap, setCustomInputMap] = useState({});
@@ -41,11 +43,19 @@ export default function WorkerSkills() {
           const profile = profileRes.worker;
           
           if (profile.serviceCategories && profile.serviceCategories.length > 0) {
-            const cat = loadedCategories.find(c => (c.name || c.title) === profile.serviceCategories[0]);
-            if (cat) {
-              setSelectedCategory(cat._id || cat.id);
+            const catIds = profile.serviceCategories.map(catName => {
+              const cat = loadedCategories.find(c => (c.name || c.title) === catName);
+              return cat ? (cat._id || cat.id) : null;
+            }).filter(Boolean);
+            
+            if (catIds.length > 0) {
+              setSelectedCategories(catIds);
               setIsCategoryPreExisting(true);
             }
+          }
+          
+          if (profile.secondarySkills) {
+            setSecondarySkills(profile.secondarySkills);
           }
           
           if (profile.subServices && profile.subServices.length > 0) {
@@ -55,6 +65,7 @@ export default function WorkerSkills() {
               skills: s.skills || [],
               customSkills: s.customSkills || [],
               tools: s.tools || [],
+              brandsHandled: s.brandsHandled || [],
               experienceLevel: s.experienceLevel || '',
               yearsOfExperience: s.yearsOfExperience || 0
             })).filter(s => s.subServiceId);
@@ -72,8 +83,25 @@ export default function WorkerSkills() {
   }, []);
 
   const handleCategorySelect = (catId) => {
-    setSelectedCategory(catId);
-    setSelectedSubServices([]);
+    setSelectedCategories(prev => {
+      if (prev.includes(catId)) {
+        return prev.filter(id => id !== catId);
+      } else {
+        return [...prev, catId];
+      }
+    });
+  };
+
+  const handleAddSecondarySkill = () => {
+    const trimmed = newSecondarySkill.trim();
+    if (trimmed && !secondarySkills.includes(trimmed)) {
+      setSecondarySkills(prev => [...prev, trimmed]);
+      setNewSecondarySkill('');
+    }
+  };
+
+  const removeSecondarySkill = (skill) => {
+    setSecondarySkills(prev => prev.filter(s => s !== skill));
   };
 
   const toggleSubService = (subService) => {
@@ -88,6 +116,7 @@ export default function WorkerSkills() {
           skills: [],
           customSkills: [],
           tools: [],
+          brandsHandled: [],
           experienceLevel: '',
           yearsOfExperience: 0
         }];
@@ -120,6 +149,18 @@ export default function WorkerSkills() {
           ? s.tools.filter(name => name !== toolName)
           : [...s.tools, toolName];
         return { ...s, tools };
+      }
+      return s;
+    }));
+  };
+
+  const toggleBrand = (subServiceId, brandName) => {
+    setSelectedSubServices(prev => prev.map(s => {
+      if (s.subServiceId === subServiceId) {
+        const brandsHandled = s.brandsHandled?.includes(brandName)
+          ? s.brandsHandled.filter(name => name !== brandName)
+          : [...(s.brandsHandled || []), brandName];
+        return { ...s, brandsHandled };
       }
       return s;
     }));
@@ -162,15 +203,10 @@ export default function WorkerSkills() {
   };
 
   const handleSave = async () => {
-    if (!selectedCategory) {
-      toast.error('Please select a category.');
+    if (selectedCategories.length === 0 && secondarySkills.length === 0) {
+      toast.error('Please select at least one category or add a custom service.');
       return;
     }
-    if (selectedSubServices.length === 0) {
-      toast.error('Please select at least one specialization subservice.');
-      return;
-    }
-
     // Validation check for years of experience
     for (const ss of selectedSubServices) {
       if (ss.yearsOfExperience !== '' && (isNaN(ss.yearsOfExperience) || parseInt(ss.yearsOfExperience, 10) < 0)) {
@@ -181,17 +217,20 @@ export default function WorkerSkills() {
 
     try {
       setIsSaving(true);
-      const cat = categories.find(c => c._id === selectedCategory);
-      const catName = cat ? cat.name : '';
+      const selectedCatNames = categories
+        .filter(c => selectedCategories.includes(c._id))
+        .map(c => c.name);
 
       const payload = {
-        serviceCategories: [catName],
+        serviceCategories: selectedCatNames,
+        secondarySkills: secondarySkills,
         subServices: selectedSubServices.map(s => ({
           subServiceId: s.subServiceId,
           name: s.name,
           skills: s.skills,
           customSkills: s.customSkills.map(cs => ({ name: cs.name, status: cs.status })),
           tools: s.tools,
+          brandsHandled: s.brandsHandled,
           experienceLevel: s.experienceLevel,
           yearsOfExperience: parseInt(s.yearsOfExperience, 10) || 0
         }))
@@ -214,7 +253,7 @@ export default function WorkerSkills() {
 
   if (isLoading) return <LogoLoader />;
 
-  const availableSubServices = allSubServices.filter(s => s.categoryId?.toString() === selectedCategory?.toString());
+  const availableSubServices = allSubServices.filter(s => selectedCategories.includes(s.categoryId?.toString()));
 
   return (
     <div className="min-h-screen bg-[#F8FCFC] font-sans text-[#0F172A] pb-24">
@@ -242,47 +281,53 @@ export default function WorkerSkills() {
             <h2 className="text-base font-bold mb-1">Your Registered Category</h2>
             <p className="text-xs text-gray-500 mb-4">Your core category domain registered at WBI.</p>
             
-            <div className="flex items-center p-4 rounded-2xl border border-gray-200/50 bg-gray-50/50">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 bg-black text-white">
-                <FiBriefcase className="w-5 h-5" />
+              <div className="flex flex-col gap-2">
+                {selectedCategories.map(catId => {
+                  const cat = categories.find(c => c._id?.toString() === catId?.toString());
+                  if (!cat) return null;
+                  return (
+                    <div key={cat._id} className="flex items-center p-4 rounded-2xl border border-gray-200/50 bg-gray-50/50">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center mr-3 bg-black text-white">
+                        <FiBriefcase className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="block font-bold text-sm text-black">
+                          {cat.name}
+                        </span>
+                        <span className="block text-[10px] text-gray-500 mt-0.5">
+                          Core domain category cannot be changed.
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <span className="block font-bold text-sm text-black">
-                  {categories.find(c => c._id?.toString() === selectedCategory?.toString())?.name || 'Loading category...'}
-                </span>
-                <span className="block text-[10px] text-gray-500 mt-0.5">
-                  Core domain category cannot be changed.
-                </span>
-              </div>
-            </div>
           </section>
         ) : (
           <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-base font-bold mb-1">Primary Domain Category</h2>
             <p className="text-xs text-gray-500 mb-4">Select your primary service category domain.</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {categories.map(cat => {
-                const isSelected = selectedCategory === cat._id;
+                const isSelected = selectedCategories.includes(cat._id);
                 return (
                   <button
                     key={cat._id}
                     onClick={() => handleCategorySelect(cat._id)}
-                    className={`flex items-center p-4 rounded-2xl border-2 text-left transition-all ${
-                      isSelected ? 'border-black bg-black/5' : 'border-gray-100 hover:border-gray-200 bg-white'
+                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 text-center transition-all ${
+                      isSelected ? 'border-black bg-black/5 shadow-md' : 'border-gray-100 hover:border-gray-200 bg-white shadow-sm'
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-3 ${
-                      isSelected ? 'bg-black text-white' : 'bg-gray-50 text-gray-400'
+                    {isSelected && <FiCheckCircle className="absolute top-2.5 right-2.5 text-black w-4 h-4" />}
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2.5 transition-all ${
+                      isSelected ? 'bg-black text-white scale-110' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100'
                     }`}>
                       <FiBriefcase className="w-5 h-5" />
                     </div>
-                    <div>
-                      <span className={`block font-bold text-sm ${isSelected ? 'text-black' : 'text-gray-800'}`}>
-                        {cat.name}
-                      </span>
-                    </div>
-                    {isSelected && <FiCheck className="ml-auto text-black w-5 h-5" />}
+                    <span className={`block font-bold text-[11px] sm:text-xs leading-snug px-1 ${isSelected ? 'text-black' : 'text-gray-700'}`}>
+                      {cat.name}
+                    </span>
                   </button>
                 );
               })}
@@ -290,8 +335,42 @@ export default function WorkerSkills() {
           </section>
         )}
 
+        {/* Other / Extra Services */}
+        <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-base font-bold mb-1">Other / Extra Services</h2>
+          <p className="text-xs text-gray-500 mb-4">Add any extra services or skills you provide that aren't listed above.</p>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="e.g. Carpentry, Plumbing"
+              value={newSecondarySkill}
+              onChange={(e) => setNewSecondarySkill(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSecondarySkill())}
+              className="flex-1 px-3.5 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-black/15 focus:border-black transition-all"
+            />
+            <button
+              onClick={handleAddSecondarySkill}
+              className="px-4 py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          {secondarySkills.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {secondarySkills.map(skill => (
+                <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg shadow-sm">
+                  {skill}
+                  <button onClick={() => removeSecondarySkill(skill)} className="text-gray-400 hover:text-red-500">
+                    <FiX className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* Specializations selection */}
-        {selectedCategory && (
+        {selectedCategories.length > 0 && availableSubServices.length > 0 && (
           <section className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <h2 className="text-base font-bold mb-1">Specializations</h2>
             <p className="text-xs text-gray-500 mb-4">Choose the sub-services you can work on.</p>
@@ -327,6 +406,7 @@ export default function WorkerSkills() {
               const subConfig = allSubServices.find(s => s._id === subService.subServiceId);
               const availableSkills = subConfig?.requiredSkills || [];
               const availableTools = subConfig?.suggestedTools || [];
+              const availableBrands = subConfig?.suggestedBrands || [];
 
               return (
                 <section key={subService.subServiceId} className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100 space-y-6 animate-fadeIn">
@@ -422,6 +502,32 @@ export default function WorkerSkills() {
                             >
                               {isChecked && <FiCheck className="w-3.5 h-3.5" />}
                               {tool}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Brands Grid */}
+                  {availableBrands.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-gray-600 ml-0.5">Brands Handled</label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableBrands.map(brand => {
+                          const isChecked = subService.brandsHandled?.includes(brand);
+                          return (
+                            <button
+                              key={brand}
+                              onClick={() => toggleBrand(subService.subServiceId, brand)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1 ${
+                                isChecked 
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                              }`}
+                            >
+                              {isChecked && <FiCheck className="w-3.5 h-3.5" />}
+                              {brand}
                             </button>
                           );
                         })}

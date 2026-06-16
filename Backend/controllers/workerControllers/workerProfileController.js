@@ -220,10 +220,17 @@ const updateLocation = async (req, res) => {
     }
 
     // Update only the location field for performance
-    await Worker.findByIdAndUpdate(workerId, {
-      location: { lat, lng, updatedAt: new Date() }
-    });
-
+    const worker = await Worker.findByIdAndUpdate(
+      req.user.id,
+      { 
+        location: { 
+          type: 'Point',
+          coordinates: [lng, lat], 
+          updatedAt: new Date() 
+        } 
+      },
+      { new: true, runValidators: true }
+    );
     res.status(200).json({ success: true, message: 'Location updated' });
   } catch (error) {
     console.error('Location update error:', error);
@@ -427,6 +434,10 @@ const updateSkillsProfile = async (req, res) => {
     
     if (serviceCategories && Array.isArray(serviceCategories)) {
       worker.serviceCategories = serviceCategories;
+    }
+    
+    if (req.body.secondarySkills && Array.isArray(req.body.secondarySkills)) {
+      worker.secondarySkills = req.body.secondarySkills;
     }
 
     await worker.save();

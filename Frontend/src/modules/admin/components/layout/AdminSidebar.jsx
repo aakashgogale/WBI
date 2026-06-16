@@ -33,6 +33,7 @@ const iconMap = {
   "Form Builder": FiGrid,
   Bookings: FiShoppingBag,
   "User Catalog": FiGrid,
+  "One-Time Services": FiShoppingBag,
   "Vendor Services": FiGrid,
   "Vendor Parts": FiPackage,
   Payments: FiDollarSign,

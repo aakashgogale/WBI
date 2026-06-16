@@ -61,6 +61,10 @@ const subServiceSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  suggestedBrands: [{
+    type: String,
+    trim: true
+  }],
   slaTargets: {
     responseTimeMins: { type: Number, default: 30 },
     assignmentTimeMins: { type: Number, default: 60 },
