@@ -412,88 +412,27 @@ const createBooking = async (req, res) => {
           console.log(`User ${userId} upgraded to Plus Membership until ${expiryDate}`);
         }
 
-        // WAVE-BASED ALERTING: Sort by distance and only notify first wave
         // =========================================================================
-        // URGENCY LEVEL ROUTING & DISPATCH
+        // INSTANT DISPATCH & ADMIN NOTIFICATION (Replaces legacy urgency logic)
         // =========================================================================
         const { getIO } = require('../../sockets');
         const io = getIO();
         
-        if (urgencyLevel === 'emergency') {
-          console.log(`[CreateBooking] EMERGENCY: Bypassing admin and alerting top 3 workers directly!`);
-          
-          // Use previously calculated nearbyWorkers/Vendors since it bypassed admin
-          const sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-          const sortedWorkers = nearbyWorkers.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-
-          const wave1Vendors = sortedVendors.slice(0, 3);
-          const wave1Workers = sortedWorkers.slice(0, 3);
-
-          bookingForBackground.currentWave = 1;
-          bookingForBackground.waveStartedAt = new Date();
-          bookingForBackground.notifiedVendors = wave1Vendors.map(v => v._id);
-          bookingForBackground.notifiedWorkers = wave1Workers.map(w => w._id);
-          // Set status directly as we bypass admin
-          bookingForBackground.status = BOOKING_STATUS.SEARCHING;
-          await bookingForBackground.save();
-
-          if (io) {
-            const bookingPayload = {
-              bookingId: bookingForBackground._id,
-              serviceName: serviceForBackground.title,
-              customerName: userForBackground.name,
-              customerPhone: userForBackground.phone,
-              scheduledDate: scheduledDate,
-              scheduledTime: scheduledTime,
-              price: finalAmount,
-              address: address,
-              serviceCategory: bookingForBackground.serviceCategory,
-              brandName: bookingForBackground.brandName,
-              brandIcon: bookingForBackground.brandIcon,
-              categoryIcon: bookingForBackground.categoryIcon,
-              createdAt: bookingForBackground.createdAt || new Date(),
-              expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-              playSound: true,
-            };
-
-            wave1Workers.forEach(worker => {
-              io.to(`worker_${worker._id}`).emit('new_job_assigned', {
-                ...bookingPayload,
-                distance: worker.distance,
-                message: 'EMERGENCY: Immediate job request near you!'
-              });
-            });
-            wave1Vendors.forEach(vendor => {
-              io.to(`vendor_${vendor._id}`).emit('new_booking_request', {
-                ...bookingPayload,
-                distance: vendor.distance,
-                message: 'EMERGENCY: Immediate request near you!'
-              });
-            });
-          }
-          
-        } else if (urgencyLevel === 'urgent') {
-          console.log(`[CreateBooking] URGENT: Sending instant notification to Admin! (10 min timer started)`);
-          
-          if (io) {
-            io.to('admin_room').emit('urgent_booking_alert', {
-              bookingId: bookingForBackground._id,
-              message: 'URGENT Booking requires immediate approval!'
-            });
-          }
-          
-          // Queue auto-escalation (10 minutes -> 1 min for testing)
-          const { bookingDispatchQueue } = require('../../jobs/queueSetup');
-          await bookingDispatchQueue.add('auto-escalate', { bookingId: bookingForBackground._id }, { delay: 1 * 60 * 1000 });
-          
-        } else {
-          console.log(`[CreateBooking] NORMAL: Added to admin queue. (30 min timer started - set to 2 min for testing)`);
-          
-          // Queue auto-escalation (30 minutes -> 2 mins for testing)
-          const { bookingDispatchQueue } = require('../../jobs/queueSetup');
-          // Start 2 min timer
-          await bookingDispatchQueue.add('auto-escalate', { bookingId: bookingForBackground._id }, { delay: 2 * 60 * 1000 });
+        console.log(`[CreateBooking] Triggering instant matching for booking ${bookingForBackground._id}`);
+        
+        // Notify Admin instantly
+        if (io) {
+          io.to('admin:wbi').emit('admin:urgent_booking_alert', {
+            bookingId: bookingForBackground._id,
+            message: `New booking ${bookingForBackground.bookingNumber} created. Searching for workers instantly.`
+          });
         }
+        
+        // Trigger Matching Service immediately (Background Async)
+        const matcher = require('../../services/matchingService');
+        matcher.startMatching(bookingForBackground._id).catch(err => {
+           console.error('[CreateBooking] Error starting matching service:', err);
+        });
 
         // NOTIFY USER: Send actionable notification so they can track status
         await createNotification({
@@ -1121,6 +1060,66 @@ const getUserRatings = async (req, res) => {
   }
 };
 
+// Create call log
+const createCallLog = async (req, res) => {
+  try {
+    const { bookingId, workerId } = req.body;
+    const customerId = req.user.id;
+
+    if (!bookingId || !workerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking ID and Worker ID are required'
+      });
+    }
+
+    const CallLog = require('../../models/CallLog');
+    const callLog = await CallLog.create({
+      bookingId,
+      workerId,
+      customerId,
+      callerRole: 'user',
+      timestamp: new Date()
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Call log saved successfully',
+      data: callLog
+    });
+  } catch (error) {
+    console.error('Create call log error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save call log'
+    });
+  }
+};
+
+// Get call logs for a booking
+const getCallLogsForBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const CallLog = require('../../models/CallLog');
+    const callLogs = await CallLog.find({ bookingId: id, customerId: userId })
+      .sort({ timestamp: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: callLogs
+    });
+  } catch (error) {
+    console.error('Get call logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch call logs'
+    });
+  }
+};
+
 module.exports = {
   createBooking,
   getUserBookings,
@@ -1128,6 +1127,8 @@ module.exports = {
   cancelBooking,
   rescheduleBooking,
   addReview,
-  getUserRatings
+  getUserRatings,
+  createCallLog,
+  getCallLogsForBooking
 };
 

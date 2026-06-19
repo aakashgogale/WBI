@@ -54,7 +54,7 @@ exports.findNearbyWorkers = async (req, res) => {
 // 3. Create a Booking
 exports.createBooking = async (req, res) => {
   try {
-    const { serviceId, subServiceId, workerId, address, scheduledDate, scheduledTime, basePrice } = req.body;
+    const { serviceId, subServiceId, workerId, address, scheduledDate, scheduledTime, timeSlot, basePrice } = req.body;
 
     // Validate inputs
     if (!serviceId || !address || !basePrice) {
@@ -76,9 +76,10 @@ exports.createBooking = async (req, res) => {
       address,
       scheduledDate,
       scheduledTime,
+      timeSlot,
       basePrice,
       finalAmount: basePrice,
-      status: 'awaiting_worker_acceptance',
+      status: 'searching_worker',
       paymentStatus: 'pending',
       customerConfirmationOTP: completionOTP,
       bookingType: 'scheduled'
@@ -86,21 +87,61 @@ exports.createBooking = async (req, res) => {
 
     await booking.save();
 
-    // Notify the worker via Socket.IO
+    const WaveManagerService = require('../../services/WaveManagerService');
+
+    // Notify the worker(s) via Socket.IO and Auto-Assignment Engine
     if (workerId) {
-      const io = getIo();
-      io.to(`worker:${workerId.toString()}`).emit('worker:bookingRequest', {
+      // If user specifically picked a worker, put them in a wave of 1
+      const io = getIO();
+      io.to(`worker:${workerId.toString()}`).emit('worker:newBookingRequest', {
         bookingId: booking._id,
         serviceName: booking.serviceName,
         address: booking.address,
         scheduledDate,
         scheduledTime,
-        price: basePrice
+        price: basePrice,
+        waveNumber: 1
       });
-      // Start auto-assignment fallback timer here in a real production system (e.g., BullMQ)
+      
+      booking.potentialWorkers = [{ workerId: workerId, distance: 0 }];
+      await booking.save();
+      
+      // Start auto-assignment fallback timer (re-using dispatchWave logic for queueing)
+      await WaveManagerService.dispatchWave(booking._id.toString(), 1);
+    } else {
+      // Trigger WaveManagerService to find and group nearby workers
+      if (!address.lat || !address.lng) {
+        return res.status(400).json({ success: false, message: 'Address must contain lat and lng for auto-assignment' });
+      }
+
+      const waves = await WaveManagerService.findAndGroupWorkers(
+        address.lat,
+        address.lng,
+        10 // default 10km radius
+      );
+      
+      if (waves.length === 0) {
+        // No workers found
+        booking.status = 'admin_action_required';
+        booking.adminLog.push({
+          action: 'No Workers Found',
+          reason: 'No online workers found within radius upon creation.',
+          timestamp: new Date()
+        });
+        await booking.save();
+        return res.status(201).json({ success: true, data: booking, message: 'Booking created but no workers available. Admin notified.' });
+      }
+
+      // Flatten waves into potentialWorkers array
+      const flatPotentialWorkers = waves.flat();
+      booking.potentialWorkers = flatPotentialWorkers;
+      await booking.save();
+
+      // Dispatch Wave 1
+      await WaveManagerService.dispatchWave(booking._id.toString(), 1);
     }
 
-    res.status(201).json({ success: true, data: booking, message: 'Booking created and worker notified' });
+    res.status(201).json({ success: true, data: booking, message: 'Booking created and worker assignment started' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -199,6 +240,7 @@ exports.createDraft = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // 7. Update Draft (Address & Schedule)
 exports.updateDraft = async (req, res) => {
   try {
@@ -206,24 +248,38 @@ exports.updateDraft = async (req, res) => {
     const { bookingType, address, scheduledDate, scheduledTime } = req.body;
     const userId = req.user._id || req.user.id;
 
+    console.log('[updateDraft] Draft ID:', draftId);
+    console.log('[updateDraft] Payload Address:', address);
+
     const draft = await BookingDraft.findOne({ _id: draftId, userId });
     
     if (!draft) {
+      console.log('[updateDraft] Draft NOT FOUND for user:', userId);
       return res.status(404).json({ success: false, message: 'Draft not found' });
     }
 
-    draft.bookingType = bookingType;
-    draft.address = address;
-    draft.scheduledDate = scheduledDate;
-    draft.scheduledTime = scheduledTime;
+    await BookingDraft.updateOne(
+      { _id: draftId },
+      { 
+        $set: { 
+          bookingType: bookingType,
+          address: address,
+          scheduledDate: scheduledDate,
+          scheduledTime: scheduledTime 
+        } 
+      }
+    );
+    
+    // Fetch updated to return
+    const updatedDraft = await BookingDraft.findById(draftId);
+    console.log('[updateDraft] Successfully saved draft with address:', updatedDraft.address);
 
-    await draft.save();
-
-    res.status(200).json({ success: true, data: draft, message: 'Draft updated successfully' });
+    res.status(200).json({ success: true, data: updatedDraft, message: 'Draft updated successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 const axios = require('axios');
 
 // 8. Reverse Geocode (Lat/Lng to Address via Google Maps)
@@ -381,4 +437,3 @@ exports.scheduleDraft = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-

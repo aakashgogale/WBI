@@ -30,7 +30,7 @@ const initializeSocket = (server) => {
       const decoded = verifyAccessToken(token);
 
       socket.userId = decoded.userId;
-      socket.userRole = decoded.role;
+      socket.userRole = decoded.role ? decoded.role.toUpperCase() : 'UNKNOWN';
 
       next();
     } catch (error) {
@@ -52,6 +52,7 @@ const initializeSocket = (server) => {
       updateVendorOnlineStatus(socket.userId, true, socket.id);
     } else if (socket.userRole === 'WORKER' || socket.userRole === 'ENGINEER') {
       socket.join(`worker_${socket.userId.toString()}`);
+      socket.join(`worker:${socket.userId.toString()}`); // Ensure new format
       socket.join(`engineer:${socket.userId.toString()}`); // New format
       // Update worker online status
       updateWorkerOnlineStatus(socket.userId, true, socket.id);
@@ -81,6 +82,40 @@ const initializeSocket = (server) => {
       if (socket.userRole === 'WORKER' && socket.userId === workerId) {
         socket.join(`worker_${workerId}`);
         console.log(`Socket ${socket.id} explicitly joined room worker_${workerId}`);
+      }
+    });
+
+    socket.on('worker:register', async (data) => {
+      const { workerId, userId, role, device } = data;
+      if (!workerId) return;
+
+      console.log(`[WORKER_CONNECTED] Worker registered: ${workerId}`);
+
+      socket.join(`worker:${workerId}`);
+      socket.join(`worker_${workerId}`);
+      socket.join('role:worker');
+      
+      console.log(`[WORKER_JOINED_ROOM] Worker ${workerId} joined room: worker:${workerId}`);
+
+      try {
+        const Worker = require('../models/Worker');
+        await Worker.findByIdAndUpdate(workerId, { status: 'ONLINE' });
+
+        const ActiveWorkerSession = require('../models/ActiveWorkerSession');
+        await ActiveWorkerSession.findOneAndUpdate(
+          { workerId },
+          { 
+            userId: userId || workerId,
+            socketId: socket.id,
+            isOnline: true,
+            device: device || 'web',
+            role: role || 'worker',
+            lastSeen: new Date()
+          },
+          { upsert: true, new: true }
+        );
+      } catch (error) {
+        console.error('[Socket] Error updating worker session:', error);
       }
     });
 
@@ -217,6 +252,34 @@ const initializeSocket = (server) => {
       }
     });
 
+    // Real-time Chat socket event handler
+    socket.on('chat:send_message', async (data) => {
+      try {
+        const { bookingId, text, fileUrl, fileType, fileName } = data;
+        if (!bookingId) return;
+
+        const Chat = require('../models/Chat');
+        const senderModel = socket.userRole === 'WORKER' ? 'Worker' : 'User';
+
+        const message = await Chat.create({
+          bookingId,
+          senderId: socket.userId,
+          senderModel,
+          text: text || '',
+          fileUrl: fileUrl || null,
+          fileType: fileType || 'none',
+          fileName: fileName || null,
+          readBy: [socket.userId]
+        });
+
+        // Broadcast to everyone in the booking tracking room
+        io.to(`booking_${bookingId}`).emit('chat:message_received', message);
+        console.log(`[Socket] Chat message sent for booking_${bookingId} by ${socket.userId}`);
+      } catch (error) {
+        console.error('[Socket] Error sending chat message over socket:', error);
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
       // Update online status
@@ -266,18 +329,40 @@ const updateVendorOnlineStatus = async (vendorId, isOnline, socketId) => {
 const updateWorkerOnlineStatus = async (workerId, isOnline, socketId) => {
   try {
     const Worker = require('../models/Worker');
+    const ActiveWorkerSession = require('../models/ActiveWorkerSession');
 
     const updateData = {
       status: isOnline ? 'ONLINE' : 'OFFLINE',
-      // currentSocketId: socketId // Add to model if needed
     };
 
     if (!isOnline) {
-      updateData.lastSeenAt = new Date(); // Add to model if needed
+      updateData.lastSeenAt = new Date();
     }
 
     // Update MongoDB
     await Worker.findByIdAndUpdate(workerId, updateData);
+
+    // Update ActiveWorkerSession
+    if (isOnline) {
+       await ActiveWorkerSession.findOneAndUpdate(
+          { workerId },
+          { 
+            socketId, 
+            isOnline: true, 
+            lastSeen: new Date(),
+            userId: workerId.toString(),
+            role: 'worker',
+            device: 'web'
+          },
+          { upsert: true, new: true }
+       );
+    } else {
+       await ActiveWorkerSession.findOneAndUpdate(
+          { workerId },
+          { isOnline: false, lastSeen: new Date() }
+       );
+       console.log(`[WORKER_DISCONNECTED] Worker disconnected: ${workerId}`);
+    }
 
     console.log(`[Socket] Worker ${workerId} is now ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
   } catch (error) {

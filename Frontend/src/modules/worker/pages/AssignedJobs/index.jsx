@@ -97,6 +97,7 @@ const AssignedJobs = () => {
       case 'assigned':
       case 'confirmed':
       case 'accepted':
+      case 'worker_assigned':
         return { label: 'Assigned', bg: 'bg-[#16A34A]', text: 'text-white' };
       case 'in_progress':
       case 'journey_started':

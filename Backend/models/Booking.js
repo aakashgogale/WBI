@@ -425,7 +425,7 @@ const bookingSchema = new mongoose.Schema({
 });
 
 // Generate unique booking number
-bookingSchema.pre('save', async function (next) {
+bookingSchema.pre('validate', async function (next) {
   if (this.isNew && !this.bookingNumber) {
     const timestamp = Date.now().toString().slice(-8);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -435,6 +435,8 @@ bookingSchema.pre('save', async function (next) {
 });
 
 // Core compound indexes
+bookingSchema.index({ createdAt: -1 });
+bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ userId: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ workerId: 1, status: 1, createdAt: -1 });

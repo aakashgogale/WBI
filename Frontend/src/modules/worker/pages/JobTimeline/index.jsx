@@ -62,6 +62,7 @@ const JobTimeline = () => {
       case 'confirmed':
       case 'assigned':
       case 'accepted':
+      case 'worker_assigned':
         setCurrentStage(1);
         break;
       case 'journey_started': setCurrentStage(2); break;

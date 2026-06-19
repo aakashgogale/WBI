@@ -159,39 +159,69 @@ const verifyPaymentWebhook = async (req, res) => {
     // Fetch VendorBill for earnings (only if bill exists = post-completion payment)
     const bill = await VendorBill.findOne({ bookingId: booking._id });
 
-    if (bill && booking.vendorId) {
-      const vendorEarning = bill.vendorTotalEarning;
+    if (bill) {
+      const earningAmount = bill.vendorTotalEarning;
 
       // Mark bill as paid
       bill.status = 'paid';
       bill.paidAt = new Date();
       await bill.save();
 
-      // Online payment: only earnings increase, NO dues (platform holds the money)
-      await Vendor.findByIdAndUpdate(booking.vendorId, {
-        $inc: { 'wallet.earnings': vendorEarning }
-      });
+      if (booking.vendorId) {
+        // Online payment: only earnings increase, NO dues (platform holds the money)
+        await Vendor.findByIdAndUpdate(booking.vendorId, {
+          $inc: { 'wallet.earnings': earningAmount }
+        });
 
-      // Earnings credit transaction
-      if (vendorEarning > 0) {
-        await Transaction.create({
-          vendorId: booking.vendorId,
-          bookingId: booking._id,
-          amount: vendorEarning,
-          type: 'earnings_credit',
-          paymentMethod: 'system',
-          status: 'completed',
-          description: `Earnings ₹${vendorEarning} credited for booking ${booking.bookingNumber} (online payment)`,
-          metadata: {
-            type: 'earnings_increase',
-            billId: bill._id.toString(),
-            serviceEarning: bill.vendorServiceEarning,
-            partsEarning: bill.vendorPartsEarning
+        // Earnings credit transaction
+        if (earningAmount > 0) {
+          await Transaction.create({
+            vendorId: booking.vendorId,
+            bookingId: booking._id,
+            amount: earningAmount,
+            type: 'earnings_credit',
+            paymentMethod: 'system',
+            status: 'completed',
+            description: `Earnings ₹${earningAmount} credited for booking ${booking.bookingNumber} (online payment)`,
+            metadata: {
+              type: 'earnings_increase',
+              billId: bill._id.toString(),
+              serviceEarning: bill.vendorServiceEarning,
+              partsEarning: bill.vendorPartsEarning
+            }
+          });
+        }
+        console.log(`[Payment] Credited ₹${earningAmount} to vendor ${booking.vendorId}`);
+      } else if (booking.workerId) {
+        // Independent worker: credit worker directly
+        const WorkerModel = require('../../models/Worker');
+        await WorkerModel.findByIdAndUpdate(booking.workerId, {
+          $inc: {
+            'wallet.balance': earningAmount,
+            'wallet.totalEarnings': earningAmount
           }
         });
-      }
 
-      console.log(`[Payment] Credited ₹${vendorEarning} to vendor ${booking.vendorId}`);
+        // Earnings credit transaction for worker
+        if (earningAmount > 0) {
+          await Transaction.create({
+            workerId: booking.workerId,
+            bookingId: booking._id,
+            amount: earningAmount,
+            type: 'earnings_credit',
+            paymentMethod: 'system',
+            status: 'completed',
+            description: `Earnings ₹${earningAmount} credited for booking ${booking.bookingNumber} (online payment)`,
+            metadata: {
+              type: 'earnings_increase',
+              billId: bill._id.toString(),
+              serviceEarning: bill.vendorServiceEarning,
+              partsEarning: bill.vendorPartsEarning
+            }
+          });
+        }
+        console.log(`[Payment] Credited ₹${earningAmount} to independent worker ${booking.workerId}`);
+      }
     }
 
     // Record stats in the Daily Earning Tracker (Async)
@@ -344,44 +374,73 @@ const processWalletPayment = async (req, res) => {
 
     await booking.save();
 
-    // ── Credit Vendor Wallet from VendorBill (single source of truth) ──
+    // ── Credit Wallet from VendorBill (single source of truth) ──
     const Vendor = require('../../models/Vendor');
     const VendorBill = require('../../models/VendorBill');
 
     const bill = await VendorBill.findOne({ bookingId: booking._id });
 
-    if (bill && booking.vendorId) {
-      const vendorEarning = bill.vendorTotalEarning;
+    if (bill) {
+      const earningAmount = bill.vendorTotalEarning;
 
       // Mark bill as paid
       bill.status = 'paid';
       bill.paidAt = new Date();
       await bill.save();
 
-      // Wallet payment: only earnings increase, NO dues (platform holds the money)
-      await Vendor.findByIdAndUpdate(booking.vendorId, {
-        $inc: { 'wallet.earnings': vendorEarning }
-      });
+      if (booking.vendorId) {
+        // Wallet payment: only earnings increase, NO dues (platform holds the money)
+        await Vendor.findByIdAndUpdate(booking.vendorId, {
+          $inc: { 'wallet.earnings': earningAmount }
+        });
 
-      if (vendorEarning > 0) {
-        await Transaction.create({
-          vendorId: booking.vendorId,
-          bookingId: booking._id,
-          amount: vendorEarning,
-          type: 'earnings_credit',
-          paymentMethod: 'system',
-          status: 'completed',
-          description: `Earnings ₹${vendorEarning} credited for booking ${booking.bookingNumber} (wallet payment)`,
-          metadata: {
-            type: 'earnings_increase',
-            billId: bill._id.toString(),
-            serviceEarning: bill.vendorServiceEarning,
-            partsEarning: bill.vendorPartsEarning
+        if (earningAmount > 0) {
+          await Transaction.create({
+            vendorId: booking.vendorId,
+            bookingId: booking._id,
+            amount: earningAmount,
+            type: 'earnings_credit',
+            paymentMethod: 'system',
+            status: 'completed',
+            description: `Earnings ₹${earningAmount} credited for booking ${booking.bookingNumber} (wallet payment)`,
+            metadata: {
+              type: 'earnings_increase',
+              billId: bill._id.toString(),
+              serviceEarning: bill.vendorServiceEarning,
+              partsEarning: bill.vendorPartsEarning
+            }
+          });
+        }
+        console.log(`[Wallet Payment] Credited ₹${earningAmount} to vendor ${booking.vendorId}`);
+      } else if (booking.workerId) {
+        // Independent worker: credit worker directly
+        const WorkerModel = require('../../models/Worker');
+        await WorkerModel.findByIdAndUpdate(booking.workerId, {
+          $inc: {
+            'wallet.balance': earningAmount,
+            'wallet.totalEarnings': earningAmount
           }
         });
-      }
 
-      console.log(`[Wallet Payment] Credited ₹${vendorEarning} to vendor ${booking.vendorId}`);
+        if (earningAmount > 0) {
+          await Transaction.create({
+            workerId: booking.workerId,
+            bookingId: booking._id,
+            amount: earningAmount,
+            type: 'earnings_credit',
+            paymentMethod: 'system',
+            status: 'completed',
+            description: `Earnings ₹${earningAmount} credited for booking ${booking.bookingNumber} (wallet payment)`,
+            metadata: {
+              type: 'earnings_increase',
+              billId: bill._id.toString(),
+              serviceEarning: bill.vendorServiceEarning,
+              partsEarning: bill.vendorPartsEarning
+            }
+          });
+        }
+        console.log(`[Wallet Payment] Credited ₹${earningAmount} to independent worker ${booking.workerId}`);
+      }
     }
 
     // Record stats in the Daily Earning Tracker (Async)

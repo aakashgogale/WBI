@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, lazy, Suspense, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiMapPin, FiPhone, FiClock, FiUser, FiArrowLeft, FiImage, FiVideo, FiPlus, FiCheckCircle, FiFileText, FiDownload, FiInfo, FiMessageSquare } from 'react-icons/fi';
+import { FiMapPin, FiPhone, FiClock, FiUser, FiArrowLeft, FiImage, FiVideo, FiPlus, FiCheckCircle, FiFileText, FiDownload, FiInfo, FiMessageSquare, FiPaperclip, FiSend, FiX, FiWifi, FiWifiOff } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import { workerTheme as themeColors } from '../../../../theme';
 import { SkeletonCard } from '../../../../components/common/SkeletonLoaders';
 
 const VisitVerificationModal = lazy(() => import('../../components/common/VisitVerificationModal'));
 import workerService from '../../../../services/workerService';
+import api from '../../../../services/api';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { useLocationTracking } from '../../../../hooks/useLocationTracking';
+import styles from './JobDetails.module.css';
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -19,6 +22,24 @@ const JobDetails = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+
+  // Real-time Chat States
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [attachment, setAttachment] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+
+  const chatEndRef = useRef(null);
+
+  const quickReplies = [
+    "Please share location details",
+    "I have reached the location",
+    "Starting the service now",
+    "Okay, noted"
+  ];
 
   // Work Progress State
   const [progressNotes, setProgressNotes] = useState('');
@@ -93,12 +114,157 @@ const JobDetails = () => {
     }
   }, [socket, id]);
 
+  // Monitor socket connection status
+  useEffect(() => {
+    if (!socket) return;
+    setIsSocketConnected(socket.connected);
+
+    const handleConnect = () => setIsSocketConnected(true);
+    const handleDisconnect = () => setIsSocketConnected(false);
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+    };
+  }, [socket]);
+
+  // Socket chat message room and live updates setup
+  useEffect(() => {
+    if (socket && id) {
+      socket.emit('join_tracking', id);
+
+      const handleMessageReceived = (message) => {
+        if (message.bookingId === id) {
+          setChatMessages((prev) => [...prev, message]);
+          if (!isChatOpen) {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      };
+
+      const handleTyping = (data) => {
+        if (data.bookingId === id && data.senderRole === 'USER') {
+          setIsTyping(true);
+        }
+      };
+
+      const handleStopTyping = (data) => {
+        if (data.bookingId === id && data.senderRole === 'USER') {
+          setIsTyping(false);
+        }
+      };
+
+      socket.on('chat:message_received', handleMessageReceived);
+      socket.on('chat:typing', handleTyping);
+      socket.on('chat:stop_typing', handleStopTyping);
+
+      return () => {
+        socket.off('chat:message_received', handleMessageReceived);
+        socket.off('chat:typing', handleTyping);
+        socket.off('chat:stop_typing', handleStopTyping);
+      };
+    }
+  }, [socket, id, isChatOpen]);
+
+  // Fetch chat history
+  useEffect(() => {
+    if (isChatOpen) {
+      fetchChatHistory();
+      setUnreadCount(0);
+    }
+  }, [isChatOpen]);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollTop = chatEndRef.current.scrollHeight;
+    }
+  }, [chatMessages, isTyping, isChatOpen]);
+
+  const fetchChatHistory = async () => {
+    try {
+      const res = await api.get(`/chats/${id}`);
+      if (res.data.success) {
+        setChatMessages(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chat history', err);
+    }
+  };
+
+  const handleTypingIndicator = (isUserTyping) => {
+    if (socket && id) {
+      if (isUserTyping) {
+        socket.emit('chat:typing', { bookingId: id, senderRole: 'WORKER' });
+      } else {
+        socket.emit('chat:stop_typing', { bookingId: id, senderRole: 'WORKER' });
+      }
+    }
+  };
+
+  const handleAttachment = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileType = file.type.startsWith('image/') ? 'image' : 'document';
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachment({
+        fileUrl: reader.result,
+        fileType,
+        fileName: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSendMessage = () => {
+    if (!newMessage.trim() && !attachment) return;
+
+    const payload = {
+      bookingId: id,
+      text: newMessage,
+      fileUrl: attachment ? attachment.fileUrl : null,
+      fileType: attachment ? attachment.fileType : 'none',
+      fileName: attachment ? attachment.fileName : null,
+    };
+
+    if (socket && socket.connected) {
+      socket.emit('chat:send_message', payload);
+    } else {
+      api.post('/chats', payload);
+    }
+
+    setNewMessage('');
+    setAttachment(null);
+    handleTypingIndicator(false);
+  };
+
+  const handleQuickReplyClick = (replyText) => {
+    const payload = {
+      bookingId: id,
+      text: replyText,
+      fileUrl: null,
+      fileType: 'none',
+      fileName: null,
+    };
+
+    if (socket && socket.connected) {
+      socket.emit('chat:send_message', payload);
+    } else {
+      api.post('/chats', payload);
+    }
+  };
+
   const getStatusConfig = (status, workerResponse) => {
     if (!workerResponse || workerResponse === 'PENDING') return { label: 'Assigned', color: 'bg-blue-100 text-blue-700' };
     
     switch (status) {
       case 'assigned':
       case 'confirmed':
+      case 'worker_assigned':
         return { label: 'Accepted', color: 'bg-green-100 text-green-700' };
       case 'journey_started':
         return { label: 'On The Way', color: 'bg-blue-100 text-blue-700' };
@@ -252,6 +418,16 @@ const JobDetails = () => {
             <a href={`tel:${job.userId.phone}`} className="p-2 rounded-full bg-[#10AFA5]/10 text-[#10AFA5] active:scale-95">
               <FiPhone className="w-5 h-5" />
             </a>
+          )}
+          {job.userId?.phone && (
+            <button onClick={() => setIsChatOpen(true)} className="p-2 rounded-full bg-[#10AFA5]/10 text-[#10AFA5] active:scale-95 relative flex items-center justify-center">
+              <FiMessageSquare className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
           )}
         </div>
       </header>
@@ -547,6 +723,173 @@ const JobDetails = () => {
           }}
         />
       </Suspense>
+
+      <AnimatePresence>
+        {isChatOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsChatOpen(false)}
+              className={styles.chatBackdrop}
+            />
+
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+              className={styles.chatPanel}
+            >
+              {/* Drag handle for premium sheet look */}
+              <div className={styles.dragHandle} onClick={() => setIsChatOpen(false)}>
+                <div className={styles.dragBar} />
+              </div>
+
+              <div className={styles.chatHeader}>
+                <div className={styles.chatHeaderLeft}>
+                  {job.userId?.profilePhoto ? (
+                    <img src={job.userId.profilePhoto} alt={job.userId.name} className={styles.chatHeaderAvatar} />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#10AFA5] text-white flex items-center justify-center font-bold">
+                      {job.userId?.name ? job.userId.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className={styles.chatHeaderName}>{job.userId?.name || 'Customer'}</h3>
+                    <p className={styles.chatHeaderStatus}>
+                      <span className={styles.onlineDot} /> Online
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.chatHeaderRight}>
+                  {/* Socket connection indicator */}
+                  <span className={styles.connIndicator}>
+                    {isSocketConnected ? (
+                      <FiWifi className={styles.wifiGreen} size={18} />
+                    ) : (
+                      <FiWifiOff className={styles.wifiRed} size={18} />
+                    )}
+                  </span>
+                  <button onClick={() => setIsChatOpen(false)} className={styles.closeChatBtn}>
+                    <FiX size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.chatMessagesContainer} ref={chatEndRef}>
+                {chatMessages.length === 0 ? (
+                  <div className={styles.noMessages}>
+                    <div className={styles.noMessagesIcon}>💬</div>
+                    <p className={styles.noMessagesTitle}>No messages yet</p>
+                    <p className={styles.noMessagesSubtitle}>Say hello to start chatting with the customer!</p>
+                  </div>
+                ) : (
+                  chatMessages.map((msg, index) => {
+                    const isMe = msg.senderModel === 'Worker' || msg.senderId === job.workerId;
+                    return (
+                      <motion.div
+                        key={msg._id || index}
+                        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.22, ease: 'easeOut' }}
+                        className={`${styles.messageWrapper} ${
+                          isMe ? styles.messageMe : styles.messageOther
+                        }`}
+                      >
+                        <div className={styles.messageBubble}>
+                          {msg.fileUrl && msg.fileType === 'image' && (
+                            <img
+                              src={msg.fileUrl}
+                              alt="attachment"
+                              className={styles.chatImageAttachment}
+                            />
+                          )}
+                          {msg.fileUrl && msg.fileType === 'document' && (
+                            <a
+                              href={msg.fileUrl}
+                              download={msg.fileName}
+                              className={styles.chatDocAttachment}
+                            >
+                              <FiFileText size={18} />
+                              <span>{msg.fileName || 'Document'}</span>
+                            </a>
+                          )}
+                          {msg.text && <p className={styles.messageText}>{msg.text}</p>}
+                          <span className={styles.messageTime}>
+                            {new Date(msg.createdAt || msg.timestamp || Date.now()).toLocaleTimeString(
+                              [],
+                              { hour: '2-digit', minute: '2-digit' }
+                            )}
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+                {isTyping && (
+                  <div className={`${styles.messageWrapper} ${styles.messageOther}`}>
+                    <div className={styles.typingIndicatorBubble}>
+                      <span className={styles.typingDot}></span>
+                      <span className={styles.typingDot}></span>
+                      <span className={styles.typingDot}></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Dynamic Quick Replies */}
+              {chatMessages.length < 5 && (
+                <div className={styles.quickRepliesContainer}>
+                  {quickReplies.map((reply, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleQuickReplyClick(reply)}
+                      className={styles.quickReplyChip}
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {attachment && (
+                <div className={styles.attachmentPreview}>
+                  <span className={styles.attachmentName}>
+                    {attachment.fileType === 'image' ? '📷 Image selected' : `📄 ${attachment.fileName}`}
+                  </span>
+                  <button onClick={() => setAttachment(null)} className={styles.clearAttachmentBtn}>
+                    <FiX size={14} />
+                  </button>
+                </div>
+              )}
+
+              <div className={styles.chatInputRow}>
+                <label className={styles.attachmentLabel}>
+                  <FiPaperclip size={20} />
+                  <input type="file" onChange={handleAttachment} style={{ display: 'none' }} />
+                </label>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    handleTypingIndicator(e.target.value.length > 0);
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type a message..."
+                  className={styles.chatTextInput}
+                />
+                <button onClick={handleSendMessage} className={styles.sendChatBtn}>
+                  <FiSend size={18} />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
     </div>
   );

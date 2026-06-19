@@ -46,19 +46,19 @@ const getAllBookings = async (req, res) => {
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Get bookings
-    const bookings = await Booking.find(query)
-      .populate('userId', 'name phone email')
-      .populate('vendorId', 'name businessName phone')
-      .populate('serviceId', 'title iconUrl')
-      .populate('categoryId', 'title slug')
-      .populate('workerId', 'name phone')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get total count
-    const total = await Booking.countDocuments(query);
+    // Execute find and count in parallel to cut latency
+    const [bookings, total] = await Promise.all([
+      Booking.find(query)
+        .populate('userId', 'name phone email')
+        .populate('vendorId', 'name businessName phone')
+        .populate('serviceId', 'title iconUrl')
+        .populate('categoryId', 'title slug')
+        .populate('workerId', 'name phone')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      Booking.countDocuments(query)
+    ]);
 
     res.status(200).json({
       success: true,
@@ -324,11 +324,311 @@ const autoAssignProvider = async (req, res) => {
   }
 };
 
+const getBookingMatchingStatus = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId).populate('workerId', 'name phone rating status');
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const WorkerAssignmentAttempt = require('../../models/WorkerAssignmentAttempt');
+    const BookingAssignmentLog = require('../../models/BookingAssignmentLog');
+
+    const attempts = await WorkerAssignmentAttempt.find({ bookingId })
+      .populate('workerId', 'name phone status')
+      .sort({ createdAt: -1 });
+
+    const logs = await BookingAssignmentLog.find({ bookingId }).sort({ createdAt: -1 });
+
+    const eligibleWorkerIds = [...new Set(logs.filter(l => l.action === 'Request Sent' || l.action === 'Worker Filtered').map(l => l.workerId?.toString()).filter(Boolean))];
+    const requestsSentCount = attempts.length;
+
+    const radiusLog = logs.find(l => l.metadata?.radiusKm);
+    const currentRadius = radiusLog ? radiusLog.metadata.radiusKm : 5;
+
+    const Worker = require('../../models/Worker');
+    const eligibleWorkers = await Worker.find({ _id: { $in: eligibleWorkerIds } })
+      .select('name phone status rating profilePhoto');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        matchingStatus: booking.status,
+        workersFound: eligibleWorkers.length,
+        eligibleWorkers: eligibleWorkers,
+        requestsSent: requestsSentCount,
+        currentRadius: currentRadius,
+        assignedWorker: booking.workerId,
+        lastAttemptStatus: attempts[0] ? attempts[0].status : 'none',
+        attempts
+      }
+    });
+  } catch (error) {
+    console.error('Get booking matching status error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const assignWorker = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { workerId } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const Worker = require('../../models/Worker');
+    const worker = await Worker.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({ success: false, message: 'Worker not found' });
+    }
+
+    booking.workerId = workerId;
+    booking.status = 'worker_assigned';
+    booking.assignedAt = new Date();
+    await booking.save();
+
+    worker.status = 'BUSY';
+    await worker.save();
+
+    const BookingTimeline = require('../../models/BookingTimeline');
+    await BookingTimeline.create({
+      bookingId,
+      status: 'worker_assigned',
+      title: 'Technician Assigned',
+      message: `Admin manually assigned ${worker.name} for this service.`,
+      actorRole: 'admin'
+    });
+
+    const { getIO } = require('../../sockets');
+    const io = getIO();
+    io.to(`booking_${bookingId}`).emit('booking:assigned', {
+      bookingId,
+      workerId,
+      workerName: worker.name
+    });
+    io.to('admin:wbi').emit('admin:workerAccepted', { bookingId, workerId });
+
+    res.status(200).json({ success: true, message: 'Worker assigned successfully', data: booking });
+  } catch (error) {
+    console.error('Assign worker error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const reassignWorker = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { workerId } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const Worker = require('../../models/Worker');
+    const oldWorkerId = booking.workerId;
+    if (oldWorkerId) {
+      await Worker.findByIdAndUpdate(oldWorkerId, { status: 'ONLINE' });
+    }
+
+    const worker = await Worker.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({ success: false, message: 'New worker not found' });
+    }
+
+    booking.workerId = workerId;
+    booking.status = 'worker_assigned';
+    booking.assignedAt = new Date();
+    await booking.save();
+
+    worker.status = 'BUSY';
+    await worker.save();
+
+    const BookingTimeline = require('../../models/BookingTimeline');
+    await BookingTimeline.create({
+      bookingId,
+      status: 'worker_assigned',
+      title: 'Technician Reassigned',
+      message: `Admin reassigned booking to ${worker.name}.`,
+      actorRole: 'admin'
+    });
+
+    const { getIO } = require('../../sockets');
+    const io = getIO();
+    io.to(`booking_${bookingId}`).emit('booking:assigned', {
+      bookingId,
+      workerId,
+      workerName: worker.name
+    });
+    io.to('admin:wbi').emit('admin:workerAccepted', { bookingId, workerId });
+
+    res.status(200).json({ success: true, message: 'Worker reassigned successfully', data: booking });
+  } catch (error) {
+    console.error('Reassign worker error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const updateBookingStatus = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { status } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    booking.status = status;
+    if (status === 'completed') {
+      booking.completedAt = new Date();
+      if (booking.workerId) {
+        const Worker = require('../../models/Worker');
+        await Worker.findByIdAndUpdate(booking.workerId, { status: 'ONLINE' });
+      }
+    }
+    await booking.save();
+
+    const BookingTimeline = require('../../models/BookingTimeline');
+    await BookingTimeline.create({
+      bookingId,
+      status: status,
+      title: 'Status Updated',
+      message: `Booking status manually updated to ${status} by admin.`,
+      actorRole: 'admin'
+    });
+
+    const { getIO } = require('../../sockets');
+    const io = getIO();
+    io.to(`booking_${bookingId}`).emit('booking_updated', { bookingId, status });
+    io.to('admin:wbi').emit('booking_updated', { bookingId, status });
+
+    res.status(200).json({ success: true, message: `Status updated to ${status}`, data: booking });
+  } catch (error) {
+    console.error('Update booking status error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const addAdminNote = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { note } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    booking.adminLog.push({
+      action: 'Admin Note Added',
+      reason: note,
+      timestamp: new Date()
+    });
+    await booking.save();
+
+    res.status(200).json({ success: true, message: 'Admin note added successfully', data: booking });
+  } catch (error) {
+    console.error('Add admin note error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getBookingTimeline = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const BookingTimeline = require('../../models/BookingTimeline');
+    const timeline = await BookingTimeline.find({ bookingId }).sort({ createdAt: 1 });
+    res.status(200).json({ success: true, data: timeline });
+  } catch (error) {
+    console.error('Get booking timeline error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getBookingLogs = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const BookingAssignmentLog = require('../../models/BookingAssignmentLog');
+    const logs = await BookingAssignmentLog.find({ bookingId }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: logs });
+  } catch (error) {
+    console.error('Get booking logs error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getBookingPayment = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+    res.status(200).json({
+      success: true,
+      data: {
+        paymentStatus: booking.paymentStatus,
+        paymentMethod: booking.paymentMethod,
+        paymentId: booking.paymentId,
+        finalAmount: booking.finalAmount,
+        basePrice: booking.basePrice,
+        tax: booking.tax,
+        visitingCharges: booking.visitingCharges,
+        penalty: booking.penalty,
+        extraCharges: booking.extraCharges
+      }
+    });
+  } catch (error) {
+    console.error('Get booking payment error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const paymentAction = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { action } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (action === 'refund') {
+      booking.paymentStatus = 'refunded';
+    } else if (action === 'hold') {
+      booking.paymentStatus = 'held';
+    } else if (action === 'release') {
+      booking.paymentStatus = 'success';
+    }
+    await booking.save();
+
+    res.status(200).json({ success: true, message: `Payment action ${action} performed successfully`, data: booking });
+  } catch (error) {
+    console.error('Payment action error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getAllBookings,
   getBookingById,
   cancelBooking,
   getBookingAnalytics,
-  autoAssignProvider
+  autoAssignProvider,
+  getBookingMatchingStatus,
+  assignWorker,
+  reassignWorker,
+  updateBookingStatus,
+  addAdminNote,
+  getBookingTimeline,
+  getBookingLogs,
+  getBookingPayment,
+  paymentAction
 };
 

@@ -319,21 +319,13 @@ const Home = () => {
   };
 
   const handleCategoryClick = (category) => {
-    // Route to new dynamic One-Time Service flow
-    const dynamicSlugs = ['ac-service', 'washing-machine', 'geyser-repair', 'ro-service', 'microwave', 'electrician', 'plumber', 'cctv-repair'];
-    
-    // Also handle fallback category IDs
-    if (
-      (category.slug && dynamicSlugs.includes(category.slug)) || 
-      (category.id && ['ac', 'washing', 'geyser', 'ro'].includes(category.id))
-    ) {
-      const targetSlug = category.slug || (category.id === 'ac' ? 'ac-service' : category.id === 'washing' ? 'washing-machine' : category.id === 'geyser' ? 'geyser-repair' : 'ro-service');
+    // Route to new dynamic One-Time Service flow for ALL categories
+    const targetSlug = category.slug || category.id;
+    if (targetSlug) {
       navigate(`/user/service/${targetSlug}`);
-      return;
+    } else {
+      toast.error('Service not found');
     }
-
-    setSelectedCategory(category);
-    setIsCategoryModalOpen(true);
   };
 
   const handlePromoClick = (promo) => {

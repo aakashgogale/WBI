@@ -4,6 +4,8 @@ const WorkerResponseLog = require('../../models/WorkerResponseLog');
 const PayoutRule = require('../../models/PayoutRule');
 const Wallet = require('../../models/Wallet');
 const { getIO } = require('../../sockets');
+const WaveManagerService = require('../../services/WaveManagerService');
+const { bookingAssignmentQueue } = require('../../services/queueService');
 
 exports.respondToBooking = async (req, res) => {
   try {
@@ -12,7 +14,7 @@ exports.respondToBooking = async (req, res) => {
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
-    if (booking.status !== 'awaiting_worker_acceptance') {
+    if (booking.status !== 'searching_worker') {
       return res.status(400).json({ success: false, message: 'Booking no longer available' });
     }
 
@@ -34,8 +36,17 @@ exports.respondToBooking = async (req, res) => {
         respondedAt: new Date()
       });
 
+      // Cancel pending timeout job if we want to be clean
+      try {
+        const jobId = `timeout-${booking._id}-${booking.currentWave}`;
+        const job = await bookingAssignmentQueue.getJob(jobId);
+        if (job) await job.remove();
+      } catch (err) {
+        console.error('Failed to remove timeout job on accept', err);
+      }
+
       // Notify User and Admin
-      const io = getIo();
+      const io = getIO();
       io.to(`user:${booking.userId.toString()}`).emit('booking:statusUpdated', { status: 'accepted', workerId });
       io.to('admin').emit('admin:bookingUpdated', { bookingId: booking._id, status: 'accepted' });
 
@@ -53,7 +64,34 @@ exports.respondToBooking = async (req, res) => {
         respondedAt: new Date()
       });
 
-      // In real life, trigger BullMQ job to ping next nearest worker here.
+      // Check if all workers in current wave have responded
+      // This is a simplified check. We query WorkerResponseLog for this booking
+      const responses = await WorkerResponseLog.find({ bookingId: booking._id });
+      const respondedWorkerIds = responses.map(r => r.workerId.toString());
+      
+      const waveNumber = booking.currentWave;
+      const WAVE_SIZE = 3;
+      const startIndex = (waveNumber - 1) * WAVE_SIZE;
+      const endIndex = startIndex + WAVE_SIZE;
+      
+      const currentWaveWorkers = booking.potentialWorkers.slice(startIndex, endIndex);
+      const allResponded = currentWaveWorkers.every(w => respondedWorkerIds.includes(w.workerId.toString()));
+
+      if (allResponded) {
+        console.log(`[Reject] All workers in wave ${waveNumber} rejected. Immediately dispatching next wave.`);
+        
+        // Remove pending timeout job to prevent double firing
+        try {
+          const jobId = `timeout-${booking._id}-${waveNumber}`;
+          const job = await bookingAssignmentQueue.getJob(jobId);
+          if (job) await job.remove();
+        } catch (err) {
+          console.error('Failed to remove timeout job on reject', err);
+        }
+
+        await WaveManagerService.dispatchWave(booking._id.toString(), waveNumber + 1);
+      }
+
       return res.status(200).json({ success: true, message: 'Booking rejected' });
     }
   } catch (error) {

@@ -47,7 +47,10 @@ const getDashboardStats = async (req, res) => {
           BOOKING_STATUS.ASSIGNED,
           BOOKING_STATUS.VISITED,
           BOOKING_STATUS.IN_PROGRESS,
-          BOOKING_STATUS.CONFIRMED
+          BOOKING_STATUS.CONFIRMED,
+          BOOKING_STATUS.WORKER_ASSIGNED,
+          BOOKING_STATUS.ACCEPTED,
+          BOOKING_STATUS.JOURNEY_STARTED
         ]
       }
     });

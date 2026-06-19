@@ -8,6 +8,7 @@ import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
 import LogoLoader from '../../../components/common/LogoLoader';
 import GlobalWorkerJobAlert from '../components/common/GlobalWorkerJobAlert';
+import { useWorkerLocationTracker } from '../hooks/useWorkerLocation';
 
 // Lazy load wrapper with error handling
 const lazyLoad = (importFunc) => {
@@ -75,6 +76,9 @@ const WorkerRoutes = () => {
   // Enable global notifications for worker
   // Global notifications are now handled by SocketProvider at App level
   // useAppNotifications('worker');
+
+  // Activate continuous background GPS syncing
+  useWorkerLocationTracker();
 
   const shouldHideBottomNav =
     location.pathname === '/worker/login' ||

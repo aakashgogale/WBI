@@ -202,6 +202,12 @@ app.use('/api/users/reviews', require('./routes/user-routes/review.routes'));
 app.use('/api/users/one-time-bookings', require('./routes/user-routes/oneTimeBooking.routes'));
 app.use('/api/users/one-time-services', require('./routes/user-routes/oneTimeService.routes'));
 
+// Review Booking Flow routes
+app.use('/api/booking-draft', require('./routes/user-routes/bookingDraft.routes'));
+app.use('/api/coupons', require('./routes/user-routes/coupon.routes'));
+app.use('/api/bookings/availability', require('./routes/user-routes/bookingAvailability.routes'));
+
+
 // Scrap routes
 const scrapRoutes = require('./routes/scrap.routes');
 app.use('/api/scrap', scrapRoutes);
@@ -222,6 +228,7 @@ app.use('/api/vendors/enquiries', require('./routes/vendor-routes/vendorEnquiry.
 app.use('/api/vendors/assignments', require('./routes/vendor-routes/engineerAssignment.routes'));
 app.use('/api/vendors/team', require('./routes/vendor-routes/team.routes'));
 app.use('/api/workers/one-time-bookings', require('./routes/worker-routes/workerOneTimeBooking.routes'));
+app.use('/api/worker/bookings', require('./routes/worker-routes/bookingResponse.routes'));
 app.use('/api/vendors/digital', require('./routes/vendor-routes/digital.routes'));
 
 // Worker routes
@@ -335,6 +342,7 @@ app.use('/api/payment', require('./routes/payment.routes'));
 
 // Notification routes
 app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api/chats', require('./routes/chat.routes'));
 
 // Public routes (no authentication required)
 app.use('/api/public', require('./routes/public-routes/catalog.routes'));

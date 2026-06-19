@@ -99,34 +99,11 @@ const OneTimeServiceCheckout = () => {
   };
 
   const handleSaveSchedule = async (date, timeStr, slotId) => {
-    try {
-      setIsSubmitting(true);
-      toast.loading('Saving schedule...');
-      
-      const payload = {
-        scheduledDate: date,
-        slotId: slotId,
-        timeString: timeStr
-      };
-      
-      const res = await api.patch(`/users/one-time-bookings/draft/${draftId}/schedule`, payload);
-      
-      toast.dismiss();
-      if (res.data.success) {
-        toast.success('Schedule updated!');
-        setSelectedDate(date);
-        setSelectedTime(timeStr);
-        setShowTimeSlotModal(false);
-        navigate(`/user/one-time-review?draftId=${draftId}`);
-      } else {
-        toast.error(res.data.message || 'Failed to save schedule');
-      }
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Something went wrong');
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Just save the selection in state. The 'Continue' button will send everything to the backend.
+    setSelectedDate(date);
+    setSelectedTime(timeStr);
+    setShowTimeSlotModal(false);
+    toast.success('Schedule time selected');
   };
 
   const handleSaveAddress = async (savedHouseNumber, locationObj) => {

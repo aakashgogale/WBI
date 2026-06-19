@@ -114,6 +114,9 @@ const PowerTestingService = lazyLoad(() => import('../pages/PowerTestingService'
 const WorkerSelection = lazyLoad(() => import('../pages/WorkerSelection'));
 const OneTimeServiceDetail = lazyLoad(() => import('../pages/OneTimeServiceDetail'));
 const OneTimeServicePackages = lazyLoad(() => import('../pages/OneTimeServicePackages'));
+const ReviewBooking = lazyLoad(() => import('../pages/ReviewBooking'));
+const SearchingTechnician = lazyLoad(() => import('../pages/SearchingTechnician'));
+const TechnicianFound = lazyLoad(() => import('../pages/TechnicianFound'));
 
 // Healthcare Solutions
 const MedicalEquipmentEnquiry = lazyLoad(() => import('../pages/MedicalEquipmentEnquiry'));
@@ -142,7 +145,7 @@ const UserRoutes = () => {
   const shouldShowBottomNav = bottomNavPages.includes(location.pathname);
 
   // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
-  const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/);
+  const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/) || location.pathname.includes('/technician-found');
   const isBookingConfirmationPage = location.pathname.includes('/booking-confirmation');
 
 
@@ -179,6 +182,9 @@ const UserRoutes = () => {
               <Route path="/my-bookings" element={<ProtectedRoute userType="user"><MyBookings /></ProtectedRoute>} />
               <Route path="/calendar" element={<ProtectedRoute userType="user"><Calendar /></ProtectedRoute>} />
               <Route path="/inbox" element={<ProtectedRoute userType="user"><Inbox /></ProtectedRoute>} />
+              <Route path="/one-time-review" element={<ProtectedRoute userType="user"><ReviewBooking /></ProtectedRoute>} />
+              <Route path="/booking/searching/:bookingId" element={<ProtectedRoute userType="user"><SearchingTechnician /></ProtectedRoute>} />
+              <Route path="/booking/technician-found/:bookingId" element={<ProtectedRoute userType="user"><TechnicianFound /></ProtectedRoute>} />
               <Route path="/booking/:id" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
               <Route path="/booking/:id/track" element={<ProtectedRoute userType="user"><BookingTrack /></ProtectedRoute>} />
               <Route path="/booking-confirmation/:id" element={<ProtectedRoute userType="user"><BookingConfirmation /></ProtectedRoute>} />

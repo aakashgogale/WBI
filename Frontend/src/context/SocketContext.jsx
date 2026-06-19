@@ -177,6 +177,21 @@ export const SocketProvider = ({ children }) => {
           newSocket.emit('join_vendor_room', vendorId);
         }
       }
+
+      // If worker, register worker session on backend
+      if (userType === 'worker') {
+        const workerData = JSON.parse(localStorage.getItem('workerData') || '{}');
+        const workerId = workerData.id || workerData._id;
+        const userId = workerData.userId || workerId;
+        if (workerId) {
+          newSocket.emit('worker:register', {
+            workerId,
+            userId,
+            role: 'worker',
+            device: 'web'
+          });
+        }
+      }
     });
 
     newSocket.on('disconnect', () => {
@@ -350,28 +365,34 @@ export const SocketProvider = ({ children }) => {
 
     // Listen for special Worker Job Assignments
     if (userType === 'worker') {
-      newSocket.on('new_job_assigned', (data) => {
+      const handleWorkerNewJob = (data) => {
         // Play urgent alert ring
         playAlertRing();
 
         const newJob = {
           id: data.bookingId,
           _id: data.bookingId,
+          orderId: data.orderId || data.bookingId,
           serviceType: data.serviceName || 'Service',
           customerName: data.customerName,
-          customerPhone: data.customerPhone,
+          customerPhone: data.customerPhoneMasked || data.customerPhone,
           location: {
-            address: data.address?.addressLine1 || 'Location shared',
+            address: data.fullAddress || data.address?.addressLine1 || 'Location shared',
+            area: data.addressArea,
+            distance: data.distanceKm || data.distance
           },
-          price: data.price,
+          price: data.totalAmount || data.price || data.estimatedAmount,
+          estimatedPayout: data.estimatedPayout,
           scheduledDate: data.scheduledDate,
           scheduledTime: data.scheduledTime,
           timeSlot: {
-            date: new Date(data.scheduledDate).toLocaleDateString(),
+            date: new Date(data.scheduledDate || new Date()).toLocaleDateString(),
             time: data.scheduledTime
           },
-          status: 'ASSIGNED',
-          createdAt: new Date().toISOString()
+          paymentMode: data.paymentMode,
+          status: 'request_sent',
+          createdAt: data.createdAt || new Date().toISOString(),
+          acceptExpiresAt: data.acceptExpiresAt
         };
 
         const pendingJobs = JSON.parse(localStorage.getItem('workerPendingJobs') || '[]');
@@ -386,7 +407,11 @@ export const SocketProvider = ({ children }) => {
         // Always show the global alert 
         const event = new CustomEvent('showWorkerJobAlert', { detail: newJob });
         window.dispatchEvent(event);
-      });
+      };
+
+      newSocket.on('new_job_assigned', handleWorkerNewJob);
+      newSocket.on('worker:new-booking', handleWorkerNewJob);
+      newSocket.on('worker:newBookingRequest', handleWorkerNewJob);
     }
 
     return () => {

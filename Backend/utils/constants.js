@@ -33,7 +33,8 @@ const WORKER_STATUS = {
   INACTIVE: 'inactive',
   SUSPENDED: 'suspended',
   ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE'
+  OFFLINE: 'OFFLINE',
+  BUSY: 'BUSY'
 };
 
 // Engineer Status
@@ -42,12 +43,16 @@ const ENGINEER_STATUS = {
   INACTIVE: 'inactive',
   SUSPENDED: 'suspended',
   ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE'
+  OFFLINE: 'OFFLINE',
+  BUSY: 'BUSY'
 };
 
 // Booking Status
 const BOOKING_STATUS = {
   SEARCHING: 'searching', // Initial search phase
+  SEARCHING_WORKER: 'searching_worker', // Searching for nearby worker
+  REQUEST_SENT: 'request_sent', // Booking request sent to worker
+  WORKER_ASSIGNED: 'worker_assigned', // Worker successfully assigned
   REQUESTED: 'requested', // Waiting for vendor to accept
   AWAITING_PAYMENT: 'awaiting_payment', // Accepted by vendor, waiting for user payment
   PENDING: 'pending',
