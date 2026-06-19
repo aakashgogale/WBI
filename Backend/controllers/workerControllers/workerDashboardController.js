@@ -11,7 +11,7 @@ const getDashboardStats = async (req, res) => {
     const workerId = req.user.id;
 
     // Get Worker Profile for Rating (fallback)
-    const worker = await Worker.findById(workerId);
+    const worker = await Worker.findById(workerId).lean();
 
     if (!worker) {
       return res.status(404).json({
@@ -90,7 +90,8 @@ const getDashboardStats = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5)
       .populate('userId', 'name')
-      .populate('serviceId', 'title categoryIcon');
+      .populate('serviceId', 'title categoryIcon')
+      .lean();
 
     res.status(200).json({
       success: true,

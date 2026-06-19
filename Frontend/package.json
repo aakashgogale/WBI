@@ -21,6 +21,7 @@
     "framer-motion": "^12.23.26",
     "gsap": "^3.13.0",
     "leaflet": "^1.9.4",
+    "lucide-react": "^1.21.0",
     "nprogress": "^0.2.0",
     "razorpay": "^2.9.6",
     "react": "^19.2.0",

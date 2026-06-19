@@ -448,6 +448,7 @@ bookingSchema.index({ paymentStatus: 1, status: 1 });
 bookingSchema.index({ status: 1, waveStartedAt: 1 });
 // Reject/Accept: Booking.findOne({ notifiedVendors: vendorId, status: ... })
 bookingSchema.index({ notifiedVendors: 1, status: 1 });
+bookingSchema.index({ notifiedWorkers: 1, status: 1 });
 // Wave filter: potentialVendors.vendorId lookup
 bookingSchema.index({ 'potentialVendors.vendorId': 1 });
 // Dashboard: $or on { vendorId: null, serviceCategory: ..., status: ... }
