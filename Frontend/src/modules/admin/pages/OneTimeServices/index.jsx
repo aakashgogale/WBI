@@ -14,7 +14,20 @@ const OneTimeServices = () => {
     subtitle: '',
     image: '',
     isActive: true,
-    sortOrder: 0
+    sortOrder: 0,
+    isBrandRequired: false,
+    isIssueRequired: false,
+    isPackageRequired: true,
+    allowSchedule: true,
+    allowBookNow: true,
+    allowPayAtHome: true,
+    allowOnlinePayment: true,
+    requiresOTP: true,
+    requiresProofUpload: true,
+    requiresLiveTracking: true,
+    estimatedDuration: '60 mins',
+    defaultRadiusKm: 10,
+    assignmentMode: 'auto_wave'
   });
 
   useEffect(() => {
@@ -68,11 +81,24 @@ const OneTimeServices = () => {
     if (service) {
       setCurrentService(service);
       setFormData({
-        name: service.name,
+        name: service.name || '',
         subtitle: service.subtitle || '',
         image: service.image || '',
-        isActive: service.isActive,
-        sortOrder: service.sortOrder
+        isActive: service.isActive !== undefined ? service.isActive : true,
+        sortOrder: service.sortOrder || 0,
+        isBrandRequired: service.isBrandRequired || false,
+        isIssueRequired: service.isIssueRequired || false,
+        isPackageRequired: service.isPackageRequired !== undefined ? service.isPackageRequired : true,
+        allowSchedule: service.allowSchedule !== undefined ? service.allowSchedule : true,
+        allowBookNow: service.allowBookNow !== undefined ? service.allowBookNow : true,
+        allowPayAtHome: service.allowPayAtHome !== undefined ? service.allowPayAtHome : true,
+        allowOnlinePayment: service.allowOnlinePayment !== undefined ? service.allowOnlinePayment : true,
+        requiresOTP: service.requiresOTP !== undefined ? service.requiresOTP : true,
+        requiresProofUpload: service.requiresProofUpload !== undefined ? service.requiresProofUpload : true,
+        requiresLiveTracking: service.requiresLiveTracking !== undefined ? service.requiresLiveTracking : true,
+        estimatedDuration: service.estimatedDuration || '60 mins',
+        defaultRadiusKm: service.defaultRadiusKm || 10,
+        assignmentMode: service.assignmentMode || 'auto_wave'
       });
     } else {
       setCurrentService(null);
@@ -81,7 +107,20 @@ const OneTimeServices = () => {
         subtitle: '',
         image: '',
         isActive: true,
-        sortOrder: 0
+        sortOrder: 0,
+        isBrandRequired: false,
+        isIssueRequired: false,
+        isPackageRequired: true,
+        allowSchedule: true,
+        allowBookNow: true,
+        allowPayAtHome: true,
+        allowOnlinePayment: true,
+        requiresOTP: true,
+        requiresProofUpload: true,
+        requiresLiveTracking: true,
+        estimatedDuration: '60 mins',
+        defaultRadiusKm: 10,
+        assignmentMode: 'auto_wave'
       });
     }
     setIsModalOpen(true);
@@ -189,34 +228,108 @@ const OneTimeServices = () => {
                   value={formData.image}
                   onChange={e => setFormData({...formData, image: e.target.value})}
                 />
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10AFA5]"
+                  placeholder="https://example.com/image.jpg"
+                />
               </div>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Duration</label>
                   <input
-                    type="number"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    value={formData.sortOrder}
-                    onChange={e => setFormData({...formData, sortOrder: Number(e.target.value)})}
+                    type="text"
+                    value={formData.estimatedDuration}
+                    onChange={(e) => setFormData({ ...formData, estimatedDuration: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10AFA5]"
+                    placeholder="e.g. 60 mins"
                   />
                 </div>
-                <div className="flex-1 flex items-center pt-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Default Radius (km)</label>
+                  <input
+                    type="number"
+                    value={formData.defaultRadiusKm}
+                    onChange={(e) => setFormData({ ...formData, defaultRadiusKm: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10AFA5]"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 border-t pt-4">
+                <h3 className="text-md font-semibold text-gray-800 mb-3">Service Configuration</h3>
+                <div className="grid grid-cols-2 gap-y-3 gap-x-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isBrandRequired}
+                      onChange={(e) => setFormData({ ...formData, isBrandRequired: e.target.checked })}
+                      className="w-4 h-4 text-[#10AFA5] rounded"
+                    />
+                    <span className="text-sm text-gray-700">Requires Brand</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isIssueRequired}
+                      onChange={(e) => setFormData({ ...formData, isIssueRequired: e.target.checked })}
+                      className="w-4 h-4 text-[#10AFA5] rounded"
+                    />
+                    <span className="text-sm text-gray-700">Requires Issue</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isPackageRequired}
+                      onChange={(e) => setFormData({ ...formData, isPackageRequired: e.target.checked })}
+                      className="w-4 h-4 text-[#10AFA5] rounded"
+                    />
+                    <span className="text-sm text-gray-700">Requires Packages</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.requiresOTP}
+                      onChange={(e) => setFormData({ ...formData, requiresOTP: e.target.checked })}
+                      className="w-4 h-4 text-[#10AFA5] rounded"
+                    />
+                    <span className="text-sm text-gray-700">Requires Visit OTP</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.requiresLiveTracking}
+                      onChange={(e) => setFormData({ ...formData, requiresLiveTracking: e.target.checked })}
+                      className="w-4 h-4 text-[#10AFA5] rounded"
+                    />
+                    <span className="text-sm text-gray-700">Live Tracking</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowSchedule}
+                      onChange={(e) => setFormData({ ...formData, allowSchedule: e.target.checked })}
+                      className="w-4 h-4 text-[#10AFA5] rounded"
+                    />
+                    <span className="text-sm text-gray-700">Allow Schedule</span>
+                  </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.isActive}
-                      onChange={e => setFormData({...formData, isActive: e.target.checked})}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                       className="w-4 h-4 text-[#10AFA5] rounded"
                     />
-                    <span className="text-sm font-medium text-gray-700">Is Active</span>
+                    <span className="text-sm text-gray-700">Is Active</span>
                   </label>
                 </div>
               </div>
+
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                 >
                   Cancel
                 </button>
@@ -224,7 +337,7 @@ const OneTimeServices = () => {
                   type="submit"
                   className="px-4 py-2 bg-[#10AFA5] text-white rounded-lg hover:bg-[#0d8f87]"
                 >
-                  Save
+                  {currentService ? 'Update Service' : 'Create Service'}
                 </button>
               </div>
             </form>

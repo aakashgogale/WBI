@@ -50,11 +50,12 @@ class MatchingService {
       });
       
       console.log(`[BOOKING_CREATED] Booking created successfully`);
+      console.log(`[AUTO_ASSIGNMENT_STARTED] Booking ID: ${booking._id}`);
+      console.log(`[ADMIN_APPROVAL_BYPASSED_FOR_ONE_TIME] Auto assignment initiated directly`);
       console.log(`[BOOKING_ID] ${booking._id}`);
       console.log(`[SERVICE_ID] ${booking.serviceId?._id || booking.serviceId}`);
       console.log(`[SUB_SERVICE_ID] ${booking.subServiceId?._id || booking.subServiceId}`);
       console.log(`[USER_LOCATION] Lat: ${booking.address?.lat}, Lng: ${booking.address?.lng}`);
-      console.log(`[MATCHING_STARTED] Booking ID: ${booking._id}`);
 
       // Emit to user: Search Started
       const io = getIO();
@@ -157,6 +158,9 @@ class MatchingService {
       message: `${newWorkers.length} technicians found nearby`,
       workers: workerLocations
     });
+
+    console.log(`[WORKERS_FOUND] Found ${newWorkers.length} workers in radius`);
+    console.log(`[ELIGIBLE_WORKERS] Eligible workers: ${newWorkers.map(w => w._id).join(', ')}`);
 
     if (config.assignmentMode === 'broadcast') {
       await this.handleBroadcastMode(booking, newWorkers, config, radiusKm, roundNumber);
@@ -295,6 +299,10 @@ class MatchingService {
         metadata: { roundNumber, radiusKm }
       });
 
+      console.log(`[REQUEST_SENT_TO_WORKER] Worker ID: ${worker._id}`);
+      console.log(`[WORKER_SOCKET_ROOM] Emit to: worker_${worker._id}`);
+
+      // Emit to specific worker's room
       const payload = {
         bookingId: booking._id,
         orderId: booking.bookingNumber || booking._id,

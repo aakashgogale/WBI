@@ -36,7 +36,6 @@ const oneTimeServiceSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // Average rating calculated from reviews
   rating: {
     type: Number,
     default: 0
@@ -44,7 +43,21 @@ const oneTimeServiceSchema = new mongoose.Schema({
   totalReviews: {
     type: Number,
     default: 0
-  }
+  },
+  // --- Dynamic Configuration Flags ---
+  isBrandRequired: { type: Boolean, default: false },
+  isIssueRequired: { type: Boolean, default: false },
+  isPackageRequired: { type: Boolean, default: true },
+  allowSchedule: { type: Boolean, default: true },
+  allowBookNow: { type: Boolean, default: true },
+  allowPayAtHome: { type: Boolean, default: true },
+  allowOnlinePayment: { type: Boolean, default: true },
+  requiresOTP: { type: Boolean, default: true },
+  requiresProofUpload: { type: Boolean, default: true },
+  requiresLiveTracking: { type: Boolean, default: true },
+  estimatedDuration: { type: String, default: '60 mins' },
+  defaultRadiusKm: { type: Number, default: 10 },
+  assignmentMode: { type: String, enum: ['auto_wave', 'manual'], default: 'auto_wave' }
 }, {
   timestamps: true
 });

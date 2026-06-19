@@ -254,7 +254,10 @@ const startJob = async (req, res) => {
       });
     }
 
-    if (booking.status !== BOOKING_STATUS.ASSIGNED && booking.status !== BOOKING_STATUS.CONFIRMED && booking.status !== BOOKING_STATUS.ACCEPTED) {
+    if (booking.status !== BOOKING_STATUS.ASSIGNED && 
+        booking.status !== BOOKING_STATUS.CONFIRMED && 
+        booking.status !== BOOKING_STATUS.ACCEPTED &&
+        booking.status !== BOOKING_STATUS.WORKER_ASSIGNED) {
       return res.status(400).json({
         success: false,
         message: `Cannot start journey with status: ${booking.status}`
@@ -944,6 +947,10 @@ const respondToJob = async (req, res) => {
         });
         io.to('admin:wbi').emit('admin:workerAccepted', { bookingId: id, workerId });
       }
+
+      console.log(`[WORKER_ACCEPTED] Worker ${workerId} accepted booking ${id}`);
+      console.log(`[USER_UPDATED] User notified of worker acceptance for booking ${id}`);
+      console.log(`[ADMIN_UPDATED] Admin notified of worker acceptance for booking ${id}`);
 
     } else if (status === 'REJECTED') {
       // If worker rejects, update attempt status to rejected

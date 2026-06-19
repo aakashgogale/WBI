@@ -162,6 +162,20 @@ exports.confirmReview = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Draft not found' });
     }
 
+    if (draft.status === 'converted') {
+      const Booking = require('../../models/Booking');
+      // Prevent duplicate booking creation, but return success so the UI can proceed
+      const existingBooking = await Booking.findOne({ userId: draft.userId, serviceId: draft.serviceId._id }).sort({ createdAt: -1 });
+      if (existingBooking) {
+        return res.status(200).json({ 
+          success: true, 
+          bookingId: existingBooking._id,
+          message: 'Booking already confirmed.' 
+        });
+      }
+      return res.status(400).json({ success: false, message: 'Booking already confirmed for this draft. Please check your bookings page.' });
+    }
+
     // Validation
     if (!draft.address) {
       return res.status(400).json({ success: false, message: 'Address is required' });
@@ -210,11 +224,18 @@ exports.confirmReview = async (req, res) => {
     const WaveManagerService = require('../../services/WaveManagerService');
     
     // Find nearby workers within 10km
-    const waves = await WaveManagerService.findAndGroupWorkers(
-      booking.address.lat,
-      booking.address.lng,
-      10
-    );
+    let waves = [];
+    try {
+      waves = await WaveManagerService.findAndGroupWorkers(
+        booking.address.lat,
+        booking.address.lng,
+        draft.serviceId.defaultRadiusKm || 10,
+        booking.serviceId
+      );
+    } catch (waveErr) {
+      console.warn('[WaveManager] Error finding workers:', waveErr.message);
+      waves = [];
+    }
 
     if (waves.length === 0) {
       // No workers found
@@ -245,7 +266,7 @@ exports.confirmReview = async (req, res) => {
     });
   } catch (error) {
     console.error('Error confirming review:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
 };
 

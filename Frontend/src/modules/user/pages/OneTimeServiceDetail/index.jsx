@@ -31,14 +31,25 @@ const OneTimeServiceDetail = () => {
       const svcRes = await api.get(`/users/one-time-services/${slug}`);
       if (svcRes.data.success) {
         setService(svcRes.data.data);
+        // Check if we should skip this page entirely
+        if (!svcRes.data.data.isBrandRequired && !svcRes.data.data.isIssueRequired) {
+          navigate(`/user/service/${slug}/packages`, { replace: true });
+          return;
+        }
+
         const srvId = svcRes.data.data._id;
         
         // Fetch brands
-        const brRes = await api.get(`/users/one-time-services/${srvId}/brands`);
-        if (brRes.data.success) setBrands(brRes.data.data);
+        if (svcRes.data.data.isBrandRequired) {
+          const brRes = await api.get(`/users/one-time-services/${srvId}/brands`);
+          if (brRes.data.success) setBrands(brRes.data.data);
+        }
         
-        // Fetch initial issues (no brand selected)
-        fetchIssues(srvId, null);
+        // Fetch initial issues (no brand selected, or brand not required)
+        if (svcRes.data.data.isIssueRequired && !svcRes.data.data.isBrandRequired) {
+          fetchIssues(srvId, null);
+        }
+        
         fetchEstimate(srvId, null, []);
       }
     } catch (error) {
@@ -105,17 +116,19 @@ const OneTimeServiceDetail = () => {
   };
 
   const handleContinue = () => {
-    if (!selectedBrand) {
+    if (service.isBrandRequired && !selectedBrand) {
       toast.error('Please select a brand');
       return;
     }
-    if (selectedIssues.length === 0) {
+    if (service.isIssueRequired && selectedIssues.length === 0) {
       toast.error('Please select at least one issue');
       return;
     }
     
-    const issueIdsParam = selectedIssues.join(',');
-    navigate(`/user/service/${slug}/packages?brandId=${selectedBrand._id}&issueIds=${issueIdsParam}`);
+    const brandParam = selectedBrand ? `brandId=${selectedBrand._id}&` : '';
+    const issueIdsParam = selectedIssues.length > 0 ? `issueIds=${selectedIssues.join(',')}` : '';
+    
+    navigate(`/user/service/${slug}/packages?${brandParam}${issueIdsParam}`);
   };
 
   if (loading) {
@@ -177,6 +190,7 @@ const OneTimeServiceDetail = () => {
         </div>
 
         {/* 1. Select Brand */}
+        {service.isBrandRequired && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[15px] font-bold text-[#0F172A]">1. Select Brand</h2>
@@ -224,53 +238,64 @@ const OneTimeServiceDetail = () => {
             </button>
           </div>
         </div>
+        )}
 
         {/* 2. What's the issue? */}
+        {service.isIssueRequired && (
         <div className="mb-6">
-          <h2 className="text-[15px] font-bold text-[#0F172A] mb-1">2. What's the issue?</h2>
+          <h2 className="text-[15px] font-bold text-[#0F172A] mb-1">
+            {service.isBrandRequired ? "2. What's the issue?" : "1. What's the issue?"}
+          </h2>
           <p className="text-[11px] text-[#64748B] mb-3">Select one or more problems</p>
           
-          <div className="flex flex-wrap gap-2">
-            {issues.map(issue => {
-              const isSelected = selectedIssues.includes(issue._id);
-              return (
-                <button
-                  key={issue._id}
-                  onClick={() => handleIssueSelect(issue)}
-                  className={`px-4 py-2 rounded-full border text-[13px] transition-all flex items-center gap-2 ${
-                    isSelected
-                      ? 'border-[#10AFA5] bg-[#F1FAF9] text-[#10AFA5] font-semibold'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                    isSelected ? 'border-[#10AFA5] bg-[#10AFA5]' : 'border-gray-300'
-                  }`}>
-                    {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                  </div>
-                  {issue.title}
-                </button>
-              );
-            })}
-            
-            {/* Other Issue Option */}
-            <button
-              onClick={() => handleIssueSelect({ _id: 'other', title: 'Others (specify)', allowMultiple: true })}
-              className={`px-4 py-2 rounded-full border text-[13px] transition-all flex items-center gap-2 ${
-                selectedIssues.includes('other')
-                  ? 'border-[#10AFA5] bg-[#F1FAF9] text-[#10AFA5] font-semibold'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                selectedIssues.includes('other') ? 'border-[#10AFA5] bg-[#10AFA5]' : 'border-gray-300'
-              }`}>
-                {selectedIssues.includes('other') && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-              </div>
-              Others (specify)
-            </button>
-          </div>
+          {(!service.isBrandRequired || selectedBrand) ? (
+            <div className="flex flex-wrap gap-2">
+              {issues.map(issue => {
+                const isSelected = selectedIssues.includes(issue._id);
+                return (
+                  <button
+                    key={issue._id}
+                    onClick={() => handleIssueSelect(issue)}
+                    className={`px-4 py-2 rounded-full border text-[13px] transition-all flex items-center gap-2 ${
+                      isSelected
+                        ? 'border-[#10AFA5] bg-[#F1FAF9] text-[#10AFA5] font-semibold'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                      isSelected ? 'border-[#10AFA5] bg-[#10AFA5]' : 'border-gray-300'
+                    }`}>
+                      {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    </div>
+                    {issue.title}
+                  </button>
+                );
+              })}
+              
+              {/* Other Issue Option */}
+              <button
+                onClick={() => handleIssueSelect({ _id: 'other', title: 'Others (specify)', allowMultiple: true })}
+                className={`px-4 py-2 rounded-full border text-[13px] transition-all flex items-center gap-2 ${
+                  selectedIssues.includes('other')
+                    ? 'border-[#10AFA5] bg-[#F1FAF9] text-[#10AFA5] font-semibold'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                  selectedIssues.includes('other') ? 'border-[#10AFA5] bg-[#10AFA5]' : 'border-gray-300'
+                }`}>
+                  {selectedIssues.includes('other') && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                </div>
+                Others (specify)
+              </button>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+              <p className="text-gray-500 text-sm">Please select a brand first</p>
+            </div>
+          )}
         </div>
+        )}
       </div>
 
       {/* Bottom Action Sheet */}

@@ -116,6 +116,10 @@ const workerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Skill'
   }],
+  approvedOneTimeServices: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'OneTimeService'
+  }],
   secondarySkills: [{
     type: String
   }],

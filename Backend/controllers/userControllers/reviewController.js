@@ -44,7 +44,16 @@ exports.submitReview = async (req, res) => {
     booking.rating = rating;
     booking.review = review;
     booking.reviewedAt = new Date();
+    booking.status = 'closed';
     await booking.save();
+
+    if (workerId) {
+      const Worker = require('../../models/Worker');
+      await Worker.findByIdAndUpdate(workerId, { $inc: { totalJobsCompleted: 1 } });
+    }
+
+    const { getIO } = require('../../sockets');
+    getIO().to(`booking_${bookingId}`).emit('booking:closed', { bookingId });
 
     res.status(201).json({
       success: true,

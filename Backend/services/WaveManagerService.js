@@ -15,11 +15,14 @@ class WaveManagerService {
    * @param {number} radius Radius in km
    * @returns {Array<Array<Object>>} Array of waves, where each wave is an array of worker objects
    */
-  async findAndGroupWorkers(lat, lng, radius = 10) {
-    if (!lat || !lng) throw new Error('Latitude and longitude are required');
+  async findAndGroupWorkers(lat, lng, radius = 10, serviceId = null) {
+    if (!lat || !lng) {
+      console.warn('[WaveManagerService] Latitude or Longitude missing, returning empty workers array.');
+      return [];
+    }
 
-    // Find workers using $near within radius
-    const workers = await Worker.find({
+    // Build the query to find online workers
+    const query = {
       status: 'ONLINE',
       location: {
         $nearSphere: {
@@ -30,7 +33,15 @@ class WaveManagerService {
           $maxDistance: radius * 1000 // Convert km to meters
         }
       }
-    })
+    };
+
+    if (serviceId) {
+      // Ensure the worker has been approved for this specific one-time service
+      query.approvedOneTimeServices = serviceId;
+    }
+
+    // Find workers
+    const workers = await Worker.find(query)
     .select('_id name rating completedJobs location fcmTokens')
     .lean();
 
@@ -82,6 +93,11 @@ class WaveManagerService {
     // Update booking state
     booking.currentWave = waveNumber;
     booking.waveStartedAt = new Date();
+    
+    // Add current wave workers to notifiedWorkers array
+    const newWorkerIds = currentWaveWorkers.map(w => w.workerId);
+    booking.notifiedWorkers = [...new Set([...booking.notifiedWorkers, ...newWorkerIds])];
+    
     await booking.save();
 
     const io = getIO();

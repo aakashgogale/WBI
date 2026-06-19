@@ -1120,6 +1120,72 @@ const getCallLogsForBooking = async (req, res) => {
   }
 };
 
+/**
+ * Respond to material request (Approve/Reject)
+ */
+const respondToMaterial = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id, materialId } = req.params;
+    const { status } = req.body; // 'approved' or 'rejected'
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    const booking = await Booking.findOne({ _id: id, userId });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const material = booking.materials.id(materialId);
+    if (!material) {
+      return res.status(404).json({ success: false, message: 'Material not found' });
+    }
+
+    if (material.status !== 'pending') {
+      return res.status(400).json({ success: false, message: `Material is already ${material.status}` });
+    }
+
+    material.status = status;
+
+    if (status === 'approved') {
+      const materialCost = material.cost * material.quantity;
+      booking.finalAmount += materialCost;
+      booking.amountBreakdown.additionalCharges = (booking.amountBreakdown.additionalCharges || 0) + materialCost;
+      
+      const Timeline = require('../../models/BookingTimeline');
+      await Timeline.create({
+        bookingId: id,
+        status: booking.status,
+        title: 'Material Approved',
+        message: `Customer approved ${material.name} for ₹${materialCost}`,
+        actorRole: 'user',
+        actorId: userId
+      });
+    }
+
+    await booking.save();
+
+    const io = req.app.get('io');
+    if (io && booking.workerId) {
+      io.to(`worker_${booking.workerId}`).emit('booking_updated', {
+        bookingId: id,
+        message: `Customer ${status} material: ${material.name}`
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Material ${status} successfully`,
+      data: booking
+    });
+  } catch (error) {
+    console.error('Respond to material error:', error);
+    res.status(500).json({ success: false, message: 'Failed to respond to material' });
+  }
+};
+
 module.exports = {
   createBooking,
   getUserBookings,
@@ -1129,6 +1195,6 @@ module.exports = {
   addReview,
   getUserRatings,
   createCallLog,
-  getCallLogsForBooking
+  getCallLogsForBooking,
+  respondToMaterial
 };
-

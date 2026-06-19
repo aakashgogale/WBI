@@ -54,6 +54,12 @@ export const bookingService = {
   getRatings: async (params = {}) => {
     const response = await api.get('/users/bookings/ratings', { params });
     return response.data;
+  },
+
+  // Respond to material request
+  respondToMaterial: async (bookingId, materialId, status) => {
+    const response = await api.post(`/users/bookings/${bookingId}/materials/${materialId}/respond`, { status });
+    return response.data;
   }
 };
 

@@ -58,12 +58,16 @@ const BOOKING_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',
   ACCEPTED: 'accepted',
+  ADMIN_ACTION_REQUIRED: 'admin_action_required',
   ASSIGNED: 'assigned',
   JOURNEY_STARTED: 'journey_started',
+  ARRIVED: 'arrived', // Worker arrived at location
+  SERVICE_STARTED: 'service_started', // OTP verified, service begins
   VISITED: 'visited',
   IN_PROGRESS: 'in_progress',
   WORK_DONE: 'work_done',
   COMPLETED: 'completed',
+  CLOSED: 'closed', // Payment and rating done
   CANCELLED: 'cancelled',
   REJECTED: 'rejected'
 };

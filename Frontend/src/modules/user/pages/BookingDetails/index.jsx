@@ -344,6 +344,8 @@ const BookingDetails = () => {
         theme: { color: themeColors.button }
       };
       setPaying(true);
+      const { loadRazorpay } = await import('../../../../utils/loadRazorpay');
+      await loadRazorpay();
       const razorpay = new window.Razorpay(options);
       razorpay.open();
       return;
@@ -400,6 +402,8 @@ const BookingDetails = () => {
         }
       };
 
+      const { loadRazorpay } = await import('../../../../utils/loadRazorpay');
+      await loadRazorpay();
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error) {

@@ -103,6 +103,8 @@ const BookingTrack = () => {
         theme: { color: "#0F766E" }
       };
       setPaying(true);
+      const { loadRazorpay } = await import('../../../../utils/loadRazorpay');
+      await loadRazorpay();
       const razorpay = new window.Razorpay(options);
       razorpay.open();
       return;
@@ -159,6 +161,8 @@ const BookingTrack = () => {
         }
       };
 
+      const { loadRazorpay } = await import('../../../../utils/loadRazorpay');
+      await loadRazorpay();
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error) {
@@ -237,6 +241,21 @@ const BookingTrack = () => {
       if (isFirstLoad) setLoading(false);
     }
   }, [id, coords]);
+
+  const handleMaterialResponse = async (materialId, status) => {
+    try {
+      const toastId = toast.loading(`${status === 'approved' ? 'Approving' : 'Rejecting'} material...`);
+      const response = await bookingService.respondToMaterial(id, materialId, status);
+      if (response.success) {
+        toast.success(`Material ${status}`, { id: toastId });
+        refreshBooking();
+      } else {
+        toast.error(`Failed to ${status} material`, { id: toastId });
+      }
+    } catch (error) {
+      toast.error('An error occurred');
+    }
+  };
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -827,6 +846,42 @@ const BookingTrack = () => {
             <div>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Professional Arrived</h3>
               <p className="text-[10px] text-teal-50">Expert is starting the work now.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Additional Charges / Materials Notification */}
+        {booking?.materials && booking.materials.some(m => m.status === 'pending') && (
+          <div className="mb-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-4 shadow-lg">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
+              <FiInfo className="w-4 h-4" /> Additional Charges Requested
+            </h3>
+            <div className="space-y-3">
+              {booking.materials.filter(m => m.status === 'pending').map((material) => (
+                <div key={material._id} className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="text-xs font-bold text-white">{material.name}</p>
+                      <p className="text-[10px] text-amber-50">Qty: {material.quantity}</p>
+                    </div>
+                    <p className="text-sm font-black text-white">₹{material.cost * material.quantity}</p>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button 
+                      onClick={() => handleMaterialResponse(material._id, 'approved')}
+                      className="flex-1 bg-white text-orange-600 text-[10px] font-bold py-2 rounded-lg active:scale-95 transition-all"
+                    >
+                      APPROVE
+                    </button>
+                    <button 
+                      onClick={() => handleMaterialResponse(material._id, 'rejected')}
+                      className="flex-1 bg-transparent border border-white/50 text-white text-[10px] font-bold py-2 rounded-lg active:scale-95 transition-all"
+                    >
+                      REJECT
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

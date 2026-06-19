@@ -62,25 +62,13 @@ const Checkout = () => {
   const [visitedFee, setVisitedFee] = useState(29);
   const [gstPercentage, setGstPercentage] = useState(18);
   const [bookingType, setBookingType] = useState('instant'); // 'instant' | 'scheduled'
-
-  // Check if Razorpay is loaded (defer to avoid blocking initial render)
+  // Load Razorpay dynamically
   useEffect(() => {
-    // Defer Razorpay check until after page load
-    const checkRazorpay = () => {
-      if (window.Razorpay) {
-        setRazorpayLoaded(true);
-      } else {
-        // Retry after a short delay (non-blocking)
-        setTimeout(checkRazorpay, 100);
-      }
-    };
-
-    // Use requestIdleCallback if available, otherwise setTimeout
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(checkRazorpay, { timeout: 200 });
-    } else {
-      setTimeout(checkRazorpay, 100);
-    }
+    import('../../../../utils/loadRazorpay').then(({ loadRazorpay }) => {
+      loadRazorpay()
+        .then(() => setRazorpayLoaded(true))
+        .catch(err => console.error('Failed to load Razorpay:', err));
+    });
   }, []);
 
   // Load user data and cart
