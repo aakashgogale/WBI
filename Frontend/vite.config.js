@@ -46,9 +46,6 @@ export default defineConfig({
             if (id.includes('firebase/')) {
               return 'firebase';
             }
-            if (id.includes('leaflet') || id.includes('react-google-maps')) {
-              return 'maps';
-            }
             if (id.includes('framer-motion') || id.includes('gsap') || id.includes('recharts')) {
               return 'ui-heavy';
             }
