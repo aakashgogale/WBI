@@ -12,9 +12,12 @@ const calculatePricing = async (draft) => {
 
   // Simulate pricing calculation dynamically
   if (draft.packageIds && draft.packageIds.length > 0) {
-    const packages = await ServicePackage.find({ _id: { $in: draft.packageIds } });
+    const packageIds = draft.packageIds.map(p => p._id || p);
+    const packages = await ServicePackage.find({ _id: { $in: packageIds } });
     packages.forEach(pkg => {
-      const qty = draft.quantities.get(pkg._id.toString()) || 1;
+      const qty = (draft.quantities && typeof draft.quantities.get === 'function') 
+        ? (draft.quantities.get(pkg._id.toString()) || 1) 
+        : 1;
       packageTotal += (pkg.price || 0) * qty;
     });
   }
@@ -35,7 +38,8 @@ const calculatePricing = async (draft) => {
 
   // Apply Coupon if valid
   if (draft.couponId) {
-    const coupon = await Coupon.findById(draft.couponId);
+    const couponId = draft.couponId._id || draft.couponId;
+    const coupon = await Coupon.findById(couponId);
     if (coupon && coupon.isActive && subtotal >= coupon.minOrderValue) {
       if (coupon.discountType === 'percentage') {
         couponDiscount = (subtotal * coupon.discountValue) / 100;

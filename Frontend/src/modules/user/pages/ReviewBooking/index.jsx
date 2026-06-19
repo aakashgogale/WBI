@@ -4,48 +4,32 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Check, MapPin, Calendar, Clock, Info, Shield, Plus, X } from 'lucide-react';
 import { useSocket } from '../../../../context/SocketContext'; // Assuming socket context is here
 import styles from './ReviewBooking.module.css';
+import api from '../../../../services/api';
 
-// Using mock fetch functions. In real app, these come from your api service
+// Using API service instead of raw fetch
 const fetchDraft = async (draftId) => {
-  const res = await fetch(`/api/booking-draft/${draftId}/review`);
-  if (!res.ok) throw new Error('Failed to fetch draft');
-  return res.json();
+  const res = await api.get(`/booking-draft/${draftId}/review`);
+  return res.data;
 };
 
 const fetchAvailability = async (draftId) => {
-  const res = await fetch(`/api/bookings/availability/${draftId}`);
-  if (!res.ok) throw new Error('Failed to fetch availability');
-  return res.json();
+  const res = await api.get(`/bookings/availability/${draftId}`);
+  return res.data;
 };
 
 const validateCoupon = async ({ draftId, code }) => {
-  const res = await fetch(`/api/coupons/validate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ draftId, code })
-  });
-  if (!res.ok) throw new Error('Invalid coupon');
-  return res.json();
+  const res = await api.post(`/coupons/validate`, { draftId, code });
+  return res.data;
 };
 
 const confirmBooking = async (draftId) => {
-  const res = await fetch(`/api/booking-draft/confirm`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ draftId })
-  });
-  if (!res.ok) throw new Error('Failed to confirm');
-  return res.json();
+  const res = await api.post(`/booking-draft/confirm`, { draftId });
+  return res.data;
 };
 
 const updateDraftNotes = async ({ draftId, notes }) => {
-  const res = await fetch(`/api/booking-draft/${draftId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(notes)
-  });
-  if (!res.ok) throw new Error('Failed to update notes');
-  return res.json();
+  const res = await api.patch(`/booking-draft/${draftId}`, notes);
+  return res.data;
 };
 
 const ReviewBooking = () => {
