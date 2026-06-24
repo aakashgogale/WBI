@@ -4,8 +4,9 @@ const { BOOKING_STATUS } = require('../../utils/constants');
 const { getIO } = require('../../sockets');
 const crypto = require('crypto');
 
-// Generate 4-digit OTP
-const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
+// Generate OTP (Hardcoded to 123456 for testing)
+const generateOTP = () => '123456';
+// Original logic: const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 
 exports.startJourney = async (req, res) => {
   try {

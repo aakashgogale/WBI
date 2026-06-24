@@ -56,7 +56,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
                     <div className="rounded-full border-2 border-[#10AFA5] w-full h-full"></div>
                   </div>
                 ) : (
-                  <div className="w-9 h-9 flex items-center justify-center">
+                  <div className="w-9 h-9 flex items-center justify-center text-[#10AFA5]">
                     <ServiceIconRenderer categoryName={category.title} />
                   </div>
                 )}

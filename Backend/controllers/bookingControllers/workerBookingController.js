@@ -851,140 +851,21 @@ const addWorkerNotes = async (req, res) => {
  */
 const respondToJob = async (req, res) => {
   try {
-    const workerId = req.user.id;
     const { id } = req.params;
     const { status } = req.body; // 'ACCEPTED' or 'REJECTED'
 
-    // Allow finding job if assigned OR if currently notified/searching
-    const booking = await Booking.findOne({
-      _id: id,
-      $or: [
-        { workerId },
-        { notifiedWorkers: workerId }
-      ]
-    });
+    req.params.bookingId = id;
+    req.userId = req.user?.id || req.user?._id || req.userId;
 
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Job not found' });
-    }
-
-    // Idempotency check: If already in desired state, return success without re-notifying
-    if (status === 'ACCEPTED' && booking.workerResponse === 'ACCEPTED') {
-      return res.status(200).json({ success: true, message: 'Job already accepted', data: booking });
-    }
-
-    if (status === 'REJECTED' && booking.workerResponse === 'REJECTED') {
-      return res.status(200).json({ success: true, message: 'Job already rejected', data: booking });
-    }
-
-    const WorkerAssignmentAttempt = require('../../models/WorkerAssignmentAttempt');
-    const BookingTimeline = require('../../models/BookingTimeline');
-    const WorkerModel = require('../../models/Worker');
-    const { getIO } = require('../../sockets');
+    const bookingResponseController = require('../worker-controllers/bookingResponse.controller');
 
     if (status === 'ACCEPTED') {
-      // Set assignment details atomically
-      booking.workerId = workerId;
-      booking.status = BOOKING_STATUS.WORKER_ASSIGNED; // worker_assigned
-      booking.workerAcceptedAt = new Date();
-      booking.workerResponse = 'ACCEPTED';
-      await booking.save();
-
-      // Update attempt
-      const attempt = await WorkerAssignmentAttempt.findOne({ bookingId: id, workerId, status: 'sent' });
-      if (attempt) {
-        attempt.status = 'accepted';
-        attempt.respondedAt = new Date();
-        attempt.responseTimeSec = (attempt.respondedAt - attempt.sentAt) / 1000;
-        await attempt.save();
-      }
-
-      // Update worker status and availability
-      await WorkerModel.findByIdAndUpdate(workerId, { status: 'BUSY', availability: 'ON_JOB' });
-
-      // Create timeline log
-      await BookingTimeline.create({
-        bookingId: id,
-        status: 'worker_assigned',
-        title: 'Technician Confirmed',
-        message: 'A technician has accepted your request.',
-        actorRole: 'worker',
-        actorId: workerId
-      });
-
-      const { createNotification } = require('../notificationControllers/notificationController');
-
-      // Notify Vendor
-      if (booking.vendorId) {
-        await createNotification({
-          vendorId: booking.vendorId,
-          type: 'job_accepted',
-          title: 'Worker Accepted Job',
-          message: `Worker has accepted job ${booking.bookingNumber}`,
-          relatedId: booking._id,
-          relatedType: 'booking'
-        });
-      }
-
-      // Notify User
-      await createNotification({
-        userId: booking.userId,
-        type: 'worker_accepted',
-        title: 'Worker Confirmed',
-        message: 'The assigned professional has accepted your booking.',
-        relatedId: booking._id,
-        relatedType: 'booking',
-        priority: 'high',
-        pushData: { type: 'worker_accepted', bookingId: booking._id.toString(), link: `/user/booking/${booking._id}` }
-      });
-
-      // Emit live updates
-      const io = getIO();
-      if (io) {
-        io.to(`booking_${id}`).emit('booking:workerAccepted', {
-          message: 'Technician confirmed!',
-          workerId: workerId
-        });
-        io.to('admin:wbi').emit('admin:workerAccepted', { bookingId: id, workerId });
-      }
-
-      console.log(`[WORKER_ACCEPTED] Worker ${workerId} accepted booking ${id}`);
-      console.log(`[USER_UPDATED] User notified of worker acceptance for booking ${id}`);
-      console.log(`[ADMIN_UPDATED] Admin notified of worker acceptance for booking ${id}`);
-
+      return bookingResponseController.acceptBooking(req, res);
     } else if (status === 'REJECTED') {
-      // If worker rejects, update attempt status to rejected
-      const attempt = await WorkerAssignmentAttempt.findOne({ bookingId: id, workerId, status: 'sent' });
-      if (attempt) {
-        attempt.status = 'rejected';
-        attempt.respondedAt = new Date();
-        attempt.responseTimeSec = (attempt.respondedAt - attempt.sentAt) / 1000;
-        await attempt.save();
-      }
-
-      console.log(`[WORKER_REJECTED] Booking: ${id}, Worker: ${workerId}`);
-
-      // Immediately trigger matching continuation
-      const matchingService = require('../../services/matchingService');
-      matchingService.continueMatching(id).catch(err => {
-         console.error('[WorkerBookingController] Error continuing matching:', err);
-      });
-
-      const { createNotification } = require('../notificationControllers/notificationController');
-      if (booking.vendorId) {
-        await createNotification({
-          vendorId: booking.vendorId,
-          type: 'job_rejected',
-          title: 'Worker Declined Job',
-          message: `Worker declined job ${booking.bookingNumber}`,
-          relatedId: booking._id,
-          relatedType: 'booking'
-        });
-      }
+      return bookingResponseController.rejectBooking(req, res);
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid status response' });
     }
-
-    res.status(200).json({ success: true, message: `Job ${status.toLowerCase()}`, data: booking });
-
   } catch (error) {
     console.error('Respond job error:', error);
     res.status(500).json({ success: false, message: 'Failed to respond to job' });
@@ -1267,154 +1148,14 @@ const shareJobReport = async (req, res) => {
   }
 };
 
-/**
- * Accept a broadcasted one-time job
- * Similar to how vendors accept jobs from users
- */
 const acceptBroadcastJob = async (req, res) => {
   try {
-    const workerId = req.user.id;
     const { id } = req.params;
+    req.params.bookingId = id;
+    req.userId = req.user?.id || req.user?._id || req.userId;
 
-    // ATOMIC UPDATE: Check status and workerId/vendorId in query to prevent race conditions
-    // Accept if status is requested, searching, searching_worker, or request_sent, and no worker/vendor assigned
-    const updatedBooking = await Booking.findOneAndUpdate(
-      {
-        _id: id,
-        status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING, BOOKING_STATUS.SEARCHING_WORKER, BOOKING_STATUS.REQUEST_SENT] },
-        workerId: null,
-        vendorId: null
-      },
-      {
-        $set: {
-          workerId: workerId,
-          acceptedAt: new Date(),
-          workerAcceptedAt: new Date(),
-          status: BOOKING_STATUS.WORKER_ASSIGNED, // Standardized worker_assigned status
-          workerResponse: 'ACCEPTED'
-        }
-      },
-      { new: true } // Return updated doc
-    );
-
-    if (!updatedBooking) {
-      // If update failed, check why (likely already taken)
-      const existing = await Booking.findById(id);
-      if (existing && (existing.workerId || existing.vendorId)) {
-        return res.status(409).json({
-          success: false,
-          message: 'Sorry, this job has already been accepted by someone else.'
-        });
-      }
-      return res.status(400).json({
-        success: false,
-        message: 'Job is no longer available.'
-      });
-    }
-
-    const booking = updatedBooking;
-
-    // Update assignment attempt if exists
-    const WorkerAssignmentAttempt = require('../../models/WorkerAssignmentAttempt');
-    const attempt = await WorkerAssignmentAttempt.findOne({ bookingId: id, workerId, status: 'sent' });
-    if (attempt) {
-      attempt.status = 'accepted';
-      attempt.respondedAt = new Date();
-      attempt.responseTimeSec = (attempt.respondedAt - attempt.sentAt) / 1000;
-      await attempt.save();
-    }
-
-    // Set worker status to busy
-    const WorkerModel = require('../../models/Worker');
-    await WorkerModel.findByIdAndUpdate(workerId, { status: 'BUSY', availability: 'ON_JOB' });
-
-    // Create timeline log
-    const BookingTimeline = require('../../models/BookingTimeline');
-    await BookingTimeline.create({
-      bookingId: id,
-      status: 'worker_assigned',
-      title: 'Technician Confirmed',
-      message: 'A technician has accepted the broadcast request.',
-      actorRole: 'worker',
-      actorId: workerId
-    });
-
-
-    // Update BookingRequest statuses if exists
-    const BookingRequest = require('../../models/BookingRequest');
-    await BookingRequest.findOneAndUpdate(
-      { bookingId: id, workerId },
-      { status: 'ACCEPTED', respondedAt: new Date() }
-    );
-    await BookingRequest.updateMany(
-      { bookingId: id, workerId: { $ne: workerId }, workerId: { $exists: true } },
-      { status: 'EXPIRED', respondedAt: new Date() }
-    );
-
-    const { createNotification } = require('../notificationControllers/notificationController');
-
-    // NOTIFY OTHER WORKERS to remove this job
-    const io = req.app.get('io');
-    if (io && booking.notifiedWorkers && booking.notifiedWorkers.length > 0) {
-      booking.notifiedWorkers.forEach(otherWorkerId => {
-        if (otherWorkerId.toString() !== workerId.toString()) {
-          const room = `worker_${otherWorkerId.toString()}`;
-          io.to(room).emit('job_taken', {
-            bookingId: booking._id.toString(),
-            message: 'This job has been accepted by someone else.'
-          });
-        }
-      });
-    }
-
-    // Emit real-time updates to USER
-    if (io) {
-      // Notify tracking screens & admin panel
-      io.to(`booking_${id}`).emit('booking:workerAccepted', {
-        message: 'Technician confirmed!',
-        workerId: workerId
-      });
-      io.to('admin:wbi').emit('admin:workerAccepted', { bookingId: id, workerId });
-
-      const message = 'A professional has accepted your request. Your booking is confirmed!';
-      io.to(`user_${booking.userId}`).emit('booking_accepted', {
-        bookingId: booking._id,
-        bookingNumber: booking.bookingNumber,
-        worker: {
-          id: workerId,
-          name: req.user.name,
-        },
-        message
-      });
-
-      io.to(`user_${booking.userId}`).emit('booking_updated', {
-        bookingId: booking._id,
-        status: booking.status,
-        message: 'A professional has accepted your request'
-      });
-    }
-
-    // Send notification to user
-    const notificationMessage = `Your booking ${booking.bookingNumber} is confirmed! ${req.user.name} will arrive at the scheduled time.`;
-    await createNotification({
-      userId: booking.userId,
-      type: 'booking_accepted',
-      title: 'Booking Confirmed!',
-      message: notificationMessage,
-      relatedId: booking._id,
-      relatedType: 'booking',
-      pushData: {
-        type: 'booking_accepted',
-        bookingId: booking._id.toString(),
-        link: `/user/booking/${booking._id}`
-      }
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Job accepted successfully',
-      data: booking
-    });
+    const bookingResponseController = require('../worker-controllers/bookingResponse.controller');
+    return bookingResponseController.acceptBooking(req, res);
   } catch (error) {
     console.error('Accept broadcast job error:', error);
     res.status(500).json({

@@ -30,21 +30,26 @@ import TrustStrip from './components/TrustStrip';
 import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
 import PopularBrandsWeService from './components/PopularBrandsWeService';
+import RecentBookings from './components/RecentBookings';
 import InstantBookingBanner from './components/InstantBookingBanner';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import { SkeletonLine, SkeletonCircle, SkeletonCard } from '../../../../components/common/SkeletonLoaders';
-import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
+const AddressSelectionModal = lazy(() => import('../Checkout/components/AddressSelectionModal'));
 import ScrapPromotionCard from './components/ScrapPromotionCard';
 import DebugConsole from '../../components/common/DebugConsole';
+import { optimizeCloudinaryUrl } from '../../../../utils/cloudinaryOptimize';
 
-
-
-const toAssetUrl = (url) => {
+const toAssetUrl = (url, width) => {
   if (!url) return '';
+  let finalUrl = url;
   const clean = url.replace('/api/upload', '/upload');
-  if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
-  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+  if (clean.startsWith('http')) {
+    finalUrl = clean;
+  } else {
+    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+    finalUrl = `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+  }
+  return optimizeCloudinaryUrl(finalUrl, { width: width || 800, quality: 'auto:good', format: 'webp' });
 };
 
 const Home = () => {
@@ -236,8 +241,16 @@ const Home = () => {
 
     autoDetectLocation();
 
-    // Register FCM token for user to receive push notifications
-    registerFCMToken('user', true).catch(err => {/* Silent fail */ });
+    // Defer FCM token registration to avoid blocking the critical render path
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => {
+        registerFCMToken('user', true).catch(err => {/* Silent fail */ });
+      });
+    } else {
+      setTimeout(() => {
+        registerFCMToken('user', true).catch(err => {/* Silent fail */ });
+      }, 3000);
+    }
   }, []);
 
   const [categories, setCategories] = useState([]);
@@ -263,11 +276,19 @@ const Home = () => {
         setLoading(true);
         const cityId = currentCity?._id || currentCity?.id;
 
-        const response = await publicCatalogService.getHomeData(cityId);
+        // Optionally fetch old catalog data if needed for fallback, but here we prioritize dynamic data
+        const [oldResponse, newResponse] = await Promise.all([
+          publicCatalogService.getHomeData(cityId).catch(() => ({})),
+          import('../../../../services/userHomeService').then(m => m.userHomeService.getHomeData(cityId)).catch(() => ({}))
+        ]);
 
-        if (response.success) {
-          if (response.categories) {
-            const mappedCategories = response.categories.map(cat => ({
+        let categoriesToSet = [];
+        let homeContentToSet = {};
+
+        // Merge old structure with new structure for backwards compatibility
+        if (oldResponse && oldResponse.success) {
+          if (oldResponse.categories) {
+            categoriesToSet = oldResponse.categories.map(cat => ({
               id: cat.id,
               title: cat.title,
               slug: cat.slug,
@@ -275,18 +296,83 @@ const Home = () => {
               hasSaleBadge: cat.hasSaleBadge,
               badge: cat.badge
             }));
-            setCategories(mappedCategories);
           }
-
-          if (response.homeContent) {
-            setHomeContent(response.homeContent);
+          if (oldResponse.homeContent) {
+            homeContentToSet = oldResponse.homeContent;
           }
-          
-          if (response.popularBrands) {
-            setPopularBrands(response.popularBrands);
+          if (oldResponse.popularBrands) {
+            setPopularBrands(oldResponse.popularBrands);
           }
         }
 
+        // OVERRIDE with Dynamic Data from DB
+        if (newResponse && newResponse.success) {
+          if (newResponse.quickServices && newResponse.quickServices.length > 0) {
+            categoriesToSet = newResponse.quickServices.map(qs => ({
+              id: qs._id,
+              title: qs.name,
+              slug: qs.slug,
+              icon: toAssetUrl(qs.image || qs.icon, 150),
+              hasSaleBadge: false,
+              badge: null
+            }));
+          }
+
+          homeContentToSet = {
+            ...homeContentToSet,
+            isCategoriesVisible: true,
+            isPromosVisible: true,
+            isBookedVisible: true,
+            isHowItWorksVisible: true
+          };
+
+          if (newResponse.offers && newResponse.offers.length > 0) {
+            homeContentToSet.offerBanners = newResponse.offers.map((offer, idx) => ({
+              id: offer._id,
+              imageUrl: toAssetUrl(offer.imageUrl || offer.mobileImageUrl, 800),
+              route: offer.redirectValue || '/user/home',
+              order: offer.sortOrder || idx
+            }));
+          }
+
+          if (newResponse.promos && newResponse.promos.length > 0) {
+            homeContentToSet.promos = newResponse.promos.map((promo, idx) => ({
+              id: promo._id,
+              badge: promo.badge || 'PROMO',
+              title: promo.title,
+              subtitle: promo.subtitle,
+              description: promo.description,
+              imageUrl: promo.imageUrl ? toAssetUrl(promo.imageUrl, 800) : null,
+              route: promo.redirectValue || '/user/home',
+              order: promo.sortOrder || idx
+            }));
+          } else {
+            homeContentToSet.promos = []; // Let InstantBookingBanner use its default attractive fallback
+          }
+
+          if (newResponse.mostBookedServices && newResponse.mostBookedServices.length > 0) {
+            homeContentToSet.booked = newResponse.mostBookedServices.map(service => ({
+              id: service._id,
+              title: service.name,
+              slug: service.slug,
+              image: toAssetUrl(service.image || service.imageUrl, 400),
+              rating: service.rating || "4.8",
+              reviews: service.totalReviews ? `${service.totalReviews}+` : "10k+",
+              price: service.startingPrice || 0,
+              originalPrice: service.startingPrice ? service.startingPrice + 50 : 0,
+              discount: "10% Off",
+              targetCategoryId: service._id
+            }));
+          }
+          
+          if (newResponse.banners && newResponse.banners.length > 0) {
+              // Banners mapping could be used in PromoCarousel
+              homeContentToSet.heroBanners = newResponse.banners;
+          }
+        }
+
+        setCategories(categoriesToSet);
+        setHomeContent(homeContentToSet);
         setLoading(false);
       } catch (error) {
         setLoading(false);
@@ -536,6 +622,8 @@ const Home = () => {
             </div>
           ) : (
             <>
+              {/* 0. Hero Banners (Removed as per user request) */}
+
               {/* 1. Quick Services Category Row (Moved above Banner) */}
               {homeContent?.isCategoriesVisible !== false && (
                 <section className="relative z-10 pt-2">
@@ -657,6 +745,13 @@ const Home = () => {
                 />
               </section>
 
+              {/* Recent Bookings for Authenticated Users */}
+              {localStorage.getItem('token') && (
+                <section className="relative z-10 mt-2 mb-6">
+                  <RecentBookings />
+                </section>
+              )}
+
             </>
           )}
         </main>
@@ -687,13 +782,17 @@ const Home = () => {
       />
 
       {/* Address Selection Modal */}
-      <AddressSelectionModal
-        isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
-        houseNumber={houseNumber}
-        onHouseNumberChange={setHouseNumber}
-        onSave={handleAddressSave}
-      />
+      <Suspense fallback={null}>
+        {isAddressModalOpen && (
+          <AddressSelectionModal
+            isOpen={isAddressModalOpen}
+            onClose={() => setIsAddressModalOpen(false)}
+            houseNumber={houseNumber}
+            onHouseNumberChange={setHouseNumber}
+            onSave={handleAddressSave}
+          />
+        )}
+      </Suspense>
 
       <DebugConsole />
     </div>

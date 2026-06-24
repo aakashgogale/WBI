@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheckCircle, FiX } from 'react-icons/fi';
 import { MdStar } from 'react-icons/md';
 import api from '../../../../../services/api';
+import { apiCache } from '../../../../../utils/apiCache';
 
 // Realistic fallbacks
 import intenseBathroom2Image from '../../../../../assets/images/pages/Home/MostBookedServices/intense-bathroom-2.jpg';
@@ -18,9 +19,18 @@ const TrustVideosSection = () => {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const response = await api.get('/public/trust-videos');
+        const cacheKey = '/public/trust-videos';
+        const cached = apiCache.get(cacheKey);
+        if (cached) {
+          setVideos(cached.videos || []);
+          setLoading(false);
+          return;
+        }
+
+        const response = await api.get(cacheKey);
         if (response.data?.success && response.data?.videos?.length > 0) {
           setVideos(response.data.videos);
+          apiCache.set(cacheKey, response.data, 300);
         } else {
           // Fallback to reference image data if DB is empty
           setVideos([

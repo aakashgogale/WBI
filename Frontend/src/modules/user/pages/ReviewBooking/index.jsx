@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Check, MapPin, Calendar, Clock, Info, Shield, Plus, X } from 'lucide-react';
+import Check from 'lucide-react/dist/esm/icons/check';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
+import Clock from 'lucide-react/dist/esm/icons/clock';
+import Info from 'lucide-react/dist/esm/icons/info';
+import Shield from 'lucide-react/dist/esm/icons/shield';
+import Plus from 'lucide-react/dist/esm/icons/plus';
+import X from 'lucide-react/dist/esm/icons/x';
 import { useSocket } from '../../../../context/SocketContext'; // Assuming socket context is here
 import styles from './ReviewBooking.module.css';
 import api from '../../../../services/api';

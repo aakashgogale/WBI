@@ -126,8 +126,10 @@ const HcPreventiveMaintenanceEnquiry = lazyLoad(() => import('../pages/HcPrevent
 const HcAmcEnquiry = lazyLoad(() => import('../pages/HcAmcEnquiry'));
 
 import LogoLoader from '../../../components/common/LogoLoader';
+import PageSkeleton from '../../../components/common/PageSkeleton';
+
 const LoadingFallback = () => (
-  <div className="min-h-screen bg-[#F8FCFC]" />
+  <PageSkeleton />
 );
 
 // Import Live Booking Card

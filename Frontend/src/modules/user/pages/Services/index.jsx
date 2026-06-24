@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useDebounce } from 'react-use';
 import { FiSearch, FiSliders, FiChevronRight, FiAlertCircle, FiHeadphones, FiMonitor, FiShield, FiBriefcase, FiZap, FiHeart, FiSettings, FiCpu, FiGrid } from 'react-icons/fi';
 import Header from '../../components/layout/Header';
 import { publicCatalogService } from '../../../../services/catalogService';
+import { OptimizedImage } from '../../../../components/common';
 
 const toAssetUrl = (url) => {
   if (!url) return '';
@@ -67,10 +69,36 @@ const Services = () => {
     fetchCategories();
   }, []);
 
-  const filteredServices = services.filter(service => 
-    service.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    service.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce the search query to prevent excessive re-renders while typing
+  useDebounce(
+    () => {
+      setDebouncedSearch(searchQuery);
+    },
+    300,
+    [searchQuery]
   );
+
+  const filteredServices = services.filter(service => 
+    service.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+    service.description.toLowerCase().includes(debouncedSearch.toLowerCase())
+  );
+
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  // Simple infinite chunking to prevent huge DOM tree
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+        setVisibleCount(prev => prev + 20);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const displayedServices = filteredServices.slice(0, visibleCount);
 
   return (
     <div className="bg-[#F8FCFC] relative overflow-x-hidden pb-0 mb-0">
@@ -140,7 +168,7 @@ const Services = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 mb-8">
-            {filteredServices.map((service, index) => {
+            {displayedServices.map((service, index) => {
               // Map string icon names to actual React icons if no image is provided
               let IconComponent = FiGrid;
               if (service.iconName === 'FiMonitor') IconComponent = FiMonitor;
@@ -164,7 +192,7 @@ const Services = () => {
                 >
                   <div className="w-[42px] h-[42px] rounded-full bg-[#10AFA5]/10 flex items-center justify-center mb-4 text-[#10AFA5] group-hover:bg-[#10AFA5] group-hover:text-white transition-colors duration-300 overflow-hidden">
                     {service.iconUrl ? (
-                      <img src={toAssetUrl(service.iconUrl)} alt={service.title} className="w-full h-full object-contain filter group-hover:brightness-0 group-hover:invert transition-all duration-300 p-2" />
+                      <OptimizedImage src={toAssetUrl(service.iconUrl)} alt={service.title} className="w-full h-full object-contain filter group-hover:brightness-0 group-hover:invert transition-all duration-300 p-2" />
                     ) : (
                       <IconComponent className="w-5 h-5" />
                     )}

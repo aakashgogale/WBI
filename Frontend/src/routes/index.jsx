@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import LogoLoader from '../components/common/LogoLoader';
-
+import PageSkeleton from '../components/common/PageSkeleton';
 
 // Lazy loaded module routes
 const UserRoutes = React.lazy(() => import('../modules/user/routes'));
@@ -29,7 +29,7 @@ const AppRoutes = () => {
   return (
     <Routes location={location}>
       <Route path="/Home" element={
-        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
+        <Suspense fallback={<PageSkeleton />}>
           <LandingPage />
         </Suspense>
       } />
@@ -37,31 +37,31 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/user" replace />} />
 
       <Route path="/user/*" element={
-        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
+        <Suspense fallback={<PageSkeleton />}>
           <UserRoutes />
         </Suspense>
       } />
 
       <Route path="/vendor/*" element={
-        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
+        <Suspense fallback={<PageSkeleton />}>
           <VendorRoutes />
         </Suspense>
       } />
 
       <Route path="/worker/*" element={
-        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
+        <Suspense fallback={<PageSkeleton />}>
           <WorkerRoutes />
         </Suspense>
       } />
       
       <Route path="/engineer/*" element={
-        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
+        <Suspense fallback={<PageSkeleton />}>
           <EngineerRoutes />
         </Suspense>
       } />
 
       <Route path="/admin/*" element={
-        <Suspense fallback={<div className="min-h-screen bg-[#F8FCFC]" />}>
+        <Suspense fallback={<PageSkeleton />}>
           <AdminRoutes />
         </Suspense>
       } />

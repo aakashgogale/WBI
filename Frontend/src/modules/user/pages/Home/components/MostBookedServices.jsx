@@ -3,6 +3,7 @@ import { MdStar } from 'react-icons/md';
 import intenseBathroom2Image from '../../../../../assets/images/pages/Home/MostBookedServices/intense-bathroom-2.jpg';
 import tapRepairImage from '../../../../../assets/images/pages/Home/MostBookedServices/tap-repai.jpg';
 import automaticTopLoadImage from '../../../../../assets/images/pages/Home/MostBookedServices/automatic-top-load-machine.webp';
+import { OptimizedImage } from '../../../../../components/common';
 
 const MostBookedServices = React.memo(({ services, onServiceClick, onAddClick, onSeeAllClick }) => {
   // Fallback to exact reference UI if DB is empty
@@ -59,7 +60,7 @@ const MostBookedServices = React.memo(({ services, onServiceClick, onAddClick, o
             {/* Image section */}
             <div className="h-[96px] w-full bg-[#f8fafc] relative">
               {service.image ? (
-                <img 
+                <OptimizedImage 
                   src={service.image} 
                   alt={service.title} 
                   className="w-full h-full object-cover"

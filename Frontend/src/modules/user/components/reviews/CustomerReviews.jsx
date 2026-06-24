@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FiStar } from 'react-icons/fi';
 import { themeColors } from '../../../../theme';
-import api from '../../../../services/api'; // Or standard axios if needed
+import api from '../../../../services/api';
+import { apiCache } from '../../../../utils/apiCache';
 
 const CustomerReviews = ({ serviceId = 'all' }) => {
   const [loading, setLoading] = useState(true);
@@ -12,12 +13,23 @@ const CustomerReviews = ({ serviceId = 'all' }) => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
+        const cacheKey = `/public/reviews/service/${serviceId}?limit=3`;
+        const cached = apiCache.get(cacheKey);
+        
+        if (cached) {
+          setReviews(cached.data);
+          setStats(cached.stats);
+          setLoading(false);
+          return;
+        }
+
         setLoading(true);
         // We use 'all' for system-wide generic reviews on the homepage
-        const response = await api.get(`/public/reviews/service/${serviceId}?limit=3`);
+        const response = await api.get(cacheKey);
         if (response.data?.success) {
           setReviews(response.data.data);
           setStats(response.data.stats);
+          apiCache.set(cacheKey, response.data, 300); // 5 mins cache
         }
       } catch (error) {
         console.error('Failed to fetch reviews:', error);

@@ -15,6 +15,7 @@ const UserCategories = lazy(() => import('../pages/UserCategories'));
 const ServiceCategories = lazy(() => import('../pages/ServiceCategories'));
 const OneTimeServices = lazy(() => import('../pages/OneTimeServices'));
 const OneTimeServiceDetail = lazy(() => import('../pages/OneTimeServices/OneTimeServiceDetail'));
+const Banners = lazy(() => import('../pages/Banners'));
 const SubServices = lazy(() => import('../pages/SubServices'));
 const Users = lazy(() => import('../pages/Users'));
 const Vendors = lazy(() => import('../pages/Vendors'));
@@ -107,6 +108,7 @@ const AdminRoutes = () => {
           <Route path="service-categories/*" element={<ServiceCategories />} />
           <Route path="one-time-services" element={<OneTimeServices />} />
           <Route path="one-time-services/:id" element={<OneTimeServiceDetail />} />
+          <Route path="banners" element={<Banners />} />
           <Route path="sub-services/*" element={<SubServices />} />
           <Route path="payments/*" element={<Payments />} />
           <Route path="reports/*" element={<Reports />} />

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiSettings } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import api from '../../../../services/api';
 import toast from 'react-hot-toast';
 
 const OneTimeServices = () => {
+  const navigate = useNavigate();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,7 +180,7 @@ const OneTimeServices = () => {
                   <td className="p-4 text-gray-600">{service.sortOrder}</td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => window.location.href=`/admin/one-time-services/${service._id}`} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Manage Configs">
+                      <button onClick={() => navigate(`/admin/one-time-services/${service._id}`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Manage Configs">
                         <FiSettings />
                       </button>
                       <button onClick={() => openModal(service)} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg">
@@ -224,12 +226,9 @@ const OneTimeServices = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
                 <input
                   type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#10AFA5]"
                   value={formData.image}
                   onChange={e => setFormData({...formData, image: e.target.value})}
-                />
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10AFA5]"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>

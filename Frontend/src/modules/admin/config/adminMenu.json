@@ -152,6 +152,15 @@
     "children": []
   },
   {
+    "title": "Banners & Offers",
+    "route": "/admin/banners",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Premium Services",
     "route": "/admin/service-categories",
     "allowedRoles": [

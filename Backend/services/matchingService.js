@@ -50,10 +50,12 @@ class MatchingService {
       });
       
       console.log(`[BOOKING_CREATED] Booking created successfully`);
+      console.log(`[BROADCAST_MATCHING_STARTED] Broadcast matching started for booking ${booking._id}`);
+      console.log(`[BOOKING_SERVICE_ID] Service ID: ${booking.serviceId?._id || booking.serviceId}`);
+      console.log(`[BOOKING_LOCATION] Coordinates: Lat: ${booking.address?.lat}, Lng: ${booking.address?.lng}`);
       console.log(`[AUTO_ASSIGNMENT_STARTED] Booking ID: ${booking._id}`);
       console.log(`[ADMIN_APPROVAL_BYPASSED_FOR_ONE_TIME] Auto assignment initiated directly`);
       console.log(`[BOOKING_ID] ${booking._id}`);
-      console.log(`[SERVICE_ID] ${booking.serviceId?._id || booking.serviceId}`);
       console.log(`[SUB_SERVICE_ID] ${booking.subServiceId?._id || booking.subServiceId}`);
       console.log(`[USER_LOCATION] Lat: ${booking.address?.lat}, Lng: ${booking.address?.lng}`);
 
@@ -162,7 +164,9 @@ class MatchingService {
     console.log(`[WORKERS_FOUND] Found ${newWorkers.length} workers in radius`);
     console.log(`[ELIGIBLE_WORKERS] Eligible workers: ${newWorkers.map(w => w._id).join(', ')}`);
 
-    if (config.assignmentMode === 'broadcast') {
+    const isOneTime = booking.serviceCategory === 'One-Time' || booking.serviceCategory === 'one-time' || booking.bookingType === 'instant';
+    if (isOneTime || config.assignmentMode === 'broadcast') {
+      console.log(`[MatchingService] Forcing broadcast mode for booking ${booking._id}`);
       await this.handleBroadcastMode(booking, newWorkers, config, radiusKm, roundNumber);
     } else {
       await this.handleSequentialMode(booking, newWorkers, config, radiusKm, roundNumber);
@@ -276,6 +280,7 @@ class MatchingService {
 
       if (!isEligible) {
         console.log(`[WORKER_REJECTED_REASON] Worker: ${worker._id}, Reason: ${rejectReason}`);
+        console.log(`[WORKER_FILTER_REJECTED_REASON] Worker: ${worker._id}, Reason: ${rejectReason}`);
         await BookingAssignmentLog.create({
           bookingId: booking._id,
           workerId: worker._id,
@@ -289,20 +294,32 @@ class MatchingService {
     }
 
     console.log(`[WORKERS_ELIGIBLE] Eligible workers: ${eligibleWorkers.length}`);
+    console.log(`[ELIGIBLE_WORKERS_FOUND] Eligible workers count: ${eligibleWorkers.length}, IDs: ${eligibleWorkers.map(w => w._id.toString()).join(', ')}`);
     return eligibleWorkers.slice(0, 15);
   }
 
   async handleBroadcastMode(booking, workers, config, radiusKm, roundNumber) {
     const io = getIO();
     const selectedWorkers = workers.slice(0, config.maxWorkersPerRound);
+    const expiresAt = new Date(Date.now() + config.workerResponseTimeoutSec * 1000);
 
     // Create Attempts
     for (const worker of selectedWorkers) {
+      // Check active socket session
+      const session = await ActiveWorkerSession.findOne({ workerId: worker._id, isOnline: true });
+      if (session && session.socketId) {
+        console.log(`[WORKER_SOCKET_ROOM_FOUND] Socket room found for worker: ${worker._id}`);
+      } else {
+        console.log(`[WORKER_SOCKET_ROOM_MISSING] Socket room missing/inactive for worker: ${worker._id}`);
+      }
+
       await WorkerAssignmentAttempt.create({
         bookingId: booking._id,
         workerId: worker._id,
         roundNumber,
         radiusKm,
+        distanceKm: worker.distance || radiusKm,
+        expiresAt,
         status: 'sent'
       });
 
@@ -344,12 +361,14 @@ class MatchingService {
         estimatedPayout: booking.finalAmount * 0.8,
         paymentMode: booking.paymentMethod,
         notes: booking.userNotes || '',
-        acceptExpiresAt: new Date(Date.now() + config.workerResponseTimeoutSec * 1000).toISOString()
+        acceptExpiresAt: expiresAt.toISOString()
       };
 
       // Emit to worker specific room
       io.to(`worker:${worker._id}`).emit('worker:newBookingRequest', payload);
       console.log(`[REQUEST_SENT_TO_WORKER] Booking: ${booking._id}, Worker: ${worker._id}`);
+      console.log(`[BROADCAST_REQUEST_SENT] Broadcast request sent to worker: ${worker._id}`);
+      console.log(`[WORKER_RECEIVED_REQUEST] Worker received request: ${worker._id}`);
       
       io.to('admin:wbi').emit('admin:workerRequestSent', { bookingId: booking._id, workerId: worker._id });
     }

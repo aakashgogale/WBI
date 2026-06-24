@@ -412,6 +412,29 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('new_job_assigned', handleWorkerNewJob);
       newSocket.on('worker:new-booking', handleWorkerNewJob);
       newSocket.on('worker:newBookingRequest', handleWorkerNewJob);
+
+      newSocket.on('worker:bookingExpired', (data) => {
+        const expiredBookingId = String(data.bookingId || data.id);
+        
+        // Remove from localStorage
+        const pendingJobs = JSON.parse(localStorage.getItem('workerPendingJobs') || '[]');
+        const updatedPending = pendingJobs.filter(job => String(job.id || job._id) !== expiredBookingId);
+        localStorage.setItem('workerPendingJobs', JSON.stringify(updatedPending));
+        
+        // Show toast
+        toast.error(data.message || 'This booking has already been accepted by another worker.', { icon: '⚡' });
+        
+        // Dispatch specific remove event for instant UI update
+        window.dispatchEvent(new CustomEvent('removeWorkerJobAlert', { detail: { id: expiredBookingId } }));
+        window.dispatchEvent(new Event('workerJobsUpdated'));
+      });
+
+      newSocket.on('worker:bookingAlreadyAssigned', (data) => {
+        const bookingId = String(data.bookingId || data.id);
+        toast.error(data.message || 'This booking has already been accepted by another worker.', { icon: '⚡' });
+        window.dispatchEvent(new CustomEvent('removeWorkerJobAlert', { detail: { id: bookingId } }));
+        window.dispatchEvent(new Event('workerJobsUpdated'));
+      });
     }
 
     return () => {

@@ -1,6 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageSquare, Navigation, CheckCircle2, X, Send, Paperclip, FileText, Wifi, WifiOff } from 'lucide-react';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
+import Phone from 'lucide-react/dist/esm/icons/phone';
+import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
+import Navigation from 'lucide-react/dist/esm/icons/navigation';
+import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2';
+import X from 'lucide-react/dist/esm/icons/x';
+import Send from 'lucide-react/dist/esm/icons/send';
+import Paperclip from 'lucide-react/dist/esm/icons/paperclip';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import Wifi from 'lucide-react/dist/esm/icons/wifi';
+import WifiOff from 'lucide-react/dist/esm/icons/wifi-off';
 import Confetti from 'react-confetti';
 import useWindowSize from 'react-use/lib/useWindowSize';
 import { motion, AnimatePresence } from 'framer-motion';

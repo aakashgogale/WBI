@@ -121,7 +121,7 @@ const workerService = {
   },
 
   acceptBroadcastJob: async (id) => {
-    const response = await api.put(`/workers/jobs/${id}/accept-broadcast`);
+    const response = await api.patch(`/worker/bookings/${id}/accept`);
     return response.data;
   },
 

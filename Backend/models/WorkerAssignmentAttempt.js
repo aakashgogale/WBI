@@ -20,6 +20,9 @@ const workerAssignmentAttemptSchema = new mongoose.Schema({
     enum: ['sent', 'accepted', 'rejected', 'timeout', 'expired'],
     default: 'sent'
   },
+  distanceKm: { type: Number, default: null },
+  expiresAt: { type: Date, default: null },
+  reason: { type: String, default: null },
   sentAt: { type: Date, default: Date.now },
   respondedAt: { type: Date, default: null },
   responseTimeSec: { type: Number, default: null }

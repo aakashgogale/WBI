@@ -144,8 +144,7 @@ const userSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-userSchema.index({ phone: 1 });
-userSchema.index({ email: 1 });
+// Phone and email indexes are created automatically by Mongoose via schema properties (e.g., unique: true, sparse: true)
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ 'wallet.balance': -1 });
 

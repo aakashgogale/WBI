@@ -35,15 +35,19 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
     // Fetch trending services (Most Booked)
     const fetchTrending = async () => {
       try {
-        const res = await publicCatalogService.getHomeContent();
-        if (res.success && res.homeContent?.booked && res.homeContent.booked.length > 0) {
-          // Take top 5 most booked services, EXCLUDING 'Fan Installation', 'Top Load', etc.
-          const filtered = res.homeContent.booked.filter(s =>
-            !s.title.toLowerCase().includes('fan install') &&
-            !s.title.toLowerCase().includes('fan repair') &&
-            !s.title.toLowerCase().includes('top load') &&
-            !s.title.toLowerCase().includes('automatic')
-          );
+        const m = await import('../../../../../services/userHomeService');
+        const res = await m.userHomeService.getMostBooked();
+        if (res.success && res.data && res.data.length > 0) {
+          const filtered = res.data.filter(s =>
+            !s.name.toLowerCase().includes('fan install') &&
+            !s.name.toLowerCase().includes('fan repair') &&
+            !s.name.toLowerCase().includes('top load') &&
+            !s.name.toLowerCase().includes('automatic')
+          ).map(s => ({
+            id: s._id,
+            title: s.name,
+            category: s.name
+          }));
           setTrendingServices(filtered.slice(0, 5));
         } else {
           // Fallback to project-specific trending services if API returns empty
@@ -97,11 +101,15 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
           ).map(c => ({ ...c, isCategory: true }));
 
           // 2. Search Services (API)
-          const response = await publicCatalogService.getServices({ search: query });
+          const m = await import('../../../../../services/userHomeService');
+          const response = await m.userHomeService.searchServices(query);
           let serviceMatches = [];
 
           if (response.success) {
-            serviceMatches = response.services;
+            serviceMatches = response.data.map(s => ({
+              ...s,
+              title: s.name
+            }));
           }
 
           // Combine: Categories first, then Services

@@ -10,6 +10,7 @@ const bookingAssignmentConfigSchema = new mongoose.Schema({
   maxWorkersPerRound: { type: Number, default: 3 },
   assignmentMode: { type: String, enum: ['sequential', 'broadcast'], default: 'sequential' },
   autoAssignEnabled: { type: Boolean, default: true },
+  adminApprovalRequired: { type: Boolean, default: false },
   vendorApprovalRequired: { type: Boolean, default: false },
   adminFallbackEnabled: { type: Boolean, default: true },
   manualSelectionAllowed: { type: Boolean, default: false },

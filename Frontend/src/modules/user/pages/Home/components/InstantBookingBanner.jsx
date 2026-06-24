@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { themeColors } from '../../../../../theme';
+import { OptimizedImage } from '../../../../../components/common';
 
 const InstantBookingBanner = memo(({ promos = [], onPromoClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -147,11 +148,10 @@ const InstantBookingBanner = memo(({ promos = [], onPromoClick }) => {
             >
               {promo.imageUrl && !promo.isDefault ? (
                 // Full bleed image from backend
-                <img 
+                <OptimizedImage 
                   src={promo.imageUrl} 
                   alt={promo.title || "Offer"} 
                   className="w-full h-full absolute inset-0 object-cover"
-                  onError={(e) => { e.target.style.display = 'none'; }}
                 />
               ) : (
                 // Dynamic Teal Banner Layout
@@ -181,11 +181,10 @@ const InstantBookingBanner = memo(({ promos = [], onPromoClick }) => {
 
                   {/* Right Side Illustration */}
                   <div className="absolute right-0 bottom-0 max-w-[45%] h-full flex items-end justify-end pointer-events-none z-10">
-                    <img 
+                    <OptimizedImage 
                       src={promo.imageUrl || "/img/Technicians.png"} 
                       alt={promo.title || "Offer"} 
                       className="object-contain h-[105%] object-right-bottom"
-                      onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   </div>
                 </div>

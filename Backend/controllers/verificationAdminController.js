@@ -63,8 +63,13 @@ const ensureDefaultConfigs = async () => {
   }
 };
 
-// Initialize configuration seeding
-ensureDefaultConfigs();
+// Initialize configuration seeding only after DB connects
+const mongoose = require('mongoose');
+if (mongoose.connection.readyState === 1) {
+  ensureDefaultConfigs();
+} else {
+  mongoose.connection.once('open', ensureDefaultConfigs);
+}
 
 /**
  * List all verification requests

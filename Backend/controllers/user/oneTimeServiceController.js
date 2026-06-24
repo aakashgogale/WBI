@@ -103,65 +103,53 @@ exports.getServiceEstimate = async (req, res) => {
 
     const packages = await ServicePackage.find(query);
     
-    let startingPrice = 299; // Default fallback
-    let estimatedTime = '45 - 60 mins';
+    let startingPrice = 0;
+    let totalDuration = 0;
+    let durationCount = 0;
 
-    if (packages.length > 0) {
-      // Find lowest price
-      startingPrice = Math.min(...packages.map(p => p.price));
-      
-      // Get the duration of the most common package or required package
-      const requiredPkg = packages.find(p => p.isRequired);
-      if (requiredPkg && requiredPkg.estimatedDuration) {
-        estimatedTime = requiredPkg.estimatedDuration;
-      } else if (packages[0].estimatedDuration) {
-        estimatedTime = packages[0].estimatedDuration;
+    packages.forEach(pkg => {
+      if (startingPrice === 0 || pkg.price < startingPrice) startingPrice = pkg.price;
+      if (pkg.estimatedDurationMins) {
+        totalDuration += pkg.estimatedDurationMins;
+        durationCount++;
       }
-    }
+    });
+
+    const avgDuration = durationCount > 0 ? Math.round(totalDuration / durationCount) : 60;
 
     res.status(200).json({ 
       success: true, 
-      data: {
-        startingPrice,
-        estimatedTime
-      }
+      data: { 
+        startingPrice, 
+        estimatedDurationMins: avgDuration 
+      } 
     });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
 };
 
-// Calculate Price Preview for selected packages
+// Calculate Price Preview based on selections
 exports.getPricePreview = async (req, res) => {
   try {
-    const { packageIds, quantities } = req.body;
+    const { serviceId, packageIds } = req.body;
     
     if (!packageIds || packageIds.length === 0) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          subtotal: 0,
-          platformFee: 0,
-          gst: 0,
-          totalAmount: 0,
-          itemCount: 0
-        }
-      });
+       return res.status(200).json({ success: true, data: { itemTotal: 0, finalTotal: 0, items: [] }});
     }
 
-    // Fetch the packages from DB to prevent client-side price manipulation
-    const packages = await ServicePackage.find({ _id: { $in: packageIds } });
+    const packages = await ServicePackage.find({ _id: { $in: packageIds }, isActive: true });
     
-    let subtotal = 0;
-    let itemCount = 0;
-
-    // Support both array of package IDs and map of quantities { packageId: qty }
-    const qtyMap = quantities || {};
+    let itemTotal = 0;
+    let items = [];
 
     packages.forEach(pkg => {
-      const qty = qtyMap[pkg._id] || 1; // Default to 1 if no quantity provided
-      subtotal += pkg.price * qty;
-      itemCount += qty;
+      itemTotal += pkg.price;
+      items.push({
+        id: pkg._id,
+        title: pkg.title,
+        price: pkg.price
+      });
     });
 
     // Configurable fees (could be moved to a settings collection later)
@@ -183,5 +171,50 @@ exports.getPricePreview = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// Search Services
+exports.searchServices = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escapedQuery, 'i');
+
+    const services = await OneTimeService.find({
+      isActive: true,
+      categoryType: 'one_time',
+      $or: [
+        { name: searchRegex },
+        { subtitle: searchRegex },
+        { slug: searchRegex }
+      ]
+    }).select('name slug image rating totalReviews startingPrice').limit(10).lean();
+
+    res.status(200).json({ success: true, data: services });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// Get Most Booked Services
+exports.getMostBooked = async (req, res) => {
+  try {
+    const services = await OneTimeService.find({
+      isActive: true,
+      categoryType: 'one_time'
+    })
+    .sort({ rating: -1, totalReviews: -1 }) // Proxy for most booked
+    .limit(10)
+    .select('name slug image rating totalReviews startingPrice')
+    .lean();
+
+    res.status(200).json({ success: true, data: services });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 };

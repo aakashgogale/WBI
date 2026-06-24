@@ -12,6 +12,9 @@ const {
 // All these routes are public as users can browse before login
 // For adding to cart, that will be handled by Cart routes
 
+router.get('/search', exports.searchServices || require('../../controllers/user/oneTimeServiceController').searchServices);
+router.get('/most-booked', exports.getMostBooked || require('../../controllers/user/oneTimeServiceController').getMostBooked);
+
 router.get('/:slug', getServiceDetails);
 router.get('/:serviceId/brands', getServiceBrands);
 router.get('/:serviceId/issues', getServiceIssues);

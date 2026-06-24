@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { optimizeCloudinaryUrl } from '../../utils/cloudinaryOptimize';
 
+// Global cache to track which images have already loaded in this session
+// This prevents the shimmer effect from flashing when revisiting a screen
+const loadedImagesCache = new Set();
+
 /**
  * OptimizedImage Component
  * Provides lazy loading, Cloudinary optimization, and error handling for images
@@ -19,19 +23,23 @@ const OptimizedImage = ({
   onError,
   ...props
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const imgRef = useRef(null);
-
   // Optimize the image URL
-  const optimizedSrc = optimizeCloudinaryUrl(src, {
+  const optimizedSrc = src ? optimizeCloudinaryUrl(src, {
     width: width ? Math.min(width * 2, 1920) : undefined, // 2x for retina, max 1920
     quality,
-  });
+  }) : '';
+
+  // Synchronously check if we've already loaded this image in this session
+  const [isLoaded, setIsLoaded] = useState(() => loadedImagesCache.has(optimizedSrc));
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef(null);
 
   // Handle image load
   const handleLoad = (e) => {
     setIsLoaded(true);
+    if (optimizedSrc) {
+      loadedImagesCache.add(optimizedSrc);
+    }
     onLoad?.(e);
   };
 
