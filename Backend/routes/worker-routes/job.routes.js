@@ -45,13 +45,15 @@ const addNotesValidation = [
   body('notes').trim().notEmpty().withMessage('Notes are required')
 ];
 
+const { verifyAadhaarPanForJob } = require('../../middleware/verificationMiddleware');
+
 // Routes
-router.get('/jobs', authenticate, isWorker, getAssignedJobs);
-router.get('/jobs/:id', authenticate, isWorker, getJobById);
-router.put('/jobs/:id/respond', authenticate, isWorker, respondValidation, respondToJob);
-router.put('/jobs/:id/accept-broadcast', authenticate, isWorker, acceptBroadcastJob);
-router.put('/jobs/:id/status', authenticate, isWorker, updateStatusValidation, updateJobStatus);
-router.post('/jobs/:id/start', authenticate, isWorker, startJob);
+router.get('/jobs', authenticate, isWorker, verifyAadhaarPanForJob, getAssignedJobs);
+router.get('/jobs/:id', authenticate, isWorker, verifyAadhaarPanForJob, getJobById);
+router.put('/jobs/:id/respond', authenticate, isWorker, verifyAadhaarPanForJob, respondValidation, respondToJob);
+router.put('/jobs/:id/accept-broadcast', authenticate, isWorker, verifyAadhaarPanForJob, acceptBroadcastJob);
+router.put('/jobs/:id/status', authenticate, isWorker, verifyAadhaarPanForJob, updateStatusValidation, updateJobStatus);
+router.post('/jobs/:id/start', authenticate, isWorker, verifyAadhaarPanForJob, startJob);
 router.post('/jobs/:id/reached', authenticate, isWorker, workerReachedLocation);
 router.post('/jobs/:id/visit/verify', authenticate, isWorker, verifyVisit);
 router.post('/jobs/:id/complete', authenticate, isWorker, completeJob);

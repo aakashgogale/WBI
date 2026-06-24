@@ -215,6 +215,10 @@ const LandingPage = () => {
                               src={toAssetUrl(cat.icon)} 
                               alt={cat.title} 
                               className="w-full h-full object-contain relative z-20 transition-transform duration-700 group-hover:scale-125 group-hover:rotate-6" 
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://cdn-icons-png.flaticon.com/512/4836/4836952.png';
+                              }}
                             />
                            ) : (
                             <FaShieldAlt className="text-4xl text-brand relative z-20" />
@@ -418,7 +422,7 @@ const LandingPage = () => {
                     { title: "Real-time Tracking", desc: "Monitor your Xpert live on the map as they head to your location.", icon: <FaMapMarker />, bg: "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?auto=format&fit=crop&q=80&w=800" },
                     { title: "Doorstep Billing", desc: "Verified invoices generated at home. Transparency in every charge.", icon: <FaFileInvoiceDollar />, bg: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800" },
                     { title: "Platform Warranty", desc: "6-month warranty on every certified WBI spare part replaced.", icon: <FaShieldAlt />, bg: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800" },
-                    { title: "Direct Connect", desc: "Call or chat with your assigned technician directly in-app.", icon: <FaHandshake />, bg: "https://images.unsplash.com/photo-1521791136064-7986c2959213?auto=format&fit=crop&q=80&w=800" }
+                    { title: "Direct Connect", desc: "Call or chat with your assigned technician directly in-app.", icon: <FaHandshake />, bg: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800" }
                 ].map((item, i) => (
                     <div key={i} className="group relative p-8 sm:p-10 rounded-[3rem] sm:rounded-[4rem] overflow-hidden transition-all duration-700 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] hover:-translate-y-4 h-[350px] sm:h-[400px] flex flex-col justify-end text-left border border-gray-100">
                         <div className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110" style={{ backgroundImage: `url(${item.bg})` }}></div>

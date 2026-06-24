@@ -12,11 +12,30 @@ const engineerAssignmentWorker = new Worker('engineer-assignment', async (job) =
     const workOrder = await WorkOrder.findOne({ _id: workOrderId, vendorId });
     if (!workOrder) throw new Error('Work order not found');
 
-    // Basic scoring
-    const engineers = await Engineer.find({ vendorId, isActive: true });
+    // Retrieve dynamic verification configurations for engineers
+    const VerificationConfig = require('../models/VerificationConfig');
+    const VerificationDocument = require('../models/VerificationDocument');
+
+    const config = await VerificationConfig.findOne({ roleType: 'engineer' });
+    const requiredDocs = config?.requiredDocuments || ['aadhaar', 'pan'];
+
+    const rawEngineers = await Engineer.find({ vendorId, isActive: true, approvalStatus: 'approved' });
+    const engineers = [];
+
+    for (const eng of rawEngineers) {
+      const verifiedDocsCount = await VerificationDocument.countDocuments({
+        ownerId: eng._id,
+        documentType: { $in: requiredDocs },
+        status: 'verified'
+      });
+      if (verifiedDocsCount >= requiredDocs.length) {
+        engineers.push(eng);
+      }
+    }
+
     if (engineers.length === 0) {
-      console.log('No engineers available');
-      return { success: false, message: 'No engineers available' };
+      console.log('No verified engineers available');
+      return { success: false, message: 'No verified engineers available' };
     }
 
     const rankedEngineers = engineers.map(eng => ({

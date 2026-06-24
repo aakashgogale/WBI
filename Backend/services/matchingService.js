@@ -217,7 +217,27 @@ class MatchingService {
       } else if (worker.approvalStatus !== 'approved') {
         isEligible = false;
         rejectReason = 'unverified';
-      } else if (worker.status === 'BUSY') {
+      } else {
+        // Enforce dynamic verification check based on VerificationConfig
+        const VerificationConfig = require('../models/VerificationConfig');
+        const VerificationDocument = require('../models/VerificationDocument');
+        const config = await VerificationConfig.findOne({ roleType: 'worker' });
+        const requiredDocs = config?.requiredDocuments || ['aadhaar', 'pan'];
+        
+        if (requiredDocs.length > 0) {
+          const verifiedDocsCount = await VerificationDocument.countDocuments({
+            ownerId: worker._id,
+            documentType: { $in: requiredDocs },
+            status: 'verified'
+          });
+          
+          if (verifiedDocsCount < requiredDocs.length) {
+            isEligible = false;
+            rejectReason = 'documents unverified';
+          }
+        }
+      }
+      if (isEligible && worker.status === 'BUSY') {
         isEligible = false;
         rejectReason = 'busy';
       } else if (worker.status !== 'ONLINE') {

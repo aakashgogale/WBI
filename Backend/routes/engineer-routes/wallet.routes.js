@@ -22,7 +22,9 @@ router.get('/transactions', authenticate, isEngineer, getTransactions);
 // Request payout from vendor
 router.post('/request-payout', authenticate, isEngineer, requestPayout);
 
+const { verifyBankForWithdrawal } = require('../../middleware/verificationMiddleware');
+
 // Request withdrawal
-router.post('/withdraw', authenticate, isEngineer, requestWithdrawal);
+router.post('/withdraw', authenticate, isEngineer, verifyBankForWithdrawal, requestWithdrawal);
 
 module.exports = router;

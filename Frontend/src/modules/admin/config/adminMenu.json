@@ -70,6 +70,15 @@
     "children": []
   },
   {
+    "title": "Verifications",
+    "route": "/admin/verifications",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Bookings",
     "route": "/admin/bookings",
     "allowedRoles": [

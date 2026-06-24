@@ -40,6 +40,7 @@ const cloudinaryDocumentStorage = new CloudinaryStorage({
   params: {
     folder: 'appzeto/documents',
     resource_type: 'auto',
+    type: 'authenticated', // Secure access, requires signed URLs
     public_id: (req, file) => {
       const name = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
       return `doc-${name}-${Date.now()}`;

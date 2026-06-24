@@ -21,6 +21,7 @@ const Vendors = lazy(() => import('../pages/Vendors'));
 const Workers = lazy(() => import('../pages/Workers'));
 const Engineers = lazy(() => import('../pages/Engineers'));
 const FormBuilder = lazy(() => import('../pages/FormBuilder'));
+const Verifications = lazy(() => import('../pages/Verifications'));
 const Bookings = lazy(() => import('../pages/Bookings'));
 const BookingTracking = lazy(() => import('../pages/Bookings/Tracking'));
 const BookingNotifications = lazy(() => import('../pages/Bookings/BookingNotifications'));
@@ -98,6 +99,7 @@ const AdminRoutes = () => {
           <Route path="workers/*" element={<Workers />} />
           <Route path="engineers/*" element={<Engineers />} />
           <Route path="form-builder/*" element={<FormBuilder />} />
+          <Route path="verifications/*" element={<Verifications />} />
           <Route path="bookings" element={<Bookings />} />
           <Route path="bookings/tracking" element={<BookingTracking />} />
           <Route path="bookings/notifications" element={<BookingNotifications />} />

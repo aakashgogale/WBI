@@ -14,8 +14,26 @@ exports.getRankedEngineers = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Work order not found' });
     }
 
-    // Basic mock ranking logic
-    const engineers = await Engineer.find({ vendorId, isActive: true });
+    // Filter by dynamic verification status for engineers
+    const VerificationConfig = require('../../models/VerificationConfig');
+    const VerificationDocument = require('../../models/VerificationDocument');
+
+    const config = await VerificationConfig.findOne({ roleType: 'engineer' });
+    const requiredDocs = config?.requiredDocuments || ['aadhaar', 'pan'];
+
+    const rawEngineers = await Engineer.find({ vendorId, isActive: true, approvalStatus: 'approved' });
+    const engineers = [];
+
+    for (const eng of rawEngineers) {
+      const verifiedDocsCount = await VerificationDocument.countDocuments({
+        ownerId: eng._id,
+        documentType: { $in: requiredDocs },
+        status: 'verified'
+      });
+      if (verifiedDocsCount >= requiredDocs.length) {
+        engineers.push(eng);
+      }
+    }
     
     // In a real system, calculate score based on:
     // 1. Skill tags (40 pts)
@@ -48,6 +66,25 @@ exports.assignEngineer = async (req, res) => {
     const engineer = await Engineer.findOne({ _id: engineerId, vendorId });
     if (!engineer) {
       return res.status(404).json({ success: false, message: 'Engineer not found or belongs to another vendor' });
+    }
+
+    if (engineer.approvalStatus !== 'approved') {
+      return res.status(400).json({ success: false, message: 'Cannot assign. Engineer is not fully verified and approved.' });
+    }
+
+    const VerificationConfig = require('../../models/VerificationConfig');
+    const VerificationDocument = require('../../models/VerificationDocument');
+    const config = await VerificationConfig.findOne({ roleType: 'engineer' });
+    const requiredDocs = config?.requiredDocuments || ['aadhaar', 'pan'];
+
+    const verifiedDocsCount = await VerificationDocument.countDocuments({
+      ownerId: engineer._id,
+      documentType: { $in: requiredDocs },
+      status: 'verified'
+    });
+
+    if (verifiedDocsCount < requiredDocs.length) {
+      return res.status(400).json({ success: false, message: 'Cannot assign. Engineer has unverified required documents.' });
     }
 
     workOrder.engineerId = engineerId;

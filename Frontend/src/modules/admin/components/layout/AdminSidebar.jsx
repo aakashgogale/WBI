@@ -31,6 +31,7 @@ const iconMap = {
   Workers: FiUser,
   Engineers: FiUser,
   "Form Builder": FiGrid,
+  Verifications: FiShield,
   Bookings: FiShoppingBag,
   "User Catalog": FiGrid,
   "One-Time Services": FiShoppingBag,

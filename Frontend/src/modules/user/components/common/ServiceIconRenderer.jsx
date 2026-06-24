@@ -17,7 +17,7 @@ export const ServiceIconRenderer = ({ categoryName, className = "" }) => {
       return 'https://img.icons8.com/color/96/water-heater.png';
     }
     if (normalized.includes('ro') || normalized.includes('purifier') || normalized.includes('water')) {
-      return 'https://img.icons8.com/color/96/water-dispenser.png';
+      return 'https://img.icons8.com/color/96/water-cooler.png';
     }
     if (normalized.includes('cleaning')) {
       return 'https://img.icons8.com/color/96/broom.png';

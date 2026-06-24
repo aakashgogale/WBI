@@ -9,13 +9,13 @@ export const getServiceImage = (serviceName = '', serviceCategory = '') => {
     return 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?q=80&w=400&auto=format&fit=crop';
   
   if (searchString.includes('geyser') || searchString.includes('heater')) 
-    return 'https://images.unsplash.com/photo-1585909695029-7977a4ee758e?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1521207418485-99c705420785?q=80&w=400&auto=format&fit=crop';
   
   if (searchString.includes('ro ') || searchString.includes('purifier') || searchString.includes('water filter')) 
-    return 'https://images.unsplash.com/photo-1574926053335-502a1c22b9be?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=400&auto=format&fit=crop';
   
   if (searchString.includes('microwave') || searchString.includes('oven')) 
-    return 'https://images.unsplash.com/photo-1585659722983-38ca84b5536d?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=400&auto=format&fit=crop';
   
   if (searchString.includes('fridge') || searchString.includes('refrigerator')) 
     return 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?q=80&w=400&auto=format&fit=crop';
@@ -24,16 +24,16 @@ export const getServiceImage = (serviceName = '', serviceCategory = '') => {
     return 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=400&auto=format&fit=crop';
 
   if (searchString.includes('chimney') || searchString.includes('kitchen')) 
-    return 'https://images.unsplash.com/photo-1556910103-1c02745a872f?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=400&auto=format&fit=crop';
 
   if (searchString.includes('fan ') || searchString.includes('ceiling fan')) 
-    return 'https://images.unsplash.com/photo-1618220179428-22790b46a011?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1591088398332-8a7791972843?q=80&w=400&auto=format&fit=crop';
 
   if (searchString.includes('plumb')) 
-    return 'https://images.unsplash.com/photo-1607472586893-edb57cb31422?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1508962914676-134849a727f0?q=80&w=400&auto=format&fit=crop';
 
   if (searchString.includes('electric')) 
-    return 'https://images.unsplash.com/photo-1621905252507-b35492d0402e?q=80&w=400&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?q=80&w=400&auto=format&fit=crop';
 
   if (searchString.includes('clean') || searchString.includes('maid')) 
     return 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=400&auto=format&fit=crop';
