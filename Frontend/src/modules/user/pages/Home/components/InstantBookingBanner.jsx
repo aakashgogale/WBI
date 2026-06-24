@@ -142,16 +142,16 @@ const InstantBookingBanner = memo(({ promos = [], onPromoClick }) => {
             return (
             <div 
               key={`${promo.id || idx}-${rawIdx}`} 
-              className="flex-shrink-0 w-full snap-center relative cursor-pointer rounded-[24px] overflow-hidden"
+              className="flex-shrink-0 w-full snap-center relative cursor-pointer rounded-[24px] overflow-hidden aspect-[21/10]"
               onClick={() => onPromoClick && onPromoClick(promo)}
-              style={{ minHeight: '170px' }}
             >
               {promo.imageUrl && !promo.isDefault ? (
                 // Full bleed image from backend
                 <OptimizedImage 
                   src={promo.imageUrl} 
                   alt={promo.title || "Offer"} 
-                  className="w-full h-full absolute inset-0 object-cover"
+                  className="w-full h-full absolute inset-0 rounded-[24px]"
+                  objectFit="fill"
                 />
               ) : (
                 // Dynamic Teal Banner Layout

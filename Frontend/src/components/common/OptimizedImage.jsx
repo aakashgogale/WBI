@@ -21,6 +21,7 @@ const OptimizedImage = ({
   placeholder = true,    // Show placeholder while loading
   onLoad,
   onError,
+  objectFit = 'cover',   // 'cover', 'contain', 'fill'
   ...props
 }) => {
   // Optimize the image URL
@@ -112,8 +113,8 @@ const OptimizedImage = ({
         decoding={priority ? 'sync' : 'async'}
         onLoad={handleLoad}
         onError={handleError}
-        className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} w-full h-full object-cover`}
-        style={{ display: 'block' }}
+        className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'} w-full h-full`}
+        style={{ display: 'block', objectFit: objectFit }}
         {...props}
       />
     </div>

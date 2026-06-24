@@ -67,7 +67,8 @@ const Banners = () => {
         uploadFormData.append('file', pendingFile);
         
         const res = await api.post('/admin/upload', uploadFormData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 60000 // 60 seconds timeout for image uploads
         });
         
         if (res.data.success) {
@@ -82,17 +83,19 @@ const Banners = () => {
       const payload = { ...formData, imageUrl: finalImageUrl };
       
       if (currentBanner) {
-        await api.put(`/admin/banners/${currentBanner._id}`, payload);
+        await api.put(`/admin/banners/${currentBanner._id}`, payload, { timeout: 30000 });
         toast.success('Banner updated successfully', { id: 'banner-action' });
       } else {
-        await api.post('/admin/banners', payload);
+        await api.post('/admin/banners', payload, { timeout: 30000 });
         toast.success('Banner created successfully', { id: 'banner-action' });
       }
       
       setPendingFile(null);
       fetchBanners(); // Fetch real data to replace optimistic IDs
     } catch (error) {
-      toast.error(error.message || error.response?.data?.error || 'Operation failed', { id: 'banner-action' });
+      console.error('Error saving banner:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Operation failed';
+      toast.error(errorMsg, { id: 'banner-action' });
       fetchBanners(); // Revert on failure
     }
   };
@@ -288,13 +291,13 @@ const Banners = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image (Required)</label>
-                <div className="relative border-2 border-dashed border-gray-300 rounded-xl hover:border-[#10AFA5] hover:bg-[#F8FCFC] transition-all overflow-hidden group cursor-pointer bg-gray-50 flex flex-col items-center justify-center h-[200px] w-full">
+                <div className="relative border-2 border-dashed border-gray-300 rounded-xl hover:border-[#10AFA5] hover:bg-[#F8FCFC] transition-all overflow-hidden group cursor-pointer bg-gray-50 flex flex-col items-center justify-center aspect-[21/10] w-full max-w-[500px] mx-auto h-auto shadow-inner">
                   {formData.imageUrl ? (
                     <>
                       <img 
                         src={formData.imageUrl} 
                         alt="Preview" 
-                        className="absolute inset-0 w-full h-full object-contain p-2" 
+                        className="absolute inset-0 w-full h-full object-fill" 
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                         <span className="text-white font-medium flex items-center gap-2 bg-black/50 px-4 py-2 rounded-lg">
@@ -306,7 +309,7 @@ const Banners = () => {
                     <div className="text-center p-6 pointer-events-none">
                       <FiUploadCloud size={32} className="mx-auto text-gray-400 mb-3 group-hover:text-[#10AFA5] transition-colors" />
                       <p className="text-sm font-medium text-gray-700">Click or drag image to upload</p>
-                      <p className="text-xs text-gray-500 mt-1">SVG, PNG, JPG or GIF (max. 800x400px)</p>
+                      <p className="text-xs text-gray-500 mt-1">Recommended size: 1050x500px (Aspect Ratio 21:10)</p>
                     </div>
                   )}
                   <input

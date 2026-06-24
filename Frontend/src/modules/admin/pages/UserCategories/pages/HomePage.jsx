@@ -1496,14 +1496,14 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                 </div>
               )}
               {bannerForm.imageUrl && !uploading && (
-                <div className="relative inline-block group">
-                  <img src={bannerForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                <div className="relative block w-full max-w-[300px] group">
+                  <img src={bannerForm.imageUrl} alt="Preview" className="w-full aspect-[21/10] object-fill rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setBannerForm(p => ({ ...p, imageUrl: "" }))}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                     title="Remove image"
                   >
-                    <FiTrash2 className="w-3 h-3" />
+                    <FiTrash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
@@ -2494,8 +2494,8 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               </div>
             </div>
             {offerBannerForm.imageUrl && (
-              <div className="mt-4 p-2 bg-white rounded-xl border border-gray-100 shadow-sm inline-block">
-                <img src={offerBannerForm.imageUrl} alt="Preview" className="h-24 object-contain rounded-lg" />
+              <div className="mt-4 p-1 bg-white rounded-xl border border-gray-100 shadow-sm block w-full max-w-[300px]">
+                <img src={offerBannerForm.imageUrl} alt="Preview" className="w-full aspect-[21/10] object-fill rounded-lg" />
               </div>
             )}
           </div>

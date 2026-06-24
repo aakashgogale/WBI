@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, lazy, Suspense, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
@@ -270,117 +270,179 @@ const Home = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   // Fetch categories and home content on mount (and when city changes)
+  const fetchData = useCallback(async (showSkeleton = true) => {
+    try {
+      if (showSkeleton) setLoading(true);
+      const cityId = currentCity?._id || currentCity?.id;
+
+      // Optionally fetch old catalog data if needed for fallback, but here we prioritize dynamic data
+      const [oldResponse, newResponse] = await Promise.all([
+        publicCatalogService.getHomeData(cityId).catch(() => ({})),
+        import('../../../../services/userHomeService').then(m => m.userHomeService.getHomeData(cityId)).catch(() => ({}))
+      ]);
+
+      let categoriesToSet = [];
+      let homeContentToSet = {};
+
+      // Merge old structure with new structure for backwards compatibility
+      if (oldResponse && oldResponse.success) {
+        if (oldResponse.categories) {
+          categoriesToSet = oldResponse.categories.map(cat => ({
+            id: cat.id,
+            title: cat.title,
+            slug: cat.slug,
+            icon: toAssetUrl(cat.icon),
+            hasSaleBadge: cat.hasSaleBadge,
+            badge: cat.badge
+          }));
+        }
+        if (oldResponse.homeContent) {
+          homeContentToSet = oldResponse.homeContent;
+        }
+        if (oldResponse.popularBrands) {
+          setPopularBrands(oldResponse.popularBrands);
+        }
+      }
+
+      // OVERRIDE with Dynamic Data from DB
+      if (newResponse && newResponse.success) {
+        if (newResponse.quickServices && newResponse.quickServices.length > 0) {
+          categoriesToSet = newResponse.quickServices.map(qs => ({
+            id: qs._id,
+            title: qs.name,
+            slug: qs.slug,
+            icon: toAssetUrl(qs.image || qs.icon, 150),
+            hasSaleBadge: false,
+            badge: null
+          }));
+        }
+
+        homeContentToSet = {
+          ...homeContentToSet,
+          isCategoriesVisible: true,
+          isPromosVisible: true,
+          isBookedVisible: true,
+          isHowItWorksVisible: true
+        };
+
+        const dbOffers = (newResponse.offers && newResponse.offers.length > 0) ? newResponse.offers : [
+          {
+            _id: 'default-offer-1',
+            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782306566/appzeto/ChatGPT_Image_Jun_24__2026__06_38_54_PM-1782306562558.jpg',
+            redirectValue: '/user/home',
+            sortOrder: 0
+          },
+          {
+            _id: 'default-offer-2',
+            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782306783/appzeto/ChatGPT_Image_Jun_24__2026__06_42_36_PM-1782306780035.jpg',
+            redirectValue: '/user/home',
+            sortOrder: 1
+          }
+        ];
+
+        homeContentToSet.offerBanners = dbOffers.map((offer, idx) => ({
+          id: offer._id,
+          imageUrl: toAssetUrl(offer.imageUrl || offer.mobileImageUrl, 1600),
+          route: offer.redirectValue || '/user/home',
+          order: offer.sortOrder || idx
+        }));
+
+        const dbPromos = (newResponse.promos && newResponse.promos.length > 0) ? newResponse.promos : [
+          {
+            _id: 'default-promo-1',
+            badge: 'LIMITED TIME OFFER',
+            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782305467/appzeto/ChatGPT_Image_Jun_24__2026__06_20_36_PM-1782305459696.jpg',
+            redirectValue: '/user/home',
+            sortOrder: 0
+          },
+          {
+            _id: 'default-promo-2',
+            badge: 'SPECIAL DEAL',
+            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782305760/appzeto/ChatGPT_Image_Jun_24__2026__06_25_01_PM-1782305754765.jpg',
+            redirectValue: '/user/home',
+            sortOrder: 1
+          },
+          {
+            _id: 'default-promo-3',
+            badge: 'WINTER READY',
+            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782305943/appzeto/ChatGPT_Image_Jun_24__2026__06_28_14_PM-1782305936603.jpg',
+            redirectValue: '/user/home',
+            sortOrder: 2
+          },
+          {
+            _id: 'default-promo-4',
+            badge: 'HEALTH FIRST',
+            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782306120/appzeto/ChatGPT_Image_Jun_24__2026__06_31_10_PM-1782306115852.jpg',
+            redirectValue: '/user/home',
+            sortOrder: 3
+          }
+        ];
+
+        homeContentToSet.promos = dbPromos.map((promo, idx) => ({
+          id: promo._id,
+          badge: promo.badge || 'PROMO',
+          title: promo.title,
+          subtitle: promo.subtitle,
+          description: promo.description,
+          imageUrl: promo.imageUrl ? toAssetUrl(promo.imageUrl, 1600) : null,
+          route: promo.redirectValue || '/user/home',
+          order: promo.sortOrder || idx
+        }));
+
+        if (newResponse.mostBookedServices && newResponse.mostBookedServices.length > 0) {
+          homeContentToSet.booked = newResponse.mostBookedServices.map(service => ({
+            id: service._id,
+            title: service.name,
+            slug: service.slug,
+            image: toAssetUrl(service.image || service.imageUrl, 400),
+            rating: service.rating || "4.8",
+            reviews: service.totalReviews ? `${service.totalReviews}+` : "10k+",
+            price: service.startingPrice || 0,
+            originalPrice: service.startingPrice ? service.startingPrice + 50 : 0,
+            discount: "10% Off",
+            targetCategoryId: service._id
+          }));
+        }
+        
+        if (newResponse.banners && newResponse.banners.length > 0) {
+            // Banners mapping could be used in PromoCarousel
+            homeContentToSet.heroBanners = newResponse.banners;
+        }
+      }
+
+      setCategories(categoriesToSet);
+      setHomeContent(homeContentToSet);
+      if (showSkeleton) setLoading(false);
+    } catch (error) {
+      if (showSkeleton) setLoading(false);
+    }
+  }, [currentCity]);
+
+  // Initial fetch on mount and when city changes
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const cityId = currentCity?._id || currentCity?.id;
+    fetchData(true);
+  }, [fetchData]);
 
-        // Optionally fetch old catalog data if needed for fallback, but here we prioritize dynamic data
-        const [oldResponse, newResponse] = await Promise.all([
-          publicCatalogService.getHomeData(cityId).catch(() => ({})),
-          import('../../../../services/userHomeService').then(m => m.userHomeService.getHomeData(cityId)).catch(() => ({}))
-        ]);
+  // Automatic silence update when window gets focus or mobile browser gets visible
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchData(false);
+    };
 
-        let categoriesToSet = [];
-        let homeContentToSet = {};
-
-        // Merge old structure with new structure for backwards compatibility
-        if (oldResponse && oldResponse.success) {
-          if (oldResponse.categories) {
-            categoriesToSet = oldResponse.categories.map(cat => ({
-              id: cat.id,
-              title: cat.title,
-              slug: cat.slug,
-              icon: toAssetUrl(cat.icon),
-              hasSaleBadge: cat.hasSaleBadge,
-              badge: cat.badge
-            }));
-          }
-          if (oldResponse.homeContent) {
-            homeContentToSet = oldResponse.homeContent;
-          }
-          if (oldResponse.popularBrands) {
-            setPopularBrands(oldResponse.popularBrands);
-          }
-        }
-
-        // OVERRIDE with Dynamic Data from DB
-        if (newResponse && newResponse.success) {
-          if (newResponse.quickServices && newResponse.quickServices.length > 0) {
-            categoriesToSet = newResponse.quickServices.map(qs => ({
-              id: qs._id,
-              title: qs.name,
-              slug: qs.slug,
-              icon: toAssetUrl(qs.image || qs.icon, 150),
-              hasSaleBadge: false,
-              badge: null
-            }));
-          }
-
-          homeContentToSet = {
-            ...homeContentToSet,
-            isCategoriesVisible: true,
-            isPromosVisible: true,
-            isBookedVisible: true,
-            isHowItWorksVisible: true
-          };
-
-          if (newResponse.offers && newResponse.offers.length > 0) {
-            homeContentToSet.offerBanners = newResponse.offers.map((offer, idx) => ({
-              id: offer._id,
-              imageUrl: toAssetUrl(offer.imageUrl || offer.mobileImageUrl, 800),
-              route: offer.redirectValue || '/user/home',
-              order: offer.sortOrder || idx
-            }));
-          }
-
-          if (newResponse.promos && newResponse.promos.length > 0) {
-            homeContentToSet.promos = newResponse.promos.map((promo, idx) => ({
-              id: promo._id,
-              badge: promo.badge || 'PROMO',
-              title: promo.title,
-              subtitle: promo.subtitle,
-              description: promo.description,
-              imageUrl: promo.imageUrl ? toAssetUrl(promo.imageUrl, 800) : null,
-              route: promo.redirectValue || '/user/home',
-              order: promo.sortOrder || idx
-            }));
-          } else {
-            homeContentToSet.promos = []; // Let InstantBookingBanner use its default attractive fallback
-          }
-
-          if (newResponse.mostBookedServices && newResponse.mostBookedServices.length > 0) {
-            homeContentToSet.booked = newResponse.mostBookedServices.map(service => ({
-              id: service._id,
-              title: service.name,
-              slug: service.slug,
-              image: toAssetUrl(service.image || service.imageUrl, 400),
-              rating: service.rating || "4.8",
-              reviews: service.totalReviews ? `${service.totalReviews}+` : "10k+",
-              price: service.startingPrice || 0,
-              originalPrice: service.startingPrice ? service.startingPrice + 50 : 0,
-              discount: "10% Off",
-              targetCategoryId: service._id
-            }));
-          }
-          
-          if (newResponse.banners && newResponse.banners.length > 0) {
-              // Banners mapping could be used in PromoCarousel
-              homeContentToSet.heroBanners = newResponse.banners;
-          }
-        }
-
-        setCategories(categoriesToSet);
-        setHomeContent(homeContentToSet);
-        setLoading(false);
-      } catch (error) {
-        setLoading(false);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData(false);
       }
     };
 
-    fetchData();
-  }, [currentCity]);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchData]);
   // Open category modal from navigation state (e.g. from Cart 'Add Services')
   useEffect(() => {
     if (!loading && categories.length > 0 && (location.state?.openCategoryId || location.state?.openCategoryName)) {
@@ -622,7 +684,22 @@ const Home = () => {
             </div>
           ) : (
             <>
-              {/* 0. Hero Banners (Removed as per user request) */}
+              {/* 0. Hero Banners */}
+              {/* homeContent?.isBannersVisible !== false && (homeContent?.heroBanners?.length > 0) && (
+                <div className="relative z-10 pt-2">
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                    <OfferBannerSlider 
+                      banners={(homeContent?.heroBanners || []).sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0)).map(b => ({
+                        ...b,
+                        imageUrl: b.imageUrl ? toAssetUrl(b.imageUrl) : null
+                      }))}
+                      onBannerClick={handlePromoClick}
+                      hideTitle={true}
+                    />
+                  </Suspense>
+                </div>
+              ) */}
+
 
               {/* 1. Quick Services Category Row (Moved above Banner) */}
               {homeContent?.isCategoriesVisible !== false && (
