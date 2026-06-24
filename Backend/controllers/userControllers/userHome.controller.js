@@ -24,6 +24,7 @@ const getHomeData = async (req, res) => {
     // 2. Fetch Banners (home_banner)
     const banners = await Banner.find({ 
       isActive: true, 
+      isDeleted: { $ne: true },
       bannerType: 'home_banner' 
     })
     .sort({ sortOrder: 1, createdAt: -1 })
@@ -32,6 +33,7 @@ const getHomeData = async (req, res) => {
     // 3. Fetch Offers (offer_banner)
     const offers = await Banner.find({ 
       isActive: true, 
+      isDeleted: { $ne: true },
       bannerType: 'offer_banner' 
     })
     .sort({ sortOrder: 1, createdAt: -1 })
@@ -40,6 +42,7 @@ const getHomeData = async (req, res) => {
     // 4. Fetch Promos (promo_banner)
     const promos = await Banner.find({ 
       isActive: true, 
+      isDeleted: { $ne: true },
       bannerType: 'promo_banner' 
     })
     .sort({ sortOrder: 1, createdAt: -1 })

@@ -11,6 +11,24 @@ const {
   updateBannerOrder
 } = require('../../controllers/adminControllers/banner.controller');
 
+router.get('/debug-db', async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const Banner = require('../../models/Banner');
+    const banners = await Banner.find({});
+    res.json({
+      success: true,
+      host: mongoose.connection.host,
+      name: mongoose.connection.name,
+      uri: process.env.MONGODB_URI ? process.env.MONGODB_URI.replace(/:([^:@]+)@/, ':***@') : null,
+      bannersCount: banners.length,
+      banners
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.use(authenticate);
 router.use(isAdmin);
 

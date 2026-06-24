@@ -1,4 +1,15 @@
+const mongoose = require('mongoose');
 const Banner = require('../../models/Banner');
+const fs = require('fs');
+const path = require('path');
+const logFile = path.join(__dirname, '../../debug.log');
+const log = (msg) => {
+  try {
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch (err) {
+    console.error('Failed to write log:', err);
+  }
+};
 
 // @desc    Get all banners
 // @route   GET /api/admin/banners
@@ -6,11 +17,14 @@ const Banner = require('../../models/Banner');
 const getBanners = async (req, res) => {
   try {
     const { bannerType, isActive } = req.query;
+    log(`getBanners: query=${JSON.stringify(req.query)} Connected to DB Host: ${mongoose.connection.host} DB Name: ${mongoose.connection.name}`);
     const query = {};
     if (bannerType) query.bannerType = bannerType;
     if (isActive !== undefined) query.isActive = isActive === 'true';
+    query.isDeleted = { $ne: true };
 
     const banners = await Banner.find(query).sort({ sortOrder: 1, createdAt: -1 });
+    log(`getBanners: Found banners count: ${banners.length} - ${JSON.stringify(banners.map(b => ({ id: b._id, title: b.title })))}`);
 
     res.status(200).json({
       success: true,
@@ -18,6 +32,7 @@ const getBanners = async (req, res) => {
       data: banners
     });
   } catch (error) {
+    log(`getBanners Error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Server Error',
@@ -104,19 +119,25 @@ const updateBanner = async (req, res) => {
 // @access  Private/Admin
 const deleteBanner = async (req, res) => {
   try {
+    log(`deleteBanner: ID to delete: ${req.params.id} Connected to DB Host: ${mongoose.connection.host} DB Name: ${mongoose.connection.name}`);
     const banner = await Banner.findById(req.params.id);
 
     if (!banner) {
+      log(`deleteBanner: Banner NOT found in DB for ID: ${req.params.id}`);
       return res.status(404).json({ success: false, message: 'Banner not found' });
     }
 
-    await banner.deleteOne();
+    banner.isDeleted = true;
+    banner.deletedAt = new Date();
+    await banner.save();
+    log(`deleteBanner: Banner deleted successfully: ${req.params.id}`);
 
     res.status(200).json({
       success: true,
       data: {}
     });
   } catch (error) {
+    log(`deleteBanner Error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Server Error',
