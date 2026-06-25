@@ -22,7 +22,7 @@ router.post('/save', authenticate, async (req, res) => {
   try {
     const { token, platform = 'web' } = req.body;
     
-    if (req.userRole !== 'worker') {
+    if (req.userRole !== 'WORKER') {
       return res.status(403).json({ success: false, error: `Access denied. You are logged in as a ${req.userRole}, but this route is for workers.` });
     }
 

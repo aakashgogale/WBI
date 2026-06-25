@@ -22,7 +22,7 @@ router.post('/save', authenticate, async (req, res) => {
   try {
     const { token, platform = 'web' } = req.body;
     
-    if (req.userRole !== 'vendor') {
+    if (req.userRole !== 'VENDOR') {
       return res.status(403).json({ success: false, error: `Access denied. You are logged in as a ${req.userRole}, but this route is for vendors.` });
     }
 
