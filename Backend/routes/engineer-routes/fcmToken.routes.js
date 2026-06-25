@@ -34,6 +34,10 @@ router.post('/save', authenticate, async (req, res) => {
 
     const engineer = await Engineer.findByIdAndUpdate(engineerId, updateQuery, { new: true });
 
+    if (!engineer) {
+      return res.status(404).json({ success: false, error: 'Engineer not found' });
+    }
+
     // Optional: Trim array if too long (separate operation to keep response fast and main op safe)
     // Only verify if length > MAX_TOKENS
     const currentTokens = platform === 'mobile' ? engineer.fcmTokenMobile : engineer.fcmTokens;
@@ -45,10 +49,6 @@ router.post('/save', authenticate, async (req, res) => {
         // Array growth is acceptable for now compared to duplicates issue.
         // We can just leave it as $addToSet.
         : { $addToSet: { fcmTokens: token } };
-    }
-
-    if (!engineer) {
-      return res.status(404).json({ success: false, error: 'Engineer not found' });
     }
 
     // Remove this token from User and Vendor collections to prevent cross-account notifications
