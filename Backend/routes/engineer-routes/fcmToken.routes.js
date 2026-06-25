@@ -21,7 +21,7 @@ const MAX_TOKENS = 10; // Maximum tokens per platform
 router.post('/save', authenticate, async (req, res) => {
   try {
     const { token, platform = 'web' } = req.body;
-    const engineerId = req.user._id;
+    const engineerId = req.userId || req.user._id;
 
     if (!token) {
       return res.status(400).json({ success: false, error: 'Token is required' });
@@ -35,7 +35,7 @@ router.post('/save', authenticate, async (req, res) => {
     const engineer = await Engineer.findByIdAndUpdate(engineerId, updateQuery, { new: true });
 
     if (!engineer) {
-      return res.status(404).json({ success: false, error: 'Engineer not found' });
+      return res.status(404).json({ success: false, error: 'Engineer not found', debug: { engineerId, reqUserId: req.userId, type: typeof engineerId } });
     }
 
     // Optional: Trim array if too long (separate operation to keep response fast and main op safe)
