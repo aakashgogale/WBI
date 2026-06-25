@@ -1,4 +1,5 @@
 const Vendor = require('../../models/Vendor');
+const { findUserAcrossCollections } = require('../../utils/authHelper');
 const { generateOTP, hashOTP, storeOTP, verifyOTP, checkRateLimit } = require('../../utils/redisOtp.util');
 const { generateTokenPair, verifyRefreshToken, generateVerificationToken, verifyVerificationToken } = require('../../utils/tokenService');
 const { sendOTP: sendSMSOTP } = require('../../services/smsService');
@@ -53,16 +54,16 @@ const sendOTP = async (req, res) => {
     // 3. Store OTP (Redis primary, MongoDB fallback)
     await storeOTP(phone, otpHash);
 
-    // 4. Send OTP via SMS
-    const smsResult = await sendSMSOTP(phone, otp);
+    // 4. Send OTP via SMS (Fire and forget)
+    sendSMSOTP(phone, otp).then(smsResult => {
+      if (!smsResult.success) {
+        console.warn(`[OTP] SMS failed for vendor ${phone}, but OTP stored`);
+      }
+    }).catch(err => console.error(`[OTP] SMS error for ${phone}:`, err));
 
     // Log OTP in development mode
     if (process.env.NODE_ENV === 'development' || process.env.USE_DEFAULT_OTP === 'true') {
       console.log(`[DEV] Vendor OTP for ${phone}: ${otp}`);
-    }
-
-    if (!smsResult.success) {
-      console.warn(`[OTP] SMS failed for vendor ${phone}, but OTP stored`);
     }
 
     res.status(200).json({
@@ -96,56 +97,72 @@ const verifyLogin = async (req, res) => {
       });
     }
 
-    // 2. Check if vendor exists
-    const vendor = await Vendor.findOne({ phone });
+    // 2. Check if user exists dynamically in database
+    const searchResult = await findUserAcrossCollections(phone);
 
-    if (vendor) {
-      // EXISTING VENDOR
+    if (searchResult) {
+      const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
 
       // Check status checks (Login Logic)
-      if (vendor.approvalStatus === VENDOR_STATUS.REJECTED) {
-        return res.status(403).json({ success: false, message: 'Account rejected.' });
-      }
-      if (vendor.approvalStatus === VENDOR_STATUS.SUSPENDED) {
-        return res.status(403).json({ success: false, message: 'Account suspended.' });
-      }
-      if (!vendor.isActive) {
+      if (foundUser.isActive === false && resolvedRole !== 'admin') {
         return res.status(403).json({ success: false, message: 'Account deactivated.' });
       }
 
-      // BLOCK PENDING VENDORS
-      if (vendor.approvalStatus === VENDOR_STATUS.PENDING) {
-        return res.status(200).json({
-          success: true,
-          message: 'Your account is currently under review. Please wait for admin approval.',
-          vendor: { adminApproval: 'pending' }
-        });
+      // Check vendor specific approval status
+      if (resolvedRole === 'vendor') {
+        const status = foundUser.approvalStatus || 'pending';
+        if (status === 'pending') {
+          return res.status(200).json({
+            success: true,
+            message: 'Your account is currently under review. Please wait for admin approval.',
+            vendor: { adminApproval: 'pending' }
+          });
+        }
+        if (status === 'rejected') {
+          return res.status(403).json({ success: false, message: 'Account rejected.' });
+        }
+        if (status === 'suspended') {
+          return res.status(403).json({ success: false, message: 'Account suspended.' });
+        }
       }
 
       // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens
       const loginSessionId = Date.now().toString();
-      await Vendor.findByIdAndUpdate(vendor._id, { 
+      await matchedModel.findByIdAndUpdate(foundUser._id, { 
         loginSessionId,
         $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens to prevent ghost notifications
       });
 
       const tokens = generateTokenPair({
-        userId: vendor._id,
-        role: USER_ROLES.VENDOR,
+        userId: foundUser._id.toString(),
+        role: resolvedRole.toUpperCase(),
+        profileId: foundUser._id.toString(),
+        mobile: foundUser.phone || foundUser.mobile || null,
+        email: foundUser.email || null,
         loginSessionId
       });
 
-      const vendorRes = vendor.toObject();
-      delete vendorRes.password;
-      delete vendorRes.__v;
-      vendorRes.id = vendor._id;
+      const userRes = foundUser.toObject();
+      delete userRes.password;
+      delete userRes.__v;
+      userRes.id = foundUser._id;
+      userRes.mobile = foundUser.phone || foundUser.mobile || null;
+      userRes.role = resolvedRole;
+      userRes.status = foundUser.status || foundUser.approvalStatus || undefined;
 
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
-        vendor: vendorRes,
-        ...tokens
+        token: tokens.accessToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: userRes,
+        vendor: resolvedRole === 'vendor' ? userRes : undefined,
+        role: resolvedRole,
+        profileId: foundUser._id.toString(),
+        redirectTo: resolvedRedirect,
+        platform: 'web'
       });
 
     } else {
@@ -323,20 +340,19 @@ const login = async (req, res) => {
 
     const { identifier, password } = req.body;
 
-    // Find vendor by email or phone
-    const vendor = await Vendor.findOne({
-      $or: [{ email: identifier }, { phone: identifier }]
-    }).select('+password');
-
-    if (!vendor) {
+    // Dynamic role lookup from database
+    const searchResult = await findUserAcrossCollections(identifier);
+    if (!searchResult) {
       return res.status(404).json({
         success: false,
-        message: 'Invalid credentials. Vendor not found.'
+        message: 'Invalid credentials. Account not found.'
       });
     }
 
+    const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
+
     // Verify password
-    const isMatch = await vendor.comparePassword(password);
+    const isMatch = await foundUser.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -344,59 +360,73 @@ const login = async (req, res) => {
       });
     }
 
-    // Check approval status
-    if (vendor.approvalStatus === VENDOR_STATUS.PENDING) {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account is pending admin approval. Please wait for approval.'
-      });
-    }
-
-    if (vendor.approvalStatus === VENDOR_STATUS.REJECTED) {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account has been rejected. Please contact support.'
-      });
-    }
-
-    if (vendor.approvalStatus === VENDOR_STATUS.SUSPENDED) {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account has been suspended. Please contact support.'
-      });
-    }
-
-    if (!vendor.isActive) {
+    // Check approval status & active status
+    if (foundUser.isActive === false && resolvedRole !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Your account has been deactivated. Please contact support.'
       });
     }
 
+    if (resolvedRole === 'vendor') {
+      const status = foundUser.approvalStatus || 'pending';
+      if (status === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is pending admin approval. Please wait for approval.'
+        });
+      }
+      if (status === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been rejected. Please contact support.'
+        });
+      }
+      if (status === 'suspended') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been suspended. Please contact support.'
+        });
+      }
+    }
+
     // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens
     const loginSessionId = Date.now().toString();
-    await Vendor.findByIdAndUpdate(vendor._id, { 
+    await matchedModel.findByIdAndUpdate(foundUser._id, { 
       loginSessionId,
       $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens to prevent ghost notifications
     });
 
-    // Generate JWT tokens
+    // Generate JWT tokens with standardized claims
     const tokens = generateTokenPair({
-      userId: vendor._id,
-      role: USER_ROLES.VENDOR,
+      userId: foundUser._id.toString(),
+      role: resolvedRole.toUpperCase(),
+      profileId: foundUser._id.toString(),
+      mobile: foundUser.phone || foundUser.mobile || null,
+      email: foundUser.email || null,
       loginSessionId
     });
 
-    const vendorRes = vendor.toObject();
-    delete vendorRes.password;
-    delete vendorRes.__v;
-    vendorRes.id = vendor._id;
+    const userRes = foundUser.toObject();
+    delete userRes.password;
+    delete userRes.__v;
+    userRes.id = foundUser._id;
+    userRes.mobile = foundUser.phone || foundUser.mobile || null;
+    userRes.role = resolvedRole;
+    userRes.status = foundUser.status || foundUser.approvalStatus || undefined;
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      vendor: vendorRes,
-      ...tokens
+      token: tokens.accessToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: userRes,
+      vendor: resolvedRole === 'vendor' ? userRes : undefined,
+      role: resolvedRole,
+      profileId: foundUser._id.toString(),
+      redirectTo: resolvedRedirect,
+      platform: 'web'
     });
   } catch (error) {
     console.error('Vendor login error:', error);

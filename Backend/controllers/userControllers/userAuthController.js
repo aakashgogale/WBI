@@ -1,4 +1,5 @@
 const User = require('../../models/User');
+const { findUserAcrossCollections } = require('../../utils/authHelper');
 const { generateTokenPair, verifyRefreshToken, generateVerificationToken, verifyVerificationToken } = require('../../utils/tokenService');
 const { generateOTP, hashOTP, storeOTP, verifyOTP, checkRateLimit } = require('../../utils/redisOtp.util');
 const { sendOTP: sendSMSOTP } = require('../../services/smsService');
@@ -38,8 +39,12 @@ const sendOTP = async (req, res) => {
     // 3. Store OTP (Redis primary, MongoDB fallback)
     await storeOTP(phone, otpHash);
 
-    // 4. Send OTP via SMS
-    const smsResult = await sendSMSOTP(phone, otp);
+    // 4. Send OTP via SMS (Fire and forget for faster API response)
+    sendSMSOTP(phone, otp).then(smsResult => {
+      if (!smsResult.success) {
+        console.warn(`[OTP] SMS failed for ${phone}, but OTP stored`);
+      }
+    }).catch(err => console.error(`[OTP] SMS error for ${phone}:`, err));
 
     // Log OTP in development mode only (NEVER in production)
     if (process.env.NODE_ENV === 'development' || process.env.USE_DEFAULT_OTP === 'true') {
@@ -48,12 +53,9 @@ const sendOTP = async (req, res) => {
 
     // 5. Optional: Send email notification if email provided
     if (email) {
-      await sendOTPEmail(email, otp, 'verification');
-    }
-
-    // Check if SMS failed
-    if (!smsResult.success) {
-      console.warn(`[OTP] SMS failed for ${phone}, but OTP stored for manual entry`);
+      sendOTPEmail(email, otp, 'verification').catch(err => 
+        console.error(`[OTP] Email error for ${email}:`, err)
+      );
     }
 
     res.status(200).json({
@@ -87,55 +89,55 @@ const verifyLogin = async (req, res) => {
     }
 
     // 2. Check if user exists in ANY collection
-    const Worker = require('../../models/Worker');
-    const Engineer = require('../../models/Engineer');
-    const Vendor = require('../../models/Vendor');
-    const Admin = require('../../models/Admin');
+    const searchResult = await findUserAcrossCollections(phone);
 
-    const collections = [
-      { role: 'worker', model: Worker, redirect: '/worker/dashboard' },
-      { role: 'engineer', model: Engineer, redirect: '/engineer/dashboard' },
-      { role: 'vendor', model: Vendor, redirect: '/vendor/dashboard' },
-      { role: 'user', model: User, redirect: '/user/dashboard' },
-      { role: 'admin', model: Admin, redirect: '/admin/dashboard' }
-    ];
+    if (searchResult) {
+      const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
 
-    let foundUser = null;
-    let foundRoleInfo = null;
-
-    for (const item of collections) {
-      const user = await item.model.findOne({ phone });
-      if (user) {
-        foundUser = user;
-        foundRoleInfo = { ...item };
-        // Override for User collection with role='admin'
-        if (item.role === 'user' && user.role === 'admin') {
-          foundRoleInfo.role = 'admin';
-          foundRoleInfo.redirect = '/admin/dashboard';
-        }
-        break;
-      }
-    }
-
-    if (foundUser) {
       // EXISTING USER -> LOGIN
-      if (foundUser.isActive === false && foundRoleInfo.role !== 'admin') {
+      if (foundUser.isActive === false && resolvedRole !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'Your account has been deactivated.'
         });
       }
 
+      // Check vendor specific approval status
+      if (resolvedRole === 'vendor') {
+        const status = foundUser.approvalStatus || 'pending';
+        if (status === 'pending') {
+          return res.status(403).json({
+            success: false,
+            message: 'Your account is pending admin approval. Please wait for approval.'
+          });
+        }
+        if (status === 'rejected') {
+          return res.status(403).json({
+            success: false,
+            message: 'Your account has been rejected. Please contact support.'
+          });
+        }
+        if (status === 'suspended') {
+          return res.status(403).json({
+            success: false,
+            message: 'Your account has been suspended. Please contact support.'
+          });
+        }
+      }
+
       // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens
       const loginSessionId = Date.now().toString();
-      await foundRoleInfo.model.findByIdAndUpdate(foundUser._id, { 
+      await matchedModel.findByIdAndUpdate(foundUser._id, { 
         loginSessionId,
         $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens
       }).catch(() => {}); // Safely ignore if fields don't exist
       
       const tokens = generateTokenPair({
-        userId: foundUser._id,
-        role: foundRoleInfo.role.toUpperCase(),
+        userId: foundUser._id.toString(),
+        role: resolvedRole.toUpperCase(),
+        profileId: foundUser._id.toString(),
+        mobile: foundUser.phone || foundUser.mobile || null,
+        email: foundUser.email || null,
         loginSessionId
       });
 
@@ -143,16 +145,22 @@ const verifyLogin = async (req, res) => {
       delete userRes.password;
       delete userRes.__v;
       userRes.id = foundUser._id;
-      userRes.role = foundRoleInfo.role;
+      userRes.mobile = foundUser.phone || foundUser.mobile || null;
+      userRes.role = resolvedRole;
+      userRes.status = foundUser.status || foundUser.approvalStatus || undefined;
 
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
+        token: tokens.accessToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         user: userRes,
-        role: foundRoleInfo.role,
-        redirectTo: foundRoleInfo.redirect,
-        ...tokens
+        role: resolvedRole,
+        profileId: foundUser._id.toString(),
+        redirectTo: resolvedRedirect,
+        platform: 'mobile'
       });
 
     } else {
@@ -330,6 +338,7 @@ const login = async (req, res) => {
       success: true,
       message: 'Login successful',
       user: userRes,
+      platform: 'mobile',
       ...tokens
     });
   } catch (error) {

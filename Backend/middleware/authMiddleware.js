@@ -38,10 +38,11 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Get user based on role
+    // Get user based on role (case-insensitive check)
     let user;
-    // console.log('Role from token:', decoded.role); // Debug
-    switch (decoded.role) {
+    const userRole = decoded.role ? decoded.role.toUpperCase() : '';
+    
+    switch (userRole) {
       case USER_ROLES.USER:
         user = await User.findById(decoded.userId).select('-password').lean();
         // SINGLE DEVICE LOGOUT Logic
@@ -74,7 +75,6 @@ const authenticate = async (req, res, next) => {
         }
         break;
       case USER_ROLES.ENGINEER:
-      case 'engineer':
         const Engineer = require('../models/Engineer');
         user = await Engineer.findById(decoded.userId).select('-password').lean();
         // SINGLE DEVICE LOGOUT Logic
@@ -83,9 +83,6 @@ const authenticate = async (req, res, next) => {
         }
         break;
       case USER_ROLES.ADMIN:
-      case 'super_admin':
-      case 'admin':
-      case 'ADMIN':
         user = await Admin.findById(decoded.userId).select('-password').lean();
         break;
       default:

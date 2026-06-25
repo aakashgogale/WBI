@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const admin = require('firebase-admin');
 require('../../services/firebaseAdmin');
+const { findUserAcrossCollections } = require('../../utils/authHelper');
+
 
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -338,45 +340,13 @@ exports.unifiedLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile/Phone and password are required' });
     }
 
-    // Determine if input is email or mobile
-    const identifierString = String(mobileOrPhone);
-    const isEmail = identifierString.includes('@');
-    const query = isEmail ? { email: identifierString } : { phone: identifierString };
-    
-    // Admin uses 'email' field always, while others use 'phone' or 'email'. 
-    // If it is NOT an email, Admin might not be found. 
-    // We will search across collections sequentially.
-
-    const collectionsToSearch = [
-      { role: 'worker', model: Worker, redirect: '/worker/dashboard' },
-      { role: 'engineer', model: Engineer, redirect: '/engineer/dashboard' },
-      { role: 'vendor', model: Vendor, redirect: '/vendor/dashboard' },
-      { role: 'user', model: User, redirect: '/user/dashboard' },
-      { role: 'admin', model: Admin, redirect: '/admin/dashboard', queryOverride: isEmail ? { email: identifierString } : { email: identifierString } } 
-    ];
-
-    let foundUser = null;
-    let foundRoleInfo = null;
-
-    for (const item of collectionsToSearch) {
-      const searchQuery = item.queryOverride || query;
-      // Exclude password field unless we need it. Wait, we DO need it.
-      const user = await item.model.findOne(searchQuery).select('+password');
-      if (user) {
-        foundUser = user;
-        foundRoleInfo = item;
-        // If the user's role field overrides the default role (e.g. User model can have 'admin' role)
-        if (user.role && user.role === 'admin' && item.role === 'user') {
-          foundRoleInfo.role = 'admin';
-          foundRoleInfo.redirect = '/admin/dashboard';
-        }
-        break; // Stop searching once found
-      }
-    }
-
-    if (!foundUser) {
+    // Dynamic role lookup from database
+    const searchResult = await findUserAcrossCollections(mobileOrPhone);
+    if (!searchResult) {
       return res.status(404).json({ success: false, message: 'Account not found with this mobile/email' });
     }
+
+    const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
 
     // Verify Password
     const isMatch = await foundUser.comparePassword(password);
@@ -389,27 +359,52 @@ exports.unifiedLogin = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Account is deactivated' });
     }
 
+    // Check vendor specific approval status
+    if (resolvedRole === 'vendor') {
+      const status = foundUser.approvalStatus || 'pending';
+      if (status === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is pending admin approval. Please wait for approval.'
+        });
+      }
+      if (status === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been rejected. Please contact support.'
+        });
+      }
+      if (status === 'suspended') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been suspended. Please contact support.'
+        });
+      }
+    }
+
     // Update login session
     const loginSessionId = Date.now().toString();
     const updateQuery = { 
       loginSessionId,
       $set: { fcmTokens: [], fcmTokenMobile: [] }
     };
-    // Update lastLogin for Admin
-    if (foundRoleInfo.role === 'admin') {
+    
+    if (resolvedRole === 'admin') {
       updateQuery.lastLogin = new Date();
     }
     
-    // Try to update, but some models might not have fcmTokens so we do it safely
-    await foundRoleInfo.model.findByIdAndUpdate(foundUser._id, updateQuery).catch(() => {
-       // fallback if fcmTokens doesn't exist on schema
-       return foundRoleInfo.model.findByIdAndUpdate(foundUser._id, { loginSessionId });
+    // Update document safely
+    await matchedModel.findByIdAndUpdate(foundUser._id, updateQuery).catch(() => {
+       return matchedModel.findByIdAndUpdate(foundUser._id, { loginSessionId });
     });
 
-    // Generate Token
+    // Generate token with all required claims
     const tokens = generateTokenPair({
-      userId: foundUser._id,
-      role: foundRoleInfo.role,
+      userId: foundUser._id.toString(),
+      role: resolvedRole.toUpperCase(),
+      profileId: foundUser._id.toString(),
+      mobile: foundUser.phone || foundUser.mobile || null,
+      email: foundUser.email || null,
       loginSessionId
     });
 
@@ -418,16 +413,19 @@ exports.unifiedLogin = async (req, res) => {
     delete userResponse.__v;
     userResponse.id = foundUser._id;
     userResponse.mobile = foundUser.phone || foundUser.mobile || null;
-    userResponse.role = foundRoleInfo.role;
+    userResponse.role = resolvedRole;
     userResponse.status = foundUser.status || foundUser.approvalStatus || undefined;
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
       token: tokens.accessToken,
+      accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user: userResponse,
-      redirectTo: foundRoleInfo.redirect
+      role: resolvedRole,
+      profileId: foundUser._id.toString(),
+      redirectTo: resolvedRedirect
     });
 
   } catch (error) {

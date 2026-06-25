@@ -43,20 +43,27 @@ const initializeSocket = (server) => {
 
     // Join user-specific room for notifications
     if (socket.userRole === 'USER') {
+      socket.join(`user:${socket.userId.toString()}`);
       socket.join(`user_${socket.userId.toString()}`);
       socket.join(`client:${socket.userId.toString()}`); // New format
     } else if (socket.userRole === 'VENDOR') {
+      socket.join(`vendor:${socket.userId.toString()}`);
       socket.join(`vendor_${socket.userId.toString()}`);
-      socket.join(`vendor:${socket.userId.toString()}`); // New format
       // Update vendor online status
       updateVendorOnlineStatus(socket.userId, true, socket.id);
-    } else if (socket.userRole === 'WORKER' || socket.userRole === 'ENGINEER') {
+    } else if (socket.userRole === 'WORKER') {
+      socket.join(`worker:${socket.userId.toString()}`);
       socket.join(`worker_${socket.userId.toString()}`);
-      socket.join(`worker:${socket.userId.toString()}`); // Ensure new format
-      socket.join(`engineer:${socket.userId.toString()}`); // New format
+      // Update worker online status
+      updateWorkerOnlineStatus(socket.userId, true, socket.id);
+    } else if (socket.userRole === 'ENGINEER') {
+      socket.join(`engineer:${socket.userId.toString()}`);
+      socket.join(`worker:${socket.userId.toString()}`); // Ensure also joined since engineers perform worker jobs
+      socket.join(`worker_${socket.userId.toString()}`);
       // Update worker online status
       updateWorkerOnlineStatus(socket.userId, true, socket.id);
     } else if (socket.userRole === 'ADMIN') {
+      socket.join('admin');
       socket.join(`admin_${socket.userId.toString()}`);
       socket.join('admin:wbi'); // New format
     }

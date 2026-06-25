@@ -1,4 +1,5 @@
 const Worker = require('../../models/Worker');
+const { findUserAcrossCollections } = require('../../utils/authHelper');
 const { generateOTP, hashOTP, storeOTP, verifyOTP, checkRateLimit } = require('../../utils/redisOtp.util');
 const { generateTokenPair, verifyRefreshToken, generateVerificationToken, verifyVerificationToken } = require('../../utils/tokenService');
 const { sendOTP: sendSMSOTP } = require('../../services/smsService');
@@ -39,16 +40,16 @@ const sendOTP = async (req, res) => {
     // 3. Store OTP (Redis primary, MongoDB fallback)
     await storeOTP(phone, otpHash);
 
-    // 4. Send OTP via SMS
-    const smsResult = await sendSMSOTP(phone, otp);
+    // 4. Send OTP via SMS (Fire and forget)
+    sendSMSOTP(phone, otp).then(smsResult => {
+      if (!smsResult.success) {
+        console.warn(`[OTP] SMS failed for worker ${phone}, but OTP stored`);
+      }
+    }).catch(err => console.error(`[OTP] SMS error for ${phone}:`, err));
 
     // Log OTP
     if (process.env.NODE_ENV === 'development' || process.env.USE_DEFAULT_OTP === 'true') {
       console.log(`[DEV] Worker OTP for ${phone}: ${otp}`);
-    }
-
-    if (!smsResult.success) {
-      console.warn(`[OTP] SMS failed for worker ${phone}, but OTP stored`);
     }
 
     res.status(200).json({
@@ -81,39 +82,71 @@ const verifyLogin = async (req, res) => {
       });
     }
 
-    // 2. Check if worker exists
-    const worker = await Worker.findOne({ phone });
+    // 2. Check if user exists dynamically in database
+    const searchResult = await findUserAcrossCollections(phone);
 
-    if (worker) {
-      // EXISTING WORKER
-      if (!worker.isActive) {
+    if (searchResult) {
+      const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
+
+      if (!foundUser.isActive && resolvedRole !== 'admin') {
         return res.status(403).json({ success: false, message: 'Account deactivated.' });
+      }
+
+      // Check vendor specific approval status
+      if (resolvedRole === 'vendor') {
+        const status = foundUser.approvalStatus || 'pending';
+        if (status === 'pending') {
+          return res.status(200).json({
+            success: true,
+            message: 'Your account is currently under review. Please wait for admin approval.',
+            vendor: { adminApproval: 'pending' }
+          });
+        }
+        if (status === 'rejected') {
+          return res.status(403).json({ success: false, message: 'Account rejected.' });
+        }
+        if (status === 'suspended') {
+          return res.status(403).json({ success: false, message: 'Account suspended.' });
+        }
       }
 
       // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens
       const loginSessionId = Date.now().toString();
-      await Worker.findByIdAndUpdate(worker._id, { 
+      await matchedModel.findByIdAndUpdate(foundUser._id, { 
         loginSessionId,
         $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens
       });
 
       const tokens = generateTokenPair({
-        userId: worker._id,
-        role: USER_ROLES.WORKER,
+        userId: foundUser._id.toString(),
+        role: resolvedRole.toUpperCase(),
+        profileId: foundUser._id.toString(),
+        mobile: foundUser.phone || foundUser.mobile || null,
+        email: foundUser.email || null,
         loginSessionId
       });
 
-      const workerRes = worker.toObject();
-      delete workerRes.password;
-      delete workerRes.__v;
-      workerRes.id = worker._id;
+      const userRes = foundUser.toObject();
+      delete userRes.password;
+      delete userRes.__v;
+      userRes.id = foundUser._id;
+      userRes.mobile = foundUser.phone || foundUser.mobile || null;
+      userRes.role = resolvedRole;
+      userRes.status = foundUser.status || foundUser.approvalStatus || undefined;
 
       return res.status(200).json({
         success: true,
         isNewUser: false,
         message: 'Login successful',
-        worker: workerRes,
-        ...tokens
+        token: tokens.accessToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: userRes,
+        worker: resolvedRole === 'worker' ? userRes : undefined,
+        role: resolvedRole,
+        profileId: foundUser._id.toString(),
+        redirectTo: resolvedRedirect,
+        platform: 'mobile'
       });
 
     } else {
@@ -280,25 +313,19 @@ const login = async (req, res) => {
 
     const { phone, password } = req.body;
 
-    // Check both worker and engineer
-    let worker = await Worker.findOne({ phone }).select('+password');
-    let engineer = null;
-    if (!worker) {
-      engineer = await Engineer.findOne({ phone }).select('+password');
-    }
-    
-    if (!worker && !engineer) {
+    // Dynamic role lookup from database
+    const searchResult = await findUserAcrossCollections(phone);
+    if (!searchResult) {
       return res.status(404).json({
         success: false,
         message: 'Account not found. Please register first.'
       });
     }
 
-    const user = worker || engineer;
-    const role = worker ? USER_ROLES.WORKER : USER_ROLES.ENGINEER;
+    const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
 
     // Verify Password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await foundUser.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -306,37 +333,69 @@ const login = async (req, res) => {
       });
     }
 
-    if (!user.isActive) {
+    if (!foundUser.isActive && resolvedRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'Account deactivated.' });
     }
+
+    // Check vendor specific approval status
+    if (resolvedRole === 'vendor') {
+      const status = foundUser.approvalStatus || 'pending';
+      if (status === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is pending admin approval. Please wait for approval.'
+        });
+      }
+      if (status === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been rejected. Please contact support.'
+        });
+      }
+      if (status === 'suspended') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been suspended. Please contact support.'
+        });
+      }
+    }
+
     const loginSessionId = Date.now().toString();
-    const Model = worker ? Worker : Engineer;
-    await Model.findByIdAndUpdate(user._id, { 
+    await matchedModel.findByIdAndUpdate(foundUser._id, { 
       loginSessionId,
       $set: { fcmTokens: [], fcmTokenMobile: [] } // Clear all old tokens
     });
 
     const tokens = generateTokenPair({
-      userId: user._id,
-      role: role,
+      userId: foundUser._id.toString(),
+      role: resolvedRole.toUpperCase(),
+      profileId: foundUser._id.toString(),
+      mobile: foundUser.phone || foundUser.mobile || null,
+      email: foundUser.email || null,
       loginSessionId
     });
 
-    const userRes = user.toObject();
+    const userRes = foundUser.toObject();
     delete userRes.password;
     delete userRes.__v;
-    userRes.id = user._id;
-    userRes.role = role;
+    userRes.id = foundUser._id;
+    userRes.mobile = foundUser.phone || foundUser.mobile || null;
+    userRes.role = resolvedRole;
+    userRes.status = foundUser.status || foundUser.approvalStatus || undefined;
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      role,
+      role: resolvedRole,
       user: userRes,
-      worker: worker ? userRes : undefined,
-      engineer: engineer ? userRes : undefined,
-      redirectTo: worker ? '/worker/dashboard' : '/engineer/dashboard',
-      ...tokens
+      worker: resolvedRole === 'worker' ? userRes : undefined,
+      engineer: resolvedRole === 'engineer' ? userRes : undefined,
+      redirectTo: resolvedRedirect,
+      token: tokens.accessToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      profileId: foundUser._id.toString(),
+      platform: 'mobile'
     });
   } catch (error) {
     console.error('Login error:', error);

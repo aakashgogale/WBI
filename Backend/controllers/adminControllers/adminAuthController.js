@@ -49,15 +49,25 @@ const login = async (req, res) => {
     admin.lastLogin = new Date();
     await admin.save();
 
-    // Generate JWT tokens
+    // Generate JWT tokens with standardized claims
     const tokens = generateTokenPair({
-      userId: admin._id,
-      role: USER_ROLES.ADMIN // Force Uppercase ADMIN role from constants
+      userId: admin._id.toString(),
+      role: USER_ROLES.ADMIN, // 'ADMIN'
+      profileId: admin._id.toString(),
+      mobile: null,
+      email: admin.email,
+      loginSessionId: Date.now().toString()
     });
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      token: tokens.accessToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      role: 'admin',
+      profileId: admin._id.toString(),
+      redirectTo: '/admin/dashboard',
       admin: {
         id: admin._id,
         name: admin.name,
@@ -66,7 +76,7 @@ const login = async (req, res) => {
         cityId: admin.cityId,
         cityName: admin.cityName
       },
-      ...tokens
+      platform: 'web'
     });
   } catch (error) {
     console.error('Admin login error:', error);
