@@ -27,28 +27,42 @@ router.post('/save', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Token is required' });
     }
 
-    // Use $addToSet to ensure uniqueness (prevent duplicates efficiently)
-    const updateQuery = platform === 'mobile'
-      ? { $addToSet: { fcmTokenMobile: token } }
-      : { $addToSet: { fcmTokens: token } };
+    // 1. Remove token if it exists (to avoid duplicates)
+    const pullQuery = platform === 'mobile'
+      ? { $pull: { fcmTokenMobile: token } }
+      : { $pull: { fcmTokens: token } };
 
-    const worker = await Worker.findByIdAndUpdate(workerId, updateQuery, { new: true });
+    await Worker.findByIdAndUpdate(workerId, pullQuery);
+
+    // 2. Add token to front with limit
+    const pushQuery = platform === 'mobile'
+      ? {
+        $push: {
+          fcmTokenMobile: {
+            $each: [token],
+            $position: 0,
+            $slice: MAX_TOKENS
+          }
+        }
+      }
+      : {
+        $push: {
+          fcmTokens: {
+            $each: [token],
+            $position: 0,
+            $slice: MAX_TOKENS
+          }
+        }
+      };
+
+    const worker = await Worker.findByIdAndUpdate(workerId, pushQuery, { new: true });
 
     if (!worker) {
-      return res.status(404).json({ success: false, error: 'Worker not found', debug: { workerId, reqUserId: req.userId, type: typeof workerId } });
-    }
-
-    // Optional: Trim array if too long (separate operation to keep response fast and main op safe)
-    // Only verify if length > MAX_TOKENS
-    const currentTokens = platform === 'mobile' ? worker.fcmTokenMobile : worker.fcmTokens;
-    if (currentTokens && currentTokens.length > MAX_TOKENS) {
-      const sliceQuery = platform === 'mobile'
-        ? { $push: { fcmTokenMobile: { $each: [], $slice: MAX_TOKENS } } } // Keep last 10 (or first 10?) - slice with positive keeps first N, negative keeps last N.
-        // Wait, $slice on existing array requires $push with empty $each.
-        // Actually, easiest to just keep it simple: $addToSet. 
-        // Array growth is acceptable for now compared to duplicates issue.
-        // We can just leave it as $addToSet.
-        : { $addToSet: { fcmTokens: token } };
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Worker not found', 
+        debug: { workerId, reqUserId: req.userId, type: typeof workerId } 
+      });
     }
 
     // Remove this token from User and Vendor collections to prevent cross-account notifications
