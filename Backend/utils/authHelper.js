@@ -9,7 +9,7 @@ const COLLECTIONS = [
   { role: 'vendor', model: Vendor, redirect: '/vendor/dashboard' },
   { role: 'engineer', model: Engineer, redirect: '/engineer/dashboard' },
   { role: 'worker', model: Worker, redirect: '/worker/dashboard' },
-  { role: 'user', model: User, redirect: '/user/home' }
+  { role: 'user', model: User, redirect: '/user' }
 ];
 
 /**
@@ -17,9 +17,10 @@ const COLLECTIONS = [
  * to find a user by their phone or email.
  * 
  * @param {string} identifier - Email address or phone number
+ * @param {string} preferredRole - (Optional) The role to check first
  * @returns {Promise<Object|null>} - Returns { user, role, redirect, model } if found, null otherwise
  */
-const findUserAcrossCollections = async (identifier) => {
+const findUserAcrossCollections = async (identifier, preferredRole = null) => {
   if (!identifier) return null;
   const identifierString = String(identifier).trim();
   const isEmail = identifierString.includes('@');
@@ -27,7 +28,16 @@ const findUserAcrossCollections = async (identifier) => {
   // Clean phone number: remove non-digits
   const cleanPhone = identifierString.replace(/\D/g, '');
   
-  for (const item of COLLECTIONS) {
+  let collectionsToSearch = [...COLLECTIONS];
+  if (preferredRole) {
+    const preferred = collectionsToSearch.find(c => c.role === preferredRole);
+    if (preferred) {
+      collectionsToSearch = collectionsToSearch.filter(c => c.role !== preferredRole);
+      collectionsToSearch.unshift(preferred); // Put preferred role at the beginning
+    }
+  }
+  
+  for (const item of collectionsToSearch) {
     let query;
     if (isEmail) {
       query = { email: { $regex: new RegExp('^' + identifierString + '$', 'i') } };

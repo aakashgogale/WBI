@@ -45,7 +45,8 @@ const sendSMS = async (phone, message) => {
     console.log('[SMS] Sending request to (HTTPS):', baseUrl);
     console.log('[SMS] Params (masked):', { ...params, password: '***', apikey: '***' });
 
-    const response = await axios.get(baseUrl, { params });
+    // Added 5-second timeout to prevent hanging the event loop if SMS API provider is slow
+    const response = await axios.get(baseUrl, { params, timeout: 5000 });
 
     console.log('[SMS] Response status:', response.status);
     console.log('[SMS] Response data:', response.data);

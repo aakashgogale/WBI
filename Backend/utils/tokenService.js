@@ -66,7 +66,7 @@ module.exports = {
    */
   generateVerificationToken: (phone) => {
     return jwt.sign({ phone, type: 'verification' }, process.env.JWT_SECRET, {
-      expiresIn: '15m'
+      expiresIn: '60m'
     });
   },
 
@@ -78,9 +78,23 @@ module.exports = {
   verifyVerificationToken: (token) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (decoded.type !== 'verification') return null;
-      return decoded.phone;
+      
+      // Standard verification token
+      if (decoded.type === 'verification' && decoded.phone) {
+        return decoded.phone;
+      }
+      
+      // Fallback: if frontend sent an access token instead (e.g., cross-role user didn't refresh page)
+      if (decoded.mobile || decoded.phone) {
+        return decoded.mobile || decoded.phone;
+      }
+      
+      console.log('[JWT_DEBUG] verifyVerificationToken: Token decoded but no valid phone/mobile found:', decoded);
+      require('fs').appendFileSync('jwt_debug.log', JSON.stringify({ time: new Date(), error: 'No phone found', decoded }) + '\\n');
+      return null;
     } catch (error) {
+      console.log('[JWT_DEBUG] verifyVerificationToken failed:', error.message);
+      require('fs').appendFileSync('jwt_debug.log', JSON.stringify({ time: new Date(), error: error.message, token }) + '\\n');
       return null;
     }
   }

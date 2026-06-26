@@ -11,22 +11,31 @@ const { validationResult } = require('express-validator');
  * Send OTP for vendor registration/login
  */
 const sendOTP = async (req, res) => {
+  console.time('sendOTP_total');
   try {
+    console.time('sendOTP_validation');
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.timeEnd('sendOTP_validation');
+      console.timeEnd('sendOTP_total');
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
     }
+    console.timeEnd('sendOTP_validation');
 
     const { phone, email } = req.body;
 
     // Check existing vendor status to prevent OTP if restricted
-    const existingVendor = await Vendor.findOne({ phone });
+    console.time('sendOTP_db_check');
+    const existingVendor = await Vendor.findOne({ phone }).lean(); // Added .lean() for performance
+    console.timeEnd('sendOTP_db_check');
+
     if (existingVendor) {
       if (existingVendor.approvalStatus === VENDOR_STATUS.PENDING) {
+        console.timeEnd('sendOTP_total');
         return res.status(200).json({
           success: true,
           message: 'Your account is currently under review. Please wait for admin approval.',
@@ -34,13 +43,17 @@ const sendOTP = async (req, res) => {
         });
       }
       if (existingVendor.approvalStatus === VENDOR_STATUS.REJECTED || existingVendor.approvalStatus === VENDOR_STATUS.SUSPENDED) {
+        console.timeEnd('sendOTP_total');
         return res.status(403).json({ success: false, message: 'Account restricted.' });
       }
     }
 
     // 1. Rate limit check
+    console.time('sendOTP_rate_limit');
     const allowed = await checkRateLimit(phone);
+    console.timeEnd('sendOTP_rate_limit');
     if (!allowed) {
+      console.timeEnd('sendOTP_total');
       return res.status(429).json({
         success: false,
         message: 'Too many OTP requests. Please try again after 10 minutes.'
@@ -48,24 +61,31 @@ const sendOTP = async (req, res) => {
     }
 
     // 2. Generate OTP
+    console.time('sendOTP_generation');
     const otp = generateOTP();
     const otpHash = hashOTP(otp);
+    console.timeEnd('sendOTP_generation');
 
     // 3. Store OTP (Redis primary, MongoDB fallback)
+    console.time('sendOTP_store');
     await storeOTP(phone, otpHash);
+    console.timeEnd('sendOTP_store');
 
     // 4. Send OTP via SMS (Fire and forget)
+    console.time('sendOTP_sms_trigger');
     sendSMSOTP(phone, otp).then(smsResult => {
       if (!smsResult.success) {
         console.warn(`[OTP] SMS failed for vendor ${phone}, but OTP stored`);
       }
     }).catch(err => console.error(`[OTP] SMS error for ${phone}:`, err));
+    console.timeEnd('sendOTP_sms_trigger');
 
     // Log OTP in development mode
     if (process.env.NODE_ENV === 'development' || process.env.USE_DEFAULT_OTP === 'true') {
       console.log(`[DEV] Vendor OTP for ${phone}: ${otp}`);
     }
 
+    console.timeEnd('sendOTP_total');
     res.status(200).json({
       success: true,
       message: 'OTP sent successfully',
@@ -73,6 +93,7 @@ const sendOTP = async (req, res) => {
     });
   } catch (error) {
     console.error('Send OTP error:', error);
+    console.timeEnd('sendOTP_total');
     res.status(500).json({
       success: false,
       message: 'Failed to send OTP. Please try again.'
@@ -97,8 +118,8 @@ const verifyLogin = async (req, res) => {
       });
     }
 
-    // 2. Check if user exists dynamically in database
-    const searchResult = await findUserAcrossCollections(phone);
+    // 2. Check if user exists dynamically in database, prioritizing 'vendor'
+    const searchResult = await findUserAcrossCollections(phone, 'vendor');
 
     if (searchResult) {
       const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
@@ -149,6 +170,9 @@ const verifyLogin = async (req, res) => {
       userRes.mobile = foundUser.phone || foundUser.mobile || null;
       userRes.role = resolvedRole;
       userRes.status = foundUser.status || foundUser.approvalStatus || undefined;
+      
+      // For cross-role registration (e.g. existing User registering as Vendor)
+      const verificationToken = generateVerificationToken(phone);
 
       return res.status(200).json({
         success: true,
@@ -157,8 +181,8 @@ const verifyLogin = async (req, res) => {
         token: tokens.accessToken,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
+        verificationToken,
         user: userRes,
-        vendor: resolvedRole === 'vendor' ? userRes : undefined,
         role: resolvedRole,
         profileId: foundUser._id.toString(),
         redirectTo: resolvedRedirect,
@@ -196,9 +220,11 @@ const register = async (req, res) => {
     const validErrors = errors.array().filter(e => e.path !== 'service');
 
     if (validErrors.length > 0) {
+      console.error('Register validation errors:', validErrors);
+      const firstError = validErrors[0].msg;
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
+        message: `Validation failed: ${firstError}`,
         errors: validErrors
       });
     }
@@ -207,9 +233,18 @@ const register = async (req, res) => {
     const { name, email, verificationToken, aadhar, pan } = req.body;
     let phone = req.body.phone;
 
+    console.log('[BACKEND_REGISTER_DEBUG] Received verificationToken from frontend:', verificationToken);
+
     if (verificationToken) {
       const verifiedPhone = verifyVerificationToken(verificationToken);
-      if (!verifiedPhone) return res.status(400).json({ success: false, message: 'Invalid verification session.' });
+      console.log('[BACKEND_REGISTER_DEBUG] verifyVerificationToken result (phone):', verifiedPhone);
+      if (!verifiedPhone) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid verification session.', 
+          debug: { tokenReceived: verificationToken ? 'Yes (length: ' + verificationToken.length + ')' : 'No' }
+        });
+      }
       phone = verifiedPhone;
     } else {
       // Fallback OTP

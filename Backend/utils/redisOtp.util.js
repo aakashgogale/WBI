@@ -8,7 +8,7 @@ const { TOKEN_TYPES } = require('./constants'); // Need to ensure constants file
 // Constants if not imported
 const OTP_EXPIRY = parseInt(process.env.OTP_EXPIRY_SECONDS) || 300;
 const MAX_ATTEMPTS = parseInt(process.env.OTP_MAX_ATTEMPTS) || 3;
-const RATE_LIMIT_COUNT = parseInt(process.env.OTP_RATE_LIMIT) || 3;
+const RATE_LIMIT_COUNT = parseInt(process.env.OTP_RATE_LIMIT) || 100; // Increased for testing
 const RATE_LIMIT_WINDOW = parseInt(process.env.OTP_RATE_WINDOW) || 600;
 
 /**

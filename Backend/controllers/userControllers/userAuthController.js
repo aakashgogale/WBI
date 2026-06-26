@@ -88,41 +88,30 @@ const verifyLogin = async (req, res) => {
       });
     }
 
-    // 2. Check if user exists in ANY collection
-    const searchResult = await findUserAcrossCollections(phone);
+    // 2. Check if user exists in ANY collection, prioritizing 'user'
+    const searchResult = await findUserAcrossCollections(phone, 'user');
 
     if (searchResult) {
       const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
 
+      // If they don't have a USER profile (they matched a different collection), 
+      // treat them as a NEW user for the User app so they can create a User profile!
+      if (resolvedRole !== 'user') {
+        const verificationToken = generateVerificationToken(phone);
+        return res.status(200).json({
+          success: true,
+          isNewUser: true,
+          message: 'OTP verified. Please complete user registration.',
+          verificationToken
+        });
+      }
+
       // EXISTING USER -> LOGIN
-      if (foundUser.isActive === false && resolvedRole !== 'admin') {
+      if (foundUser.isActive === false) {
         return res.status(403).json({
           success: false,
           message: 'Your account has been deactivated.'
         });
-      }
-
-      // Check vendor specific approval status
-      if (resolvedRole === 'vendor') {
-        const status = foundUser.approvalStatus || 'pending';
-        if (status === 'pending') {
-          return res.status(403).json({
-            success: false,
-            message: 'Your account is pending admin approval. Please wait for approval.'
-          });
-        }
-        if (status === 'rejected') {
-          return res.status(403).json({
-            success: false,
-            message: 'Your account has been rejected. Please contact support.'
-          });
-        }
-        if (status === 'suspended') {
-          return res.status(403).json({
-            success: false,
-            message: 'Your account has been suspended. Please contact support.'
-          });
-        }
       }
 
       // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens

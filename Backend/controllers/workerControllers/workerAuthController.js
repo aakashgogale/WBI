@@ -83,7 +83,7 @@ const verifyLogin = async (req, res) => {
     }
 
     // 2. Check if user exists dynamically in database
-    const searchResult = await findUserAcrossCollections(phone);
+    const searchResult = await findUserAcrossCollections(phone, 'worker');
 
     if (searchResult) {
       const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
