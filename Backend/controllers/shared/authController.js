@@ -349,6 +349,9 @@ exports.unifiedLogin = async (req, res) => {
     const { user: foundUser, role: resolvedRole, redirect: resolvedRedirect, model: matchedModel } = searchResult;
 
     // Verify Password
+    if (!foundUser.password) {
+      return res.status(401).json({ success: false, message: 'Please login using your social account or reset your password' });
+    }
     const isMatch = await foundUser.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
