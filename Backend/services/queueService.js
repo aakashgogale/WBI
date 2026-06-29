@@ -14,6 +14,10 @@ connection.on('error', (err) => {
 // Create Queue
 const bookingAssignmentQueue = new Queue('booking-assignment-queue', { connection });
 
+bookingAssignmentQueue.on('error', (err) => {
+  console.error('[Queue Error] bookingAssignmentQueue:', err.message);
+});
+
 // Initialize Worker
 const bookingAssignmentWorker = new BullWorker(
   'booking-assignment-queue',
@@ -98,6 +102,10 @@ bookingAssignmentWorker.on('completed', (job) => {
 
 bookingAssignmentWorker.on('failed', (job, err) => {
   console.log(`[Queue] Job ${job.id} has failed with ${err.message}`);
+});
+
+bookingAssignmentWorker.on('error', (err) => {
+  console.error(`[Queue] Worker error: ${err.message}`);
 });
 
 module.exports = {

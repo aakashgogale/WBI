@@ -14,6 +14,14 @@ const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379'
 // Create the Matching Queue
 const b2bMatchingQueue = new Queue('b2b-matching-queue', { connection });
 
+connection.on('error', (err) => {
+  console.error('[Redis Error in b2bMatchingService]', err.message);
+});
+
+b2bMatchingQueue.on('error', (err) => {
+  console.error('[Queue Error in b2bMatchingQueue]', err.message);
+});
+
 let matchingWorker;
 
 // Helper to emit socket events
@@ -144,6 +152,18 @@ const initMatchingWorker = (app) => {
     },
     { connection }
   );
+
+  matchingWorker.on('completed', (job) => {
+    console.log(`[Matching Worker] Job ${job.id} completed successfully`);
+  });
+
+  matchingWorker.on('failed', (job, err) => {
+    console.error(`[Matching Worker] Job ${job.id} failed:`, err.message);
+  });
+
+  matchingWorker.on('error', (err) => {
+    console.error('[Matching Worker] Critical Error:', err.message);
+  });
 
   return matchingWorker;
 };

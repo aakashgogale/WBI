@@ -16,6 +16,8 @@ const engineerAssignmentQueue = new Queue('engineer-assignment', { connection: r
 const slaMonitorQueue = new Queue('sla-monitor', { connection: redisConnection });
 const notificationQueue = new Queue('notification-queue', { connection: redisConnection });
 const bookingDispatchQueue = new Queue('booking-dispatch', { connection: redisConnection });
+const queues = [vendorMatchingQueue, engineerAssignmentQueue, slaMonitorQueue, notificationQueue, bookingDispatchQueue];
+queues.forEach(q => q.on('error', err => console.error(`[BullMQ Queue Error] ${q.name}:`, err.message)));
 
 console.log('[BullMQ] Queues initialized');
 

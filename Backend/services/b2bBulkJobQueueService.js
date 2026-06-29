@@ -72,6 +72,14 @@ const initBulkJobWorker = (app) => {
     console.error(`[BullMQ Worker] Job '${job.name}' (ID: ${job.id}) failed with error: ${err.message}`);
   });
 
+  worker.on('error', (err) => {
+    console.error(`[BullMQ Worker] Critical Error in b2bBulkJobQueueService: ${err.message}`);
+  });
+
+  bulkJobQueue.on('error', (err) => {
+    console.error(`[BullMQ Queue] Error in b2bBulkJobQueueService: ${err.message}`);
+  });
+
   return worker;
 };
 
