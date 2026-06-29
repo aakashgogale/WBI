@@ -105,6 +105,7 @@ const AssignedJobs = () => {
   const formatTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A'; // Prevent RangeError crash
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -121,10 +122,10 @@ const AssignedJobs = () => {
   };
 
   const tabs = [
-    { id: 'all', label: 'All', count: counts.all },
-    { id: 'assigned', label: 'Assigned', count: counts.assigned },
-    { id: 'in_progress', label: 'In Progress', count: counts.in_progress },
-    { id: 'completed', label: 'Completed', count: counts.completed }
+    { id: 'all', label: 'All', count: counts?.all || 0 },
+    { id: 'assigned', label: 'Assigned', count: counts?.assigned || 0 },
+    { id: 'in_progress', label: 'In Progress', count: counts?.in_progress || counts?.inProgress || 0 }, // Backend sends inProgress
+    { id: 'completed', label: 'Completed', count: counts?.completed || 0 }
   ];
 
   const searchParams = new URLSearchParams(location.search);
@@ -132,10 +133,10 @@ const AssignedJobs = () => {
 
   const displayedJobs = jobs.filter(job => {
     if (!searchQuery) return true;
-    const title = (job.serviceName || job.serviceId?.title || '').toLowerCase();
-    const city = (job.address?.city || '').toLowerCase();
-    const bookingNumber = (job.bookingNumber || '').toLowerCase();
-    const status = (getStatusConfig(job.status).label || '').toLowerCase();
+    const title = String(job.serviceName || job.serviceId?.title || '').toLowerCase();
+    const city = String(job.address?.city || '').toLowerCase();
+    const bookingNumber = String(job.bookingNumber || '').toLowerCase();
+    const status = String(getStatusConfig(job.status).label || '').toLowerCase();
     return title.includes(searchQuery) || city.includes(searchQuery) || bookingNumber.includes(searchQuery) || status.includes(searchQuery);
   });
 
@@ -221,7 +222,7 @@ const AssignedJobs = () => {
             )}
             {displayedJobs.map((job, index) => {
               const statusConfig = getStatusConfig(job.status);
-              const isLastElement = jobs.length === index + 1;
+              const isLastElement = displayedJobs.length === index + 1;
 
               return (
                 <div
