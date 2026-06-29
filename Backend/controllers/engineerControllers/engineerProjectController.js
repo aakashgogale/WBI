@@ -35,16 +35,24 @@ const getProjectCounts = async (req, res) => {
 const getProjects = async (req, res) => {
   try {
     const engineerId = req.user.id;
-    const { status } = req.query;
+    const { status, page = 1, limit = 10 } = req.query;
 
     const query = { engineerId };
     if (status && status !== 'All') {
       query.status = status;
     }
 
-    const projects = await WorkerProject.find(query)
-      .populate('clientId', 'name companyName')
-      .sort({ createdAt: -1 });
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [projects, total] = await Promise.all([
+      WorkerProject.find(query)
+        .populate('clientId', 'name companyName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      WorkerProject.countDocuments(query)
+    ]);
 
     // Format response to match frontend requirements
     const formattedProjects = projects.map(p => {
@@ -68,7 +76,12 @@ const getProjects = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: formattedProjects
+      data: formattedProjects,
+      pagination: {
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total
+      }
     });
   } catch (error) {
     console.error('Error fetching projects:', error);

@@ -80,12 +80,14 @@ const getTransactions = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    const transactions = await Transaction.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Transaction.countDocuments(query);
+    const [transactions, total] = await Promise.all([
+      Transaction.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Transaction.countDocuments(query)
+    ]);
 
     res.status(200).json({
       success: true,

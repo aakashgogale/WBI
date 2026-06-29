@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   FiDollarSign, FiArrowUp, FiArrowDown, FiRefreshCw, FiX, FiFileText, 
   FiClock, FiCheck, FiAlertCircle, FiChevronRight, FiBriefcase, FiFilter,
@@ -9,6 +9,8 @@ import engineerWalletService from '../../../../services/engineerWalletService';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { toast } from 'react-hot-toast';
 import { useWalletData } from '../../../../hooks/useWalletData';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import api from '../../../../services/api';
 import { Skeleton } from '../../../../components/common/Skeleton';
 import { ErrorAlert } from '../../../../components/common/ErrorAlert';
 
@@ -33,6 +35,51 @@ const Wallet = () => {
 
   const socket = useAppNotifications('engineer');
   const { walletData, isLoading, error, refetch } = useWalletData();
+
+  // Infinite Scroll for Transactions
+  const observer = useRef();
+  
+  const {
+    data: txData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status: txStatus
+  } = useInfiniteQuery({
+    queryKey: ['engineerTransactions'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await api.get(`/wallet/transactions?page=${pageParam}&limit=20`);
+      return {
+        transactions: res.data?.data || [],
+        pagination: res.data?.pagination || { page: 1, pages: 1 }
+      };
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.pages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
+  });
+
+  const transactions = useMemo(() => {
+    return txData ? txData.pages.flatMap(page => page.transactions) : [];
+  }, [txData]);
+
+  const loadingTx = txStatus === 'pending';
+
+  const lastTxElementRef = useCallback(node => {
+    if (isFetchingNextPage || loadingTx) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loadingTx, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (walletData?.bankDetails) {
@@ -397,9 +444,15 @@ const Wallet = () => {
         <div className="mt-8">
           <h3 className="font-bold text-[#0F172A] mb-4">Recent Transactions</h3>
           <div className="space-y-3">
-             {transactions.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No transactions yet</p>}
-             {transactions.map(txn => (
-                <div key={txn._id} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+             {transactions.length === 0 && !loadingTx && <p className="text-sm text-gray-500 text-center py-4">No transactions yet</p>}
+             {transactions.map((txn, index) => {
+                const isLast = index === transactions.length - 1;
+                return (
+                <div 
+                  key={txn._id} 
+                  ref={isLast ? lastTxElementRef : null}
+                  className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100"
+                >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${txn.transactionType === 'withdrawal' || txn.transactionType === 'debit' ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'}`}>
                     {txn.transactionType === 'withdrawal' || txn.transactionType === 'debit' ? <FiArrowUp className="w-4 h-4" /> : <FiArrowDown className="w-4 h-4" />}
                   </div>
@@ -411,7 +464,13 @@ const Wallet = () => {
                     {txn.transactionType === 'withdrawal' || txn.transactionType === 'debit' ? '-' : '+'}₹{txn.amount?.toLocaleString() || 0}
                   </p>
                 </div>
-             ))}
+                );
+             })}
+             {isFetchingNextPage && (
+               <div className="flex justify-center p-4">
+                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#10AFA5]"></div>
+               </div>
+             )}
           </div>
         </div>
       </div>

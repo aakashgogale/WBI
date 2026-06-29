@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiFilter, FiBriefcase, FiMenu, FiCamera, FiGlobe, FiTool, FiShield, FiCpu, FiTrendingUp } from 'react-icons/fi';
 import api from '../../../../services/api';
 import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../../theme';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 
 // Helper to render icon based on project type
 const renderProjectIcon = (type) => {
@@ -66,15 +66,53 @@ const Projects = () => {
   });
   const counts = countsData || { 'All': 0, 'In Progress': 0, 'On Hold': 0, 'Completed': 0 };
 
-  const { data: projectsData, isLoading: loading } = useQuery({
+  const observer = useRef();
+  
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+    isLoading
+  } = useInfiniteQuery({
     queryKey: ['engineerProjects', activeTab],
-    queryFn: async () => {
-      const url = activeTab === 'All' ? '/engineers/projects' : `/engineers/projects?status=${activeTab}`;
+    queryFn: async ({ pageParam = 1 }) => {
+      const url = activeTab === 'All' 
+        ? `/engineers/projects?page=${pageParam}&limit=10` 
+        : `/engineers/projects?status=${activeTab}&page=${pageParam}&limit=10`;
       const res = await api.get(url);
-      return res.data?.data || [];
-    }
+      return {
+        projects: res.data?.data || [],
+        pagination: res.data?.pagination || { page: 1, pages: 1 }
+      };
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.pages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
   });
-  const projects = projectsData || [];
+
+  const projects = useMemo(() => {
+    return data ? data.pages.flatMap(page => page.projects) : [];
+  }, [data]);
+
+  const loading = status === 'pending';
+
+  const lastElementRef = useCallback(node => {
+    if (isFetchingNextPage || loading) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   return (
     <div className="min-h-screen bg-[#F8FCFC]  font-sans">
@@ -139,9 +177,12 @@ const Projects = () => {
             <p className="text-gray-500 text-sm">You don't have any {activeTab.toLowerCase()} projects at the moment.</p>
           </div>
         ) : (
-          projects.map((project) => (
+          projects.map((project, index) => {
+            const isLast = index === projects.length - 1;
+            return (
             <div
               key={project.projectId}
+              ref={isLast ? lastElementRef : null}
               onClick={() => navigate(`/engineer/projects/${project.projectId}`)}
               className="bg-white p-4 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-50 cursor-pointer transition active:scale-[0.98] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
             >
@@ -185,7 +226,14 @@ const Projects = () => {
                 </div>
               </div>
             </div>
-          ))
+            );
+          })
+        )}
+        
+        {isFetchingNextPage && (
+          <div className="flex justify-center p-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#10AFA5]"></div>
+          </div>
         )}
       </div>
     </div>

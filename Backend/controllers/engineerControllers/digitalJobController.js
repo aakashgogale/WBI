@@ -5,7 +5,7 @@ const Engineer = require('../../models/Engineer');
 exports.getEngineerJobs = async (req, res) => {
   try {
     const engineerId = req.engineer._id || req.worker._id; // Fallback to worker if using same auth middleware
-    const { status } = req.query;
+    const { status, page = 1, limit = 10 } = req.query;
 
     const query = { assignedEngineer: engineerId };
     
@@ -17,13 +17,26 @@ exports.getEngineerJobs = async (req, res) => {
       query.status = status;
     }
 
-    const jobs = await DigitalJob.find(query)
-      .populate('vendorId', 'companyName')
-      .sort({ createdAt: -1 });
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [jobs, total] = await Promise.all([
+      DigitalJob.find(query)
+        .populate('vendorId', 'companyName')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      DigitalJob.countDocuments(query)
+    ]);
 
     res.status(200).json({
       success: true,
-      data: jobs
+      data: jobs,
+      pagination: {
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        total
+      }
     });
   } catch (error) {
     console.error('Error fetching digital jobs:', error);
