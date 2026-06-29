@@ -103,6 +103,7 @@ const AssignedJobs = () => {
   const formatTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A'; // Prevent RangeError crash
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -119,10 +120,10 @@ const AssignedJobs = () => {
   };
 
   const tabs = [
-    { id: 'all', label: 'All', count: counts.all },
-    { id: 'assigned', label: 'Assigned', count: counts.assigned },
-    { id: 'in_progress', label: 'In Progress', count: counts.in_progress },
-    { id: 'completed', label: 'Completed', count: counts.completed }
+    { id: 'all', label: 'All', count: counts?.all || 0 },
+    { id: 'assigned', label: 'Assigned', count: counts?.assigned || 0 },
+    { id: 'in_progress', label: 'In Progress', count: counts?.in_progress || counts?.inProgress || 0 },
+    { id: 'completed', label: 'Completed', count: counts?.completed || 0 }
   ];
 
   return (
