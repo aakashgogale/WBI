@@ -193,6 +193,19 @@ export default function WorkerSignup() {
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LogoLoader fullScreen={false} /></div>;
 
+  if (!config) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
+        <FiLock className="w-12 h-12 text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Service Temporarily Unavailable</h2>
+        <p className="text-gray-500 max-w-md mb-6">We are currently experiencing technical difficulties connecting to the server. Please check your connection or try again in a few moments.</p>
+        <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-black text-white rounded-xl font-semibold shadow-sm hover:bg-gray-800 transition-colors">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   const currentStepData = config?.steps?.find(s => s.step === currentStep);
   const totalSteps = Math.max(...(config?.steps?.map(s => s.step) || [1]), 2); // At least 2 steps (fields + categories)
 
