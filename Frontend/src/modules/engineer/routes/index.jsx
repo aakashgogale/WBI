@@ -65,7 +65,7 @@ const EngineerRoutes = () => {
       {/* Main content area - leaves space for bottom nav when needed */}
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
             <AnimatePresence mode="wait">
-            <Routes location={location || undefined} key={location ? location.pathname : 'routes'}>
+            <Routes location={location || undefined}>
               {/* Public routes */}
               <Route path="/login" element={<AnimatedPage><PublicRoute userType="engineer"><Login /></PublicRoute></AnimatedPage>} />
               <Route path="/signup" element={<AnimatedPage><PublicRoute userType="engineer"><Signup /></PublicRoute></AnimatedPage>} />

@@ -99,7 +99,7 @@ const WorkerRoutes = () => {
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
         <Suspense fallback={<LoadingFallback />}>
             <AnimatePresence mode="wait">
-            <Routes location={location || undefined} key={location ? location.pathname : 'routes'}>
+            <Routes location={location || undefined}>
               {/* Public routes */}
               <Route path="/login" element={<AnimatedPage><PublicRoute userType="worker"><Login /></PublicRoute></AnimatedPage>} />
               <Route path="/signup" element={<AnimatedPage><PublicRoute userType="worker"><Signup /></PublicRoute></AnimatedPage>} />

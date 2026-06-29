@@ -153,7 +153,7 @@ const Dashboard = () => {
   }, [socket]);
 
   // Only show skeleton if we have NO cached data and are currently fetching
-  if (profileLoading && !profileRes) {
+  if ((profileLoading && !profileRes) || (statsLoading && !statsRes)) {
     return (
       <div className="min-h-screen bg-[#F8FCFC] px-4 py-6 space-y-6">
         <SkeletonProfileHeader />

@@ -38,14 +38,17 @@ const Dashboard = () => {
   const { data: profileRes, isLoading: loadingProfile } = useQuery({
     queryKey: ['workerProfile'],
     queryFn: () => workerService.getProfile(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const { data: statsRes, isLoading: loadingStats } = useQuery({
     queryKey: ['workerDashboardStats'],
     queryFn: () => workerService.getDashboardStats(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  const loading = loadingProfile || loadingStats;
+  // Only show skeleton if we have NO cached data and are currently fetching
+  const loading = (loadingProfile && !profileRes) || (loadingStats && !statsRes);
 
   const profile = profileRes?.worker || {};
   const workerProfile = {
