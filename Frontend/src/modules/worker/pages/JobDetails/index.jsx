@@ -524,7 +524,7 @@ const JobDetails = () => {
               {(job.workPhotos?.length > 0 || job.progressVideos?.length > 0) && (
                 <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
                   {job.workPhotos?.map((p, i) => (
-                     <img key={i} src={p} alt="progress" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
+                     <img fetchPriority="low" loading="lazy" key={i} src={p} alt="progress" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
                   ))}
                   {job.progressVideos?.map((v, i) => (
                      <div key={`vid-${i}`} className="w-16 h-16 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
@@ -750,7 +750,7 @@ const JobDetails = () => {
               <div className={styles.chatHeader}>
                 <div className={styles.chatHeaderLeft}>
                   {job.userId?.profilePhoto ? (
-                    <img src={job.userId.profilePhoto} alt={job.userId.name} className={styles.chatHeaderAvatar} />
+                    <img fetchPriority="low" loading="lazy" src={job.userId.profilePhoto} alt={job.userId.name} className={styles.chatHeaderAvatar} />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-[#10AFA5] text-white flex items-center justify-center font-bold">
                       {job.userId?.name ? job.userId.name.charAt(0).toUpperCase() : 'U'}
@@ -801,8 +801,7 @@ const JobDetails = () => {
                       >
                         <div className={styles.messageBubble}>
                           {msg.fileUrl && msg.fileType === 'image' && (
-                            <img
-                              src={msg.fileUrl}
+                            <img fetchPriority="low" loading="lazy"                               src={msg.fileUrl}
                               alt="attachment"
                               className={styles.chatImageAttachment}
                             />

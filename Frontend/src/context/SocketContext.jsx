@@ -66,7 +66,7 @@ const SwipeableNotification = ({ t, data, onClick }) => {
 
 const SocketContext = createContext(null);
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
@@ -79,6 +79,7 @@ export const SocketProvider = ({ children }) => {
     if (path.startsWith('/worker')) return 'worker';
     if (path.startsWith('/admin')) return 'admin';
     if (path.startsWith('/user')) return 'user';
+    if (path.startsWith('/b2b')) return 'b2b';
     return null;
   };
 
@@ -103,6 +104,9 @@ export const SocketProvider = ({ children }) => {
         break;
       case 'admin':
         tokenKey = 'adminAccessToken';
+        break;
+      case 'b2b':
+        tokenKey = 'b2bAccessToken';
         break;
       case 'user':
       default:
@@ -132,7 +136,7 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Use HTTP URL for socket.io client - it handles WS upgrade automatically
-    const socketBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+    const socketBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
 
     const newSocket = io(socketBaseUrl, {
       auth: {
@@ -200,7 +204,10 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on('connect_error', (err) => {
       // Silently handle typical connection errors to avoid spam, or log only critical ones
-      // console.error(`Socket connection error (${userType}):`, err);
+      if (err.message && err.message.includes('Authentication error')) {
+        console.warn(`[SocketContext] Auth error (${userType}). Stopping reconnection attempts.`);
+        newSocket.disconnect();
+      }
     });
 
     // Listen for generic notifications

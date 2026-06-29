@@ -11,6 +11,8 @@ import { publicCatalogService } from '../../../../services/catalogService';
 import { toast } from 'react-hot-toast';
 import AddressSelectionModal from '../../../user/pages/Checkout/components/AddressSelectionModal';
 import { z } from "zod";
+import { useQueryClient } from '@tanstack/react-query';
+import ProfilePhotoUploader from '../../../../components/common/ProfilePhotoUploader';
 
 // Zod schema
 import flutterBridge from '../../../../utils/flutterBridge';
@@ -23,6 +25,7 @@ const workerProfileSchema = z.object({
 
 const EditProfile = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -36,18 +39,7 @@ const EditProfile = () => {
     profilePhoto: null,
     status: 'OFFLINE'
   });
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
   const [errors, setErrors] = useState({});
-
-  const handleNativeCamera = async () => {
-    const file = await flutterBridge.openCamera();
-    if (file) {
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
-      flutterBridge.hapticFeedback('success');
-    }
-  };
 
   useEffect(() => {
     const initData = async () => {
@@ -79,40 +71,7 @@ const EditProfile = () => {
     initData();
   }, []);
 
-  const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
 
-    let baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    if (!baseUrl) {
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:5000';
-      } else {
-        baseUrl = window.location.origin;
-      }
-    }
-    baseUrl = baseUrl.replace(/\/api$/, '');
-    const response = await fetch(`${baseUrl}/api/image/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.message || 'Upload failed');
-    return data.imageUrl;
-  };
-
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size should be less than 5MB');
-        return;
-      }
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
-    }
-  };
 
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
@@ -150,17 +109,6 @@ const EditProfile = () => {
         status: formData.status
       };
 
-      if (photoFile) {
-        try {
-          const photoUrl = await uploadFile(photoFile);
-          payload.profilePhoto = photoUrl;
-        } catch (uploadErr) {
-          console.error('Photo upload failed', uploadErr);
-          toast.error('Failed to upload photo');
-          setSaving(false);
-          return;
-        }
-      }
 
       await workerService.updateProfile(payload);
       toast.success('Profile updated successfully');
@@ -199,39 +147,14 @@ const EditProfile = () => {
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
 
         {/* Profile Photo */}
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <div
-              className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-md overflow-hidden flex items-center justify-center cursor-pointer"
-              onClick={() => flutterBridge.isFlutter ? handleNativeCamera() : document.getElementById('photo-upload').click()}
-            >
-              {photoPreview || formData.profilePhoto ? (
-                <img src={photoPreview || formData.profilePhoto} className="w-full h-full object-cover" alt="Profile" />
-              ) : (
-                <div className="bg-gray-100 w-full h-full flex items-center justify-center">
-                  <FiUser className="w-10 h-10 text-gray-300" />
-                </div>
-              )}
-            </div>
-            {/* Camera Icon */}
-            <div
-              className="absolute bottom-0 right-0 p-2 bg-gray-900 rounded-full text-white ring-2 ring-white shadow-sm cursor-pointer"
-              onClick={() => flutterBridge.isFlutter ? handleNativeCamera() : document.getElementById('photo-upload').click()}
-            >
-              <FiCamera className="w-4 h-4" />
-            </div>
-            {!flutterBridge.isFlutter && (
-              <input
-                type="file"
-                id="photo-upload"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
-            )}
-          </div>
-          <p className="text-xs text-gray-400 mt-2 font-medium">Tap to change photo</p>
-        </div>
+        <ProfilePhotoUploader 
+          currentPhoto={formData.profilePhoto}
+          uploadFunction={workerService.uploadProfilePhoto}
+          onUploadSuccess={(newPhotoUrl) => {
+            handleInputChange('profilePhoto', newPhotoUrl);
+            queryClient.invalidateQueries(['workerProfile']);
+          }}
+        />
 
         {/* Availability Status */}
         <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">

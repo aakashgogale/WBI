@@ -58,7 +58,8 @@
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.1",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "mongodb-memory-server": "^10.1.4",

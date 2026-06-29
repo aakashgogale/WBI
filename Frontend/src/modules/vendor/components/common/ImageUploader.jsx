@@ -152,8 +152,7 @@ const ImageUploader = ({
         <div className="grid grid-cols-3 gap-3 mt-4">
           {images.map((image) => (
             <div key={image.id} className="relative group">
-              <img
-                src={image.preview}
+              <img fetchPriority="low" loading="lazy"                 src={image.preview}
                 alt="Preview"
                 className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
               />

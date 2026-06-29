@@ -194,6 +194,7 @@ app.use('/api/public/installation-enquiries', require('./routes/public-routes/in
 app.use('/api/public/maintenance-enquiries', require('./routes/public-routes/maintenanceEnquiry.routes'));
 app.use('/api/public/breakdown-enquiries', require('./routes/public-routes/breakdownEnquiry.routes'));
 
+app.use('/api/home-sections', require('./routes/public-routes/homeSections.routes'));
 
 // User routes
 app.use('/api/users/auth', require('./routes/user-routes/auth.routes'));
@@ -256,6 +257,15 @@ app.use('/api/engineers/projects', require('./routes/engineer-routes/project.rou
 app.use('/api/engineers/execution', require('./routes/engineer-routes/engineerJobExecution.routes'));
 app.use('/api/engineers/digital', require('./routes/engineer-routes/digital.routes'));
 
+// B2B routes
+app.use('/api/b2b', require('./routes/b2b-routes/auth.routes'));
+app.use('/api/b2b/bulk-jobs', require('./routes/b2b-routes/bulkJobs.routes'));
+app.use('/api/b2b/jobs', require('./routes/b2b-routes/jobs.routes'));
+app.use('/api/b2b/engineers', require('./routes/b2b-routes/engineers.routes'));
+app.use('/api/admin', require('./routes/admin-routes/b2bManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/b2bBulkJobAdmin.routes'));
+app.use('/api/admin/b2b-wallets', require('./routes/admin-routes/b2bWalletAdmin.routes'));
+
 // Admin routes
 app.use('/api/admin/auth', require('./routes/admin-routes/adminAuth.routes'));
 app.use('/api/admin', require('./routes/admin-routes/cityManagement.routes.js'));
@@ -279,6 +289,7 @@ app.use('/api/admin', require('./routes/admin-routes/brandManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/serviceManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/vendorCatalogManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/homePageManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/homeSectionsAdmin.routes'));
 app.use('/api/admin', require('./routes/admin-routes/bookingManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/paymentManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/transactionManagement.routes'));
@@ -431,43 +442,59 @@ app.use((err, req, res, next) => {
 // Initialize Socket.io
 let server;
 if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
-  const PORT = process.env.PORT || 5000;
+  const initialPort = parseInt(process.env.PORT || 5000, 10);
   // Wait for MongoDB connection before starting server and schedulers
   const mongoose = require('mongoose');
   
-  const startServer = () => {
-    server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-    });
+  const startServer = (port) => {
+    server = app.listen(port)
+      .on('listening', () => {
+        console.log(`Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
+        
+        // Initialize Socket.io
+        const { initializeSocket, getIO } = require('./sockets');
+        initializeSocket(server);
 
-    // Initialize Socket.io
-    const { initializeSocket, getIO } = require('./sockets');
-    initializeSocket(server);
+        // Make io instance available in request
+        app.set('io', getIO());
 
-    // Make io instance available in request
-    app.set('io', getIO());
+        // Initialize Booking Scheduler for Wave-Based Alerting
+        const { initializeScheduler } = require('./services/bookingScheduler');
+        initializeScheduler(getIO());
+        console.log('[Server] Booking Scheduler initialized for wave-based alerting');
 
-    // Initialize Booking Scheduler for Wave-Based Alerting
-    const { initializeScheduler } = require('./services/bookingScheduler');
-    initializeScheduler(getIO());
-    console.log('[Server] Booking Scheduler initialized for wave-based alerting');
+        // Initialize Urgency Scheduler for 3-tier booking timeouts
+        const { startUrgencyScheduler } = require('./services/urgencyScheduler');
+        startUrgencyScheduler();
+        console.log('[Server] Urgency Scheduler initialized');
 
-    // Initialize Urgency Scheduler for 3-tier booking timeouts
-    const { startUrgencyScheduler } = require('./services/urgencyScheduler');
-    startUrgencyScheduler();
-    console.log('[Server] Urgency Scheduler initialized');
+        // Initialize BullMQ Workers for Security Solutions Flow
+        require('./jobs/vendorMatchingJob');
+        require('./jobs/engineerAssignmentJob');
+        require('./jobs/slaMonitorJob');
+        console.log('[Server] BullMQ Workers initialized');
 
-    // Initialize BullMQ Workers for Security Solutions Flow
-    require('./jobs/vendorMatchingJob');
-    require('./jobs/engineerAssignmentJob');
-    require('./jobs/slaMonitorJob');
-    console.log('[Server] BullMQ Workers initialized');
+        // Initialize BullMQ Workers for B2B Bulk Uploads
+        const { initBulkJobWorker } = require('./services/b2bBulkJobQueueService');
+        const { initMatchingWorker } = require('./services/b2bMatchingService');
+        initBulkJobWorker(app);
+        initMatchingWorker(app);
+        console.log('[Server] BullMQ B2B Bulk Upload and Matching Workers initialized');
+      })
+      .on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`[Server] Port ${port} is in use. Trying port ${port + 1}...`);
+          startServer(port + 1);
+        } else {
+          console.error('[Server] Failed to start:', err);
+        }
+      });
   };
 
   if (mongoose.connection.readyState === 1) {
-    startServer();
+    startServer(initialPort);
   } else {
-    mongoose.connection.once('open', startServer);
+    mongoose.connection.once('open', () => startServer(initialPort));
   }
 
   // Handle unhandled promise rejections

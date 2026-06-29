@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState, memo, useMemo } from 'react';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { FiHome, FiBriefcase, FiUser, FiDollarSign, FiFolder } from 'react-icons/fi';
 import { HiHome, HiBriefcase, HiUser, HiFolder } from 'react-icons/hi';
 import { FiBell } from 'react-icons/fi';
@@ -8,12 +10,22 @@ import { workerTheme as themeColors } from '../../../../theme';
 import api from '../../../../services/api';
 
 const BottomNav = memo(() => {
+  const { scrollY } = useScroll();
+  const [hidden, setHidden] = React.useState(false);
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const prev = scrollY.getPrevious();
+    if (latest > prev && latest > 150) setHidden(true);
+    else setHidden(false);
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   const iconRefs = useRef({});
   const activeAnimations = useRef({});
   const [pendingJobsCount, setPendingJobsCount] = useState(0);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  const queryClient = useQueryClient();
 
   // Load counts
   useEffect(() => {
@@ -34,12 +46,49 @@ const BottomNav = memo(() => {
 
     window.addEventListener('storage', updatePendingCount);
     window.addEventListener('workerJobsUpdated', updatePendingCount);
+    
+    // Background Prefetching for Sub-1-second loading
+    const prefetchTabs = async () => {
+      try {
+        const engineerService = (await import('../../../../services/engineerService')).default;
+        
+        // Prefetch Dashboard
+        queryClient.prefetchQuery({
+          queryKey: ['engineerDashboardStats'],
+          queryFn: () => engineerService.getDashboardStats(),
+          staleTime: 60 * 1000
+        });
+        
+        // Prefetch Profile
+        queryClient.prefetchQuery({
+          queryKey: ['engineerProfile'],
+          queryFn: () => engineerService.getProfile(),
+          staleTime: 60 * 1000
+        });
+
+        // Prefetch Jobs
+        queryClient.prefetchQuery({
+          queryKey: ['engineerAssignedJobs', 1, 'all'],
+          queryFn: () => engineerService.getAssignedJobs({ page: 1, limit: 10, status: 'all' }),
+          staleTime: 60 * 1000
+        });
+        
+        // Prefetch Wallet (if controller has getWallet)
+        // (Assuming we'll add it soon if it's missing)
+      } catch (err) {
+        // Silently ignore prefetch errors
+      }
+    };
+
+    // Delay prefetching slightly so it doesn't block initial render
+    const prefetchTimer = setTimeout(prefetchTabs, 500);
 
     return () => {
       window.removeEventListener('storage', updatePendingCount);
       window.removeEventListener('workerJobsUpdated', updatePendingCount);
+      clearTimeout(prefetchTimer);
     };
-  }, []);
+  }, [queryClient]);
 
   const navItems = useMemo(() => {
     return [
@@ -60,8 +109,11 @@ const BottomNav = memo(() => {
 
 
   return (
-    <nav
+    <motion.nav
       className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.02)]"
+      variants={{ visible: { y: 0 }, hidden: { y: '100%' } }}
+      animate={hidden ? 'hidden' : 'visible'}
+      transition={{ duration: 0.35, ease: 'easeInOut' }}
       style={{
         zIndex: 40,
         paddingBottom: 'env(safe-area-inset-bottom)',
@@ -156,7 +208,7 @@ const BottomNav = memo(() => {
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 });
 

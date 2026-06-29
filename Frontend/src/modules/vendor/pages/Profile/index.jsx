@@ -221,8 +221,7 @@ const Profile = () => {
                   }}
                 >
                   {profile.photo ? (
-                    <img
-                      src={profile.photo}
+                    <img fetchPriority="low" loading="lazy"                       src={profile.photo}
                       alt={profile.name}
                       className="w-full h-full object-cover"
                     />

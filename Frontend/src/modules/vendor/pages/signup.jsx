@@ -19,9 +19,20 @@ const VendorSignup = () => {
   // OTP States
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpToken, setOtpToken] = useState('');
-  const [verificationToken, setVerificationToken] = useState('');
+  const [verificationToken, setVerificationToken] = useState(() => {
+    return sessionStorage.getItem('vendorSignupVerificationToken') || '';
+  });
   const [resendTimer, setResendTimer] = useState(0);
   const otpInputRefs = useRef([]);
+
+  // Persist verification token
+  useEffect(() => {
+    if (verificationToken) {
+      sessionStorage.setItem('vendorSignupVerificationToken', verificationToken);
+    } else {
+      sessionStorage.removeItem('vendorSignupVerificationToken');
+    }
+  }, [verificationToken]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -182,27 +193,43 @@ const VendorSignup = () => {
 
   // Step Navigations
   const handleNextStep1 = async () => {
-    if (!formData.name || !formData.email || formData.phoneNumber.length !== 10 || formData.password.length < 8) {
-      toast.error("Please fill all basic details correctly. Password must be 8+ chars.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.name || !emailRegex.test(formData.email) || formData.phoneNumber.length !== 10 || formData.password.length < 8) {
+      toast.error("Please fill all details correctly. Provide a valid email and 8+ char password.");
       return;
     }
     
     setIsLoading(true);
-    try {
-      const response = await sendVendorOTP(formData.phoneNumber);
-      if (response.success) {
-        setOtpToken(response.token);
-        setResendTimer(120);
-        setFlowState('otp');
-        toast.success('OTP sent to your phone number');
-      } else {
-        toast.error(response.message || 'Failed to send OTP');
+    let retryCount = 0;
+    
+    const trySendOTP = async () => {
+      try {
+        const response = await sendVendorOTP(formData.phoneNumber);
+        if (response.success) {
+          setOtpToken(response.token);
+          setResendTimer(120);
+          setFlowState('otp');
+          toast.success('OTP sent to your phone number');
+        } else {
+          toast.error(response.message || 'Failed to send OTP');
+        }
+      } catch (error) {
+        if (error.code === 'ECONNABORTED') {
+          if (retryCount < 1) {
+            retryCount++;
+            console.log('Timeout on sendOTP, retrying automatically...');
+            await trySendOTP(); // Retry once
+          } else {
+            toast.error('Server is taking too long to respond, please try again');
+          }
+        } else {
+          toast.error(error.response?.data?.message || 'Failed to send OTP');
+        }
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP');
-    } finally {
-      setIsLoading(false);
-    }
+    };
+    
+    await trySendOTP();
+    setIsLoading(false);
   };
 
   const handleOtpChange = (index, value) => {
@@ -233,13 +260,34 @@ const VendorSignup = () => {
       // Actually, we can use verify-login for OTP verify!
       const response = await verifyLogin({ phone: formData.phoneNumber, otp: otpValue });
       if (response.success && response.isNewUser) {
+        console.log('[SIGNUP_DEBUG] verifyLogin succeeded (new user). Storing token:', response.verificationToken);
         setVerificationToken(response.verificationToken);
         setFlowState('form');
         setStep(2); // Move to Account Type step
         toast.success('Phone verified successfully!');
       } else if (response.success && !response.isNewUser) {
-        toast.error('Account already exists! Please login.');
-        navigate('/vendor/login');
+        // First check if this is an already pending vendor response
+        if (response.vendor && response.vendor.adminApproval === 'pending') {
+          toast.success('Your account is currently under review. Please wait for admin approval.');
+          navigate('/vendor/login');
+          return;
+        }
+
+        // Cross-role registration: check if user already has the vendor role
+        const roleStr = response.role || response.user?.role || response.vendor?.role || '';
+        const roles = response.roles || response.user?.roles || [roleStr];
+        
+        if (!roles.includes('vendor') && response.accessToken) {
+          const finalToken = response.verificationToken || response.accessToken;
+          console.log('[SIGNUP_DEBUG] verifyLogin succeeded (cross-role). Storing token:', finalToken);
+          setVerificationToken(finalToken);
+          setFlowState('form');
+          setStep(2);
+          toast.success('User found. Please complete your Vendor Profile!');
+        } else {
+          toast.error('Vendor Account already exists! Please login.');
+          navigate('/vendor/login');
+        }
       } else {
         toast.error(response.message || 'OTP verification failed');
       }
@@ -291,7 +339,25 @@ const VendorSignup = () => {
   };
 
   const handleFinalSubmit = async () => {
+    if (isLoading) {
+      console.log('[SIGNUP_DEBUG] Submission already in progress, ignoring duplicate click.');
+      return;
+    }
     setIsLoading(true);
+
+    // b) Log before building payload
+    console.log('[SIGNUP_DEBUG] Final submit clicked. Current verificationToken state:', verificationToken);
+    
+    // Safety fallback: read directly from sessionStorage in case of stale closure
+    const currentToken = verificationToken || sessionStorage.getItem('vendorSignupVerificationToken');
+    console.log('[SIGNUP_DEBUG] Token being used for payload:', currentToken);
+
+    if (!currentToken) {
+      setIsLoading(false);
+      toast.error('Your verification expired, please refresh and verify your phone again.', { duration: 5000 });
+      return;
+    }
+    
     try {
       const aadharDoc = formData.documents.find(d => d.type === 'aadhar')?.url;
       const aadharBackDoc = formData.documents.find(d => d.type === 'aadharBack')?.url;
@@ -312,8 +378,11 @@ const VendorSignup = () => {
         aadharDocument: aadharDoc,
         aadharBackDocument: aadharBackDoc,
         panDocument: panDoc,
-        verificationToken
+        verificationToken: currentToken
       };
+
+      // c) Log payload
+      console.log('[SIGNUP_DEBUG] Actual payload sent to register API:', { ...registerData, password: '***', documentsLength: formData.documents.length });
 
       const response = await register(registerData);
       if (response.success) {
@@ -327,9 +396,18 @@ const VendorSignup = () => {
         navigate('/vendor/login');
       } else {
         toast.error(response.message || 'Registration failed');
+        // Dynamic redirect if already exists
+        if (response.message && response.message.toLowerCase().includes('already exists')) {
+          setTimeout(() => navigate('/vendor/login'), 2000);
+        }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      const errorMsg = error.response?.data?.message || 'Registration failed';
+      toast.error(errorMsg);
+      // Dynamic redirect if already exists
+      if (errorMsg.toLowerCase().includes('already exists')) {
+        setTimeout(() => navigate('/vendor/login'), 2000);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -718,7 +796,7 @@ const VendorSignup = () => {
                     <p className="text-xs font-semibold text-gray-600">Aadhar Front</p>
                     {documentPreview.aadhar ? (
                       <div className="relative rounded-xl overflow-hidden group border">
-                        <img src={documentPreview.aadhar} className="w-full h-28 object-cover" alt="Aadhar Front" />
+                        <img fetchPriority="low" loading="lazy" src={documentPreview.aadhar} className="w-full h-28 object-cover" alt="Aadhar Front" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                            <button onClick={() => removeDocument('aadhar')} className="bg-white text-red-500 p-2 rounded-full hover:bg-red-50"><FiX/></button>
                         </div>
@@ -741,7 +819,7 @@ const VendorSignup = () => {
                     <p className="text-xs font-semibold text-gray-600">Aadhar Back</p>
                     {documentPreview.aadharBack ? (
                       <div className="relative rounded-xl overflow-hidden group border">
-                        <img src={documentPreview.aadharBack} className="w-full h-28 object-cover" alt="Aadhar Back" />
+                        <img fetchPriority="low" loading="lazy" src={documentPreview.aadharBack} className="w-full h-28 object-cover" alt="Aadhar Back" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                            <button onClick={() => removeDocument('aadharBack')} className="bg-white text-red-500 p-2 rounded-full hover:bg-red-50"><FiX/></button>
                         </div>
@@ -764,7 +842,7 @@ const VendorSignup = () => {
                     <p className="text-xs font-semibold text-gray-600">PAN Card</p>
                     {documentPreview.pan ? (
                       <div className="relative rounded-xl overflow-hidden group border w-1/2">
-                        <img src={documentPreview.pan} className="w-full h-28 object-cover" alt="PAN" />
+                        <img fetchPriority="low" loading="lazy" src={documentPreview.pan} className="w-full h-28 object-cover" alt="PAN" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                            <button onClick={() => removeDocument('pan')} className="bg-white text-red-500 p-2 rounded-full hover:bg-red-50"><FiX/></button>
                         </div>

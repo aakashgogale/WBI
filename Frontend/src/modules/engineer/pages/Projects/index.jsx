@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiFilter, FiBriefcase, FiMenu, FiCamera, FiGlobe, FiTool, FiShield, FiCpu, FiTrendingUp } from 'react-icons/fi';
 import api from '../../../../services/api';
 import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../../theme';
+import { useQuery } from '@tanstack/react-query';
 
 // Helper to render icon based on project type
 const renderProjectIcon = (type) => {
@@ -54,43 +55,26 @@ const getStatusColor = (status) => {
 const Projects = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('All');
-  const [counts, setCounts] = useState({ 'All': 0, 'In Progress': 0, 'On Hold': 0, 'Completed': 0 });
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const tabs = ['All', 'In Progress', 'On Hold', 'Completed'];
 
-  useEffect(() => {
-    fetchCounts();
-    fetchProjects(activeTab);
-  }, [activeTab]);
-
-  const fetchCounts = async () => {
-    try {
+  const { data: countsData } = useQuery({
+    queryKey: ['engineerProjectCounts'],
+    queryFn: async () => {
       const res = await api.get('/engineers/projects/counts');
-      if (res.data.success) {
-        setCounts(res.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching project counts:', error);
+      return res.data?.data || { 'All': 0, 'In Progress': 0, 'On Hold': 0, 'Completed': 0 };
     }
-  };
+  });
+  const counts = countsData || { 'All': 0, 'In Progress': 0, 'On Hold': 0, 'Completed': 0 };
 
-  const fetchProjects = async (status) => {
-    try {
-      setLoading(true);
-      const url = status === 'All' ? '/engineers/projects' : `/engineers/projects?status=${status}`;
+  const { data: projectsData, isLoading: loading } = useQuery({
+    queryKey: ['engineerProjects', activeTab],
+    queryFn: async () => {
+      const url = activeTab === 'All' ? '/engineers/projects' : `/engineers/projects?status=${activeTab}`;
       const res = await api.get(url);
-      if (res.data.success) {
-        setProjects(res.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects');
-    } finally {
-      setLoading(false);
+      return res.data?.data || [];
     }
-  };
+  });
+  const projects = projectsData || [];
 
   return (
     <div className="min-h-screen bg-[#F8FCFC]  font-sans">

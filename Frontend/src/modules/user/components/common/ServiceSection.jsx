@@ -77,8 +77,7 @@ const ServiceSection = ({
             <div className="relative w-32 h-32 rounded-lg overflow-hidden flex-shrink-0">
               {service.image && (
                 <>
-                  <img
-                    src={service.image}
+                  <img fetchPriority="low" loading="lazy"                     src={service.image}
                     alt={service.title}
                     className="w-full h-full object-cover"
                   />

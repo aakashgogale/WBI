@@ -9,7 +9,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -85,7 +85,7 @@ const LandingPage = () => {
       <header className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-xl border-b border-gray-100 py-3 shadow-sm transition-all duration-300">
         <div className="container mx-auto px-4 sm:px-8 flex justify-between items-center max-w-7xl">
           <Link to="/Home" className="flex items-center gap-3 group">
-              <img src="/logo/WBILogo.jpg" alt="WBI Logo" className="h-9 sm:h-11 w-auto transition-transform group-hover:scale-110" />
+              <img fetchPriority="low" loading="lazy" src="/logo/WBILogo.jpg" alt="WBI Logo" className="h-9 sm:h-11 w-auto transition-transform group-hover:scale-110" />
           </Link>
 
           {/* Desktop Nav - Dark Text for Light Navbar */}
@@ -211,7 +211,7 @@ const LandingPage = () => {
                            </div>
                            
                            {cat.icon ? (
-                            <img 
+                            <img fetchPriority="low" loading="lazy" 
                               src={toAssetUrl(cat.icon)} 
                               alt={cat.title} 
                               className="w-full h-full object-contain relative z-20 transition-transform duration-700 group-hover:scale-125 group-hover:rotate-6" 
@@ -296,7 +296,7 @@ const LandingPage = () => {
             >
               <div className="relative z-10 p-2 sm:p-4 bg-gray-50 rounded-[3rem] sm:rounded-[4rem] border border-gray-100 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden group">
                 <div className="overflow-hidden rounded-[2.5rem] sm:rounded-[3.5rem] relative aspect-[4/5] lg:aspect-square">
-                  <img src="/hero-image.png" alt="WBI Pro Electronics" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                  <img fetchPriority="low" loading="lazy" src="/hero-image.png" alt="WBI Pro Electronics" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent"></div>
                 </div>
                 
@@ -359,7 +359,7 @@ const LandingPage = () => {
                 <div className="relative w-full max-w-[260px] sm:max-w-[280px] mb-10">
                    <div className="absolute inset-0 bg-brand/20 blur-[80px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700"></div>
                    <div className="relative z-10 p-2.5 sm:p-4 bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border-[4px] sm:border-[8px] border-white shadow-2xl aspect-[9/18.5] overflow-hidden transform group-hover:rotate-1 transition-transform duration-500">
-                      <img src="/WBI user.png" alt="WBI User App" className="w-full h-full object-cover rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
+                      <img fetchPriority="low" loading="lazy" src="/WBI user.png" alt="WBI User App" className="w-full h-full object-cover rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
                       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full"></div>
                    </div>
                 </div>
@@ -378,7 +378,7 @@ const LandingPage = () => {
                 <div className="relative w-full max-w-[260px] sm:max-w-[280px] mb-10">
                    <div className="absolute inset-0 bg-cyan-500/20 blur-[80px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700"></div>
                    <div className="relative z-10 p-2.5 sm:p-4 bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border-[4px] sm:border-[8px] border-white shadow-2xl aspect-[9/18.5] overflow-hidden transform group-hover:-rotate-1 transition-transform duration-500">
-                      <img src="/WBI vendor.png" alt="WBI Vendor App" className="w-full h-full object-contain bg-gray-50 rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
+                      <img fetchPriority="low" loading="lazy" src="/WBI vendor.png" alt="WBI Vendor App" className="w-full h-full object-contain bg-gray-50 rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
                       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full"></div>
                    </div>
                 </div>
@@ -397,7 +397,7 @@ const LandingPage = () => {
                 <div className="relative w-full max-w-[260px] sm:max-w-[280px] mb-10">
                    <div className="absolute inset-0 bg-orange-500/20 blur-[80px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700"></div>
                    <div className="relative z-10 p-2.5 sm:p-4 bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border-[4px] sm:border-[8px] border-white shadow-2xl aspect-[9/18.5] overflow-hidden transform group-hover:rotate-1 transition-transform duration-500">
-                      <img src="/WBI xpert .png" alt="WBI Xpert App" className="w-full h-full object-contain bg-gray-50 rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
+                      <img fetchPriority="low" loading="lazy" src="/WBI xpert .png" alt="WBI Xpert App" className="w-full h-full object-contain bg-gray-50 rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
                       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full"></div>
                    </div>
                 </div>
@@ -519,7 +519,7 @@ const LandingPage = () => {
                     </a>
                 </div>
                 <div className="relative h-64 sm:h-80 md:h-[400px] w-full md:w-1/3">
-                    <img src="/hero-image.png" alt="App Preview" className="h-full w-full object-cover rounded-[2.5rem] sm:rounded-[4rem] border-8 border-white/10 sm:rotate-3 shadow-2xl transition-transform group-hover:rotate-0 duration-700" />
+                    <img fetchPriority="low" loading="lazy" src="/hero-image.png" alt="App Preview" className="h-full w-full object-cover rounded-[2.5rem] sm:rounded-[4rem] border-8 border-white/10 sm:rotate-3 shadow-2xl transition-transform group-hover:rotate-0 duration-700" />
                 </div>
             </div>
         </div>
@@ -532,7 +532,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-20 mb-12 sm:mb-20 border-b border-white/5 pb-12 sm:pb-20">
             <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col items-center lg:items-start text-nowrap">
               <Link to="/Home" className="inline-block mb-8 sm:mb-10">
-                <img src="/WBI-logo.png" alt="WBI Logo" className="h-8 sm:h-10 w-auto" />
+                <img fetchPriority="low" loading="lazy" src="/WBI-logo.png" alt="WBI Logo" className="h-8 sm:h-10 w-auto" />
               </Link>
               <p className="text-gray-400 font-normal leading-[1.8] text-base sm:text-lg max-w-md whitespace-normal">
                 {settings?.companyName || 'WBI'} â€” Real-time tracking and doorstep billing across Indore. Exclusive genuine spare part ecosystem.

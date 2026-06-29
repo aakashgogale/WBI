@@ -123,7 +123,7 @@ const WorkerSelection = () => {
                   <div className="relative">
                     <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-md">
                       {worker.profilePic ? (
-                        <img src={worker.profilePic} alt={worker.name} className="w-full h-full object-cover" />
+                        <img fetchPriority="low" loading="lazy" src={worker.profilePic} alt={worker.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400 text-xl font-black">
                           {worker.name?.charAt(0).toUpperCase()}

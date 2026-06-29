@@ -79,7 +79,13 @@ const OneTimeServiceDetail = () => {
       if (selectedIssueIds.length > 0) url += `issueIds=${selectedIssueIds.join(',')}`;
       
       const res = await api.get(url);
-      if (res.data.success) setEstimate(res.data.data);
+      if (res.data.success) {
+        const { startingPrice, estimatedDurationMins } = res.data.data;
+        setEstimate({
+          startingPrice,
+          estimatedTime: estimatedDurationMins ? `${estimatedDurationMins} mins` : '--'
+        });
+      }
     } catch (error) {
       console.error('Error fetching estimate:', error);
     }
@@ -182,7 +188,7 @@ const OneTimeServiceDetail = () => {
           </div>
           <div className="w-[100px] h-[75px] rounded-xl overflow-hidden shrink-0 shadow-sm border border-gray-100 bg-gray-50 flex items-center justify-center">
             {service.image ? (
-              <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
+              <img fetchPriority="low" loading="lazy" src={service.image} alt={service.name} className="w-full h-full object-cover" />
             ) : (
               <div className="text-gray-300 text-xs text-center px-2">No Image</div>
             )}
@@ -212,7 +218,7 @@ const OneTimeServiceDetail = () => {
                   style={{ height: '70px' }}
                 >
                   {brand.logo ? (
-                    <img src={brand.logo} alt={brand.brandName} className="h-6 object-contain mb-1" />
+                    <img fetchPriority="low" loading="lazy" src={brand.logo} alt={brand.brandName} className="h-6 object-contain mb-1" />
                   ) : (
                     <span className={`text-[12px] font-bold ${isSelected ? 'text-[#10AFA5]' : 'text-gray-700'}`}>
                       {brand.brandName}
@@ -316,8 +322,9 @@ const OneTimeServiceDetail = () => {
         
         <button
           onClick={handleContinue}
+          disabled={!((!service.isBrandRequired || selectedBrand) && (!service.isIssueRequired || selectedIssues.length > 0))}
           className={`w-full py-3.5 rounded-xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${
-            selectedBrand && selectedIssues.length > 0
+            (!service.isBrandRequired || selectedBrand) && (!service.isIssueRequired || selectedIssues.length > 0)
               ? 'bg-[#10AFA5] text-white shadow-lg shadow-[#10AFA5]/20 active:scale-[0.98]'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
           }`}

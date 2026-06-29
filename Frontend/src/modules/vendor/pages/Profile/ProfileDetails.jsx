@@ -152,8 +152,7 @@ const ProfileDetails = () => {
             <div className="w-28 h-28 rounded-full p-1 bg-white shadow-lg relative">
               <div className="w-full h-full rounded-full overflow-hidden bg-gray-50 flex items-center justify-center border border-gray-100">
                 {profile.profilePhoto ? (
-                  <img
-                    src={profile.profilePhoto}
+                  <img fetchPriority="low" loading="lazy"                     src={profile.profilePhoto}
                     alt={profile.name}
                     className="w-full h-full object-cover"
                   />

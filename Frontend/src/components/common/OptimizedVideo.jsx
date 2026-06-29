@@ -84,8 +84,7 @@ const OptimizedVideo = ({
 
       {/* Loading state / Overlay if needed */}
       {!isIntersecting && !priority && optimizedPoster && (
-        <img
-          src={optimizedPoster}
+        <img fetchPriority="low" loading="lazy"           src={optimizedPoster}
           alt="Video Poster"
           className="absolute inset-0 w-full h-full object-cover"
         />

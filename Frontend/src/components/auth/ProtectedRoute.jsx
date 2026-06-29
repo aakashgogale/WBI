@@ -39,6 +39,11 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
           refreshTokenKey = 'adminRefreshToken';
           dataKey = 'adminData';
           break;
+        case 'b2b':
+          tokenKey = 'b2bAccessToken';
+          refreshTokenKey = 'b2bRefreshToken';
+          dataKey = 'b2bData';
+          break;
         case 'user':
         default:
           tokenKey = 'accessToken';
@@ -58,20 +63,23 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
             const payload = JSON.parse(atob(parts[1]));
             const currentTime = Math.floor(Date.now() / 1000);
 
-            // If token is expired but we have a refresh token, let's try to let it proceed.
-            // The axios interceptor in api.js will handle the actual refresh when the first request fails.
-            // We only logout here if there's NO refresh token or if the refresh token itself is expired.
-            
+            let isValid = false;
             if (payload.exp && payload.exp > currentTime) {
-              setIsAuthenticated(true);
-              setIsLoading(false);
+              isValid = true;
             } else if (refreshToken) {
-              // Access token expired but refresh token exists.
-              // We'll give it a chance. If the first API call fails to refresh, it will logout then.
-              // This prevents an aggressive logout before the interceptor can do its job.
               console.log(`[Auth] Access token expired for ${userType}, but refresh token exists. Proveding...`);
+              isValid = true;
+            }
+
+            if (isValid) {
               setIsAuthenticated(true);
               setIsLoading(false);
+              
+              // Only initialize push notifications when user is truly authenticated
+              import('../../services/pushNotificationService').then((module) => {
+                module.initializePushNotifications(userType);
+              }).catch(err => console.warn('Failed to load push notifications', err));
+              
             } else {
               // Truly expired and no way to refresh
               handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
@@ -128,7 +136,8 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
       vendor: '/vendor/login',
       worker: '/worker/login',
       engineer: '/engineer/login',
-      admin: '/admin/login'
+      admin: '/admin/login',
+      b2b: '/b2b/login'
     };
 
     const redirectPath = redirectTo || defaultRedirects[userType] || '/user/login';

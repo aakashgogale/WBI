@@ -310,7 +310,7 @@ const OneTimeServiceCheckout = () => {
           className="w-full h-36 bg-gray-100 rounded-2xl overflow-hidden relative cursor-pointer group border border-gray-200 shadow-sm mb-6"
         >
           {!mapImgError && (
-            <img 
+            <img fetchPriority="low" loading="lazy" 
               src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(addressDetails?.lat ? `${addressDetails.lat},${addressDetails.lng}` : (addressDetails?.address || 'Indore'))}&zoom=15&size=400x200&maptype=roadmap&markers=color:0x10AFA5%7C${encodeURIComponent(addressDetails?.lat ? `${addressDetails.lat},${addressDetails.lng}` : (addressDetails?.address || 'Indore'))}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
               alt="Location Map"
               className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"

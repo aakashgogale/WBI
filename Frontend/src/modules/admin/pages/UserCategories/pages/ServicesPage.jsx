@@ -352,7 +352,7 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
                       }`}
                   >
                     {brand.iconUrl ? (
-                      <img src={toAssetUrl(brand.iconUrl)} className="w-8 h-8 rounded-md object-contain bg-white border border-gray-100" />
+                      <img fetchPriority="low" loading="lazy" src={toAssetUrl(brand.iconUrl)} className="w-8 h-8 rounded-md object-contain bg-white border border-gray-100" />
                     ) : (
                       <div className="w-8 h-8 rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-400 font-bold">
                         {brand.title.charAt(0)}
@@ -398,7 +398,7 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
               <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 border-b border-gray-100 pb-4">
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    {activeBrand.iconUrl && <img src={toAssetUrl(activeBrand.iconUrl)} className="w-6 h-6 object-contain" />}
+                    {activeBrand.iconUrl && <img fetchPriority="low" loading="lazy" src={toAssetUrl(activeBrand.iconUrl)} className="w-6 h-6 object-contain" />}
                     {activeBrand.title}
                   </h3>
                   <p className="text-sm text-gray-500">Manage individual services for this brand</p>

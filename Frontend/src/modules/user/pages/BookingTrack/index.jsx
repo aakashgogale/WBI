@@ -17,7 +17,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -603,8 +603,7 @@ const BookingTrack = () => {
             transition: 'transform 0.3s ease-out'
           }}
         >
-          <img
-            src="/MapRider.png"
+          <img fetchPriority="low" loading="lazy"             src="/MapRider.png"
             alt="Rider"
             className="w-full h-full object-contain drop-shadow-xl rounded-full"
           />
@@ -977,8 +976,7 @@ const BookingTrack = () => {
             <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center border-2 border-white shadow-md overflow-hidden relative shrink-0">
               {(provider.profileImage || provider.profilePhoto) ? (
                 <>
-                  <img
-                    src={toAssetUrl(provider.profileImage || provider.profilePhoto)}
+                  <img fetchPriority="low" loading="lazy"                     src={toAssetUrl(provider.profileImage || provider.profilePhoto)}
                     alt="Agent"
                     className="w-full h-full object-cover"
                     onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.fallback-icon').style.display = 'block'; }}

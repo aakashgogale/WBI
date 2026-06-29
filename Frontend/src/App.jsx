@@ -15,8 +15,8 @@ import NavigationProgress from './components/common/NavigationProgress';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes
-      gcTime: 10 * 60 * 1000, // Keep in memory for 10 minutes even if unmounted
+      staleTime: 60 * 1000, // Data remains fresh for 1 minute
+      gcTime: 5 * 60 * 1000, // Keep in memory for 5 minutes
       refetchOnWindowFocus: false, // Prevent unnecessary refetches when switching tabs
       retry: 1, // Only retry once to avoid blocking UI on hard failures
     },
@@ -26,9 +26,8 @@ const queryClient = new QueryClient({
 function App() {
   // Initialize push notifications on app load
   useEffect(() => {
-    initializePushNotifications();
-
-    // Setup foreground notification handler
+    // Note: push notifications initialization is now handled in ProtectedRoute
+    // setupForegroundNotificationHandler remains global to catch incoming messages if token exists
     setupForegroundNotificationHandler((payload) => {
       // Dispatch update events for listening components to refresh UI
       window.dispatchEvent(new Event('vendorJobsUpdated'));

@@ -807,7 +807,7 @@ export default function BookingDetails() {
               <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
                 style={{ backgroundColor: `${themeColors.button}15`, border: `1px solid ${themeColors.button}25` }}>
                 {booking.categoryIcon ? (
-                  <img src={booking.categoryIcon} alt="" className="w-5 h-5 object-contain" />
+                  <img fetchPriority="low" loading="lazy" src={booking.categoryIcon} alt="" className="w-5 h-5 object-contain" />
                 ) : (
                   <FiTool className="w-4 h-4" style={{ color: themeColors.button }} />
                 )}
@@ -827,7 +827,7 @@ export default function BookingDetails() {
                 <div className="flex items-center gap-3 mb-3 pt-3 border-t border-dashed border-gray-100">
                   <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden">
                     {brandIcon ? (
-                      <img src={brandIcon} alt={brandName} className="w-6 h-6 object-contain" />
+                      <img fetchPriority="low" loading="lazy" src={brandIcon} alt={brandName} className="w-6 h-6 object-contain" />
                     ) : (
                       <span className="text-base font-black text-slate-400">{brandName.charAt(0)}</span>
                     )}
@@ -1056,14 +1056,13 @@ export default function BookingDetails() {
             <div className="grid grid-cols-2 gap-2">
               {booking.workPhotos.map((photo, index) => (
                 <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100 border relative group">
-                  <img
-                    src={photo.replace('/api/upload', 'http://localhost:5000/upload')}
+                  <img fetchPriority="low" loading="lazy"                     src={photo.replace('/api/upload', 'https://app.wbinfs.com/upload')}
                     alt={`Work evidence ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button
-                      onClick={() => window.open(photo.replace('/api/upload', 'http://localhost:5000/upload'), '_blank')}
+                      onClick={() => window.open(photo.replace('/api/upload', 'https://app.wbinfs.com/upload'), '_blank')}
                       className="bg-white text-gray-900 px-3 py-1 rounded-full text-xs font-bold"
                     >
                       View

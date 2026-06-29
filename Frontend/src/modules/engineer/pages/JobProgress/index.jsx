@@ -288,12 +288,12 @@ const JobProgress = () => {
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {job.workPhotos?.map((img, i) => (
                 <div key={`existing-${i}`} className="relative shrink-0">
-                  <img src={img} alt="progress" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
+                  <img fetchPriority="low" loading="lazy" src={img} alt="progress" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
                 </div>
               ))}
               {mediaFiles.map((img, i) => (
                 <div key={`new-${i}`} className="relative shrink-0">
-                  <img src={img} alt="progress" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
+                  <img fetchPriority="low" loading="lazy" src={img} alt="progress" className="w-20 h-20 rounded-xl object-cover border border-gray-200" />
                   <button onClick={() => removeMedia(i)} className="absolute -top-2 -right-2 bg-white rounded-full text-red-500 shadow-md p-1">
                     <FiX className="w-3 h-3" />
                   </button>

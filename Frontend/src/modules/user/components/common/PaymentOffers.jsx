@@ -6,7 +6,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -64,8 +64,7 @@ const PaymentOffers = memo(({ offers = [] }) => {
             }}
           >
             {offer.iconUrl ? (
-              <img
-                src={toAssetUrl(offer.iconUrl)}
+              <img fetchPriority="low" loading="lazy"                 src={toAssetUrl(offer.iconUrl)}
                 alt=""
                 className="w-8 h-8 rounded-full border border-gray-100 object-cover shrink-0"
               />

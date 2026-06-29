@@ -41,7 +41,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -755,8 +755,7 @@ const BookingDetails = () => {
                   <div className="w-full h-full rounded-full overflow-hidden relative bg-white">
                     {(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto) ? (
                       <>
-                        <img
-                          src={toAssetUrl(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto)}
+                        <img fetchPriority="low" loading="lazy"                           src={toAssetUrl(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto)}
                           alt="Professional"
                           className="w-full h-full object-cover"
                           onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.fallback-icon').style.display = 'block'; }}
@@ -1102,7 +1101,7 @@ const BookingDetails = () => {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100 overflow-hidden">
                   {booking.categoryIcon ? (
-                    <img src={booking.categoryIcon} alt="" className="w-6 h-6 object-contain" />
+                    <img fetchPriority="low" loading="lazy" src={booking.categoryIcon} alt="" className="w-6 h-6 object-contain" />
                   ) : (
                     <FiPackage className="w-5 h-5 text-teal-400" />
                   )}
@@ -1122,7 +1121,7 @@ const BookingDetails = () => {
                   <div className="flex items-center gap-3 pt-3 border-t border-dashed border-gray-100">
                     <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden">
                       {brandIcon ? (
-                        <img src={brandIcon} alt={brandName} className="w-7 h-7 object-contain" />
+                        <img fetchPriority="low" loading="lazy" src={brandIcon} alt={brandName} className="w-7 h-7 object-contain" />
                       ) : (
                         <span className="text-lg font-black text-slate-400">{brandName.charAt(0)}</span>
                       )}

@@ -173,7 +173,7 @@ const WorkerPaymentModal = ({ isOpen, onClose, workerName, amountDue = 0, onConf
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Payment Screenshot</label>
                 {screenshot ? (
                   <div className="relative aspect-video rounded-2xl overflow-hidden border border-gray-200 group">
-                    <img src={screenshot} alt="Payment Proof" className="w-full h-full object-cover" />
+                    <img fetchPriority="low" loading="lazy" src={screenshot} alt="Payment Proof" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button
                         type="button"

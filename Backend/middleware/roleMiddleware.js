@@ -93,6 +93,33 @@ const isSuperAdmin = async (req, res, next) => {
   }
 };
 
+const isB2B = (req, res, next) => {
+  if (req.userRole !== 'B2B' && req.userRole !== 'b2b') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. B2B role required.'
+    });
+  }
+  next();
+};
+
+const isApprovedB2B = (req, res, next) => {
+  if (req.userRole !== 'B2B' && req.userRole !== 'b2b') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. B2B role required.'
+    });
+  }
+  if (req.user.verificationStatus !== 'approved') {
+    return res.status(403).json({
+      success: false,
+      verificationStatus: req.user.verificationStatus,
+      message: 'Access denied. B2B account must be approved by admin.'
+    });
+  }
+  next();
+};
+
 module.exports = {
   isUser,
   isVendor,
@@ -100,6 +127,8 @@ module.exports = {
   isEngineer,
   isAdmin,
   isAdminOrVendor,
-  isSuperAdmin
+  isSuperAdmin,
+  isB2B,
+  isApprovedB2B
 };
 

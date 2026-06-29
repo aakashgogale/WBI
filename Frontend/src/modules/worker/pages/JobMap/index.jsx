@@ -507,8 +507,7 @@ const JobMap = () => {
             transition: 'transform 0.3s ease-out'
           }}
         >
-          <img
-            src="/MapRider.png"
+          <img fetchPriority="low" loading="lazy"             src="/MapRider.png"
             alt="Rider"
             className="w-full h-full object-contain drop-shadow-xl rounded-full"
             onError={(e) => { e.target.onerror = null; e.target.src = "https://cdn-icons-png.flaticon.com/512/2972/2972185.png" }}

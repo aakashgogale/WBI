@@ -152,7 +152,7 @@ const DigitalProfile = memo(() => {
                 <div className="flex gap-4 min-w-max pb-2">
                   {team.map((member, i) => (
                     <div key={i} className="w-48 bg-gray-50 rounded-xl p-4 border border-gray-100 flex flex-col items-center">
-                      <img src={member.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=0D8A72&color=fff`} alt={member.name} className="w-16 h-16 rounded-full mb-3 shadow-sm"/>
+                      <img fetchPriority="low" loading="lazy" src={member.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=0D8A72&color=fff`} alt={member.name} className="w-16 h-16 rounded-full mb-3 shadow-sm"/>
                       <h4 className="font-bold text-gray-800 text-sm text-center line-clamp-1">{member.name}</h4>
                       <p className="text-[10px] text-gray-500 text-center mb-3">{member.role}</p>
                       <div className="w-full flex justify-between items-center mt-auto">
@@ -293,7 +293,7 @@ const DigitalProfile = memo(() => {
                   {portfolio.map((item, i) => (
                     <div key={i} className="w-56 group cursor-pointer">
                       <div className="w-full h-32 rounded-xl overflow-hidden mb-3 relative">
-                        <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
+                        <img fetchPriority="low" loading="lazy" src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-[#0D8A72]"><FiEye size={14}/></div>
                           <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-[#0D8A72]"><FiEdit size={14}/></div>
@@ -515,7 +515,7 @@ const DigitalProfile = memo(() => {
         <div className="flex flex-col items-center shrink-0 relative z-10">
           <div className="w-28 h-28 rounded-full bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-4 border-white flex items-center justify-center p-1 relative overflow-hidden">
              {vendor.profilePhoto ? (
-                <img src={vendor.profilePhoto} alt={vendor.businessName} className="w-full h-full object-cover rounded-full" />
+                <img fetchPriority="low" loading="lazy" src={vendor.profilePhoto} alt={vendor.businessName} className="w-full h-full object-cover rounded-full" />
              ) : (
                 <div className="w-full h-full bg-[#0B1E36] rounded-full flex items-center justify-center">
                   <span className="text-3xl font-black text-white">{vendor.businessName?.charAt(0) || 'W'}</span>

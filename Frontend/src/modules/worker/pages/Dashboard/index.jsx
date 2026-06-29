@@ -9,28 +9,12 @@ import { SkeletonProfileHeader, SkeletonDashboardStats, SkeletonList } from '../
 import OptimizedImage from '../../../../components/common/OptimizedImage';
 import { useSocket } from '../../../../context/SocketContext';
 import WorkerJobAlertModal from '../../components/bookings/WorkerJobAlertModal';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-
-  const [stats, setStats] = useState({
-    pendingJobs: 0,
-    acceptedJobs: 0,
-    activeProjects: 0,
-    completedJobs: 0,
-    thisMonthEarnings: 0,
-    recentJobs: []
-  });
-
-  const [workerProfile, setWorkerProfile] = useState({
-    name: 'Engineer Name',
-    photo: null,
-    categories: [],
-    address: null,
-  });
-
-  const [loading, setLoading] = useState(true);
   const socket = useSocket();
+  const queryClient = useQueryClient();
   const [alertJobId, setAlertJobId] = useState(null);
 
   // Set white/light background for clean theme
@@ -51,54 +35,48 @@ const Dashboard = () => {
     };
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [profileRes, statsRes] = await Promise.all([
-        workerService.getProfile(),
-        workerService.getDashboardStats()
-      ]);
+  const { data: profileRes, isLoading: loadingProfile } = useQuery({
+    queryKey: ['workerProfile'],
+    queryFn: () => workerService.getProfile(),
+  });
 
-      if (profileRes.success) {
-        const profile = profileRes.worker;
-        setWorkerProfile({
-          name: profile.name || 'Engineer Name',
-          photo: profile.profilePhoto || null,
-          categories: profile.serviceCategories || (profile.serviceCategory ? [profile.serviceCategory] : []),
-          address: profile.address,
-        });
-      }
+  const { data: statsRes, isLoading: loadingStats } = useQuery({
+    queryKey: ['workerDashboardStats'],
+    queryFn: () => workerService.getDashboardStats(),
+  });
 
-      if (statsRes.success) {
-        const { totalEarnings, activeJobs, activeProjects, completedJobs, recentJobs } = statsRes.data;
+  const loading = loadingProfile || loadingStats;
 
-        setStats({
-          thisMonthEarnings: totalEarnings || 0,
-          pendingJobs: activeJobs || 0,
-          activeProjects: activeProjects || 0,
-          completedJobs: completedJobs || 0,
-          recentJobs: recentJobs || []
-        });
-      }
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
+  const profile = profileRes?.worker || {};
+  const workerProfile = {
+    name: profile.name || 'Engineer Name',
+    photo: profile.profilePhoto || null,
+    categories: profile.serviceCategories || (profile.serviceCategory ? [profile.serviceCategory] : []),
+    address: profile.address,
+  };
+
+  const rawStats = statsRes?.data || {};
+  const stats = {
+    thisMonthEarnings: rawStats.totalEarnings || 0,
+    pendingJobs: rawStats.activeJobs || 0,
+    activeProjects: rawStats.activeProjects || 0,
+    completedJobs: rawStats.completedJobs || 0,
+    recentJobs: rawStats.recentJobs || []
   };
 
   useEffect(() => {
-    fetchDashboardData();
     registerFCMToken('worker', true).catch(err => console.error('FCM registration failed:', err));
 
     const handleUpdate = () => {
-      fetchDashboardData();
+      queryClient.invalidateQueries(['workerDashboardStats']);
+      queryClient.invalidateQueries(['workerProfile']);
     };
     window.addEventListener('workerJobsUpdated', handleUpdate);
 
     return () => {
       window.removeEventListener('workerJobsUpdated', handleUpdate);
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!socket) return;
@@ -302,7 +280,7 @@ const Dashboard = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0 border border-slate-100">
                         {job?.serviceId?.categoryIcon ? (
-                          <img src={job.serviceId.categoryIcon} alt="" className="w-5 h-5 object-contain" />
+                          <img fetchPriority="low" loading="lazy" src={job.serviceId.categoryIcon} alt="" className="w-5 h-5 object-contain" />
                         ) : (
                           <FaBriefcase className="text-slate-400 text-lg" />
                         )}

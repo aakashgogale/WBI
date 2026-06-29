@@ -8,10 +8,20 @@ import { registerFCMToken, removeFCMToken } from './pushNotificationService';
  */
 function notifyFlutterLogin(responseData) {
   try {
+    const platform = getPlatformType();
+    const role = responseData.role || responseData?.user?.role || localStorage.getItem('role') || 'unknown';
+    
+    // Add platform explicitly if missing
+    const body = {
+      ...responseData,
+      platform,
+      role
+    };
+
     if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
       window.flutter_inappwebview.callHandler('captureLoginResponse', JSON.stringify({
         url: '/auth/login',
-        body: responseData
+        body
       }));
     }
   } catch (e) {
@@ -98,7 +108,7 @@ export const userAuthService = {
 
   // Verify Login (Unified Flow)
   verifyLogin: async (data) => {
-    const response = await api.post('/users/auth/verify-login', data);
+    const response = await api.post('/users/auth/verify-login', { ...data, role: 'user', platform: getPlatformType() });
     if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
       const { role, accessToken, refreshToken, user } = response.data;
       
@@ -112,7 +122,7 @@ export const userAuthService = {
 
   // Register
   register: async (data) => {
-    const response = await api.post('/users/auth/register', data);
+    const response = await api.post('/users/auth/register', { ...data, role: 'user', platform: getPlatformType() });
     if (response.data.accessToken) {
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
@@ -125,7 +135,7 @@ export const userAuthService = {
 
   // Login
   login: async (data) => {
-    const response = await api.post('/users/auth/login', data);
+    const response = await api.post('/users/auth/login', { ...data, role: 'user', platform: getPlatformType() });
     if (response.data.accessToken) {
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
@@ -187,7 +197,7 @@ export const vendorAuthService = {
 
   // Verify Login (Unified Flow)
   verifyLogin: async (data) => {
-    const response = await api.post('/vendors/auth/verify-login', data);
+    const response = await api.post('/vendors/auth/verify-login', { ...data, role: 'vendor', platform: getPlatformType() });
     if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
       localStorage.setItem('vendorAccessToken', response.data.accessToken);
       localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
@@ -200,7 +210,7 @@ export const vendorAuthService = {
 
   // Register
   register: async (data) => {
-    const response = await api.post('/vendors/auth/register', data);
+    const response = await api.post('/vendors/auth/register', { ...data, role: 'vendor', platform: getPlatformType() });
     return response.data;
   },
 
@@ -280,7 +290,7 @@ export const workerAuthService = {
 
   // Verify Login (Unified Flow)
   verifyLogin: async (data) => {
-    const response = await api.post('/workers/auth/verify-login', data);
+    const response = await api.post('/workers/auth/verify-login', { ...data, role: 'worker', platform: getPlatformType() });
     if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
       localStorage.setItem('workerAccessToken', response.data.accessToken);
       localStorage.setItem('workerRefreshToken', response.data.refreshToken);
@@ -293,7 +303,7 @@ export const workerAuthService = {
 
   // Register
   register: async (data) => {
-    const response = await api.post('/workers/auth/register', data);
+    const response = await api.post('/workers/auth/register', { ...data, role: 'worker', platform: getPlatformType() });
     if (response.data.accessToken) {
       localStorage.setItem('workerAccessToken', response.data.accessToken);
       localStorage.setItem('workerRefreshToken', response.data.refreshToken);
@@ -391,7 +401,7 @@ export const engineerAuthService = {
 
   // Verify Login (Unified Flow)
   verifyLogin: async (data) => {
-    const response = await api.post('/engineers/auth/verify-login', data);
+    const response = await api.post('/engineers/auth/verify-login', { ...data, role: 'engineer', platform: getPlatformType() });
     if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
       localStorage.setItem('engineerAccessToken', response.data.accessToken);
       localStorage.setItem('engineerRefreshToken', response.data.refreshToken);
@@ -404,7 +414,7 @@ export const engineerAuthService = {
 
   // Register
   register: async (data) => {
-    const response = await api.post('/engineers/auth/register', data);
+    const response = await api.post('/engineers/auth/register', { ...data, role: 'engineer', platform: getPlatformType() });
     if (response.data.accessToken) {
       localStorage.setItem('engineerAccessToken', response.data.accessToken);
       localStorage.setItem('engineerRefreshToken', response.data.refreshToken);

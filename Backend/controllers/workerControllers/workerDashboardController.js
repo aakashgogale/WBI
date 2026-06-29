@@ -7,91 +7,64 @@ const { BOOKING_STATUS } = require('../../utils/constants');
  * Get worker dashboard statistics
  */
 const getDashboardStats = async (req, res) => {
+  const startTime = Date.now();
+  console.log('[API_START] GET /api/workers/dashboard/stats');
   try {
     const workerId = req.user.id;
 
-    // Get Worker Profile for Rating (fallback)
     const worker = await Worker.findById(workerId).lean();
 
     if (!worker) {
-      return res.status(404).json({
-        success: false,
-        message: 'Worker not found'
-      });
+      return res.status(404).json({ success: false, message: 'Worker not found' });
     }
 
-    // 2. Calculate Total Earnings
-    // Aggregate from completed bookings where workerId matches
-    const earningStats = await Booking.aggregate([
-      {
-        $match: {
-          workerId: worker._id,
-          status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] }
+    const [
+      earningStats,
+      activeJobsCount,
+      activeProjectsCount,
+      completedJobsCount,
+      ratingStats,
+      recentJobs
+    ] = await Promise.all([
+      Booking.aggregate([
+        { $match: { workerId: worker._id, status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] } } },
+        { $group: { _id: null, total: { $sum: "$finalAmount" } } }
+      ]),
+      Booking.countDocuments({
+        workerId: worker._id,
+        status: {
+          $in: [
+            BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS,
+            BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.WORKER_ASSIGNED, BOOKING_STATUS.ACCEPTED,
+            BOOKING_STATUS.JOURNEY_STARTED
+          ]
         }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$finalAmount" }
-        }
-      }
+      }),
+      WorkerProject.countDocuments({
+        workerId: worker._id,
+        status: { $in: ['PENDING', 'IN_PROGRESS'] }
+      }),
+      Booking.countDocuments({
+        workerId: worker._id,
+        status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] }
+      }),
+      Booking.aggregate([
+        { $match: { workerId: worker._id, rating: { $exists: true, $ne: null } } },
+        { $group: { _id: null, avgRating: { $avg: "$rating" } } }
+      ]),
+      Booking.find({ workerId: worker._id })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('userId', 'name')
+        .populate('serviceId', 'title categoryIcon')
+        .lean()
     ]);
 
     const totalEarnings = earningStats.length > 0 ? earningStats[0].total : 0;
-
-    // 3. Count Active Jobs (Assigned, Visited, In Progress)
-    const activeJobsCount = await Booking.countDocuments({
-      workerId: worker._id,
-      status: {
-        $in: [
-          BOOKING_STATUS.ASSIGNED,
-          BOOKING_STATUS.VISITED,
-          BOOKING_STATUS.IN_PROGRESS,
-          BOOKING_STATUS.CONFIRMED,
-          BOOKING_STATUS.WORKER_ASSIGNED,
-          BOOKING_STATUS.ACCEPTED,
-          BOOKING_STATUS.JOURNEY_STARTED
-        ]
-      }
-    });
-
-    // 4. Count Active Projects
-    const activeProjectsCount = await WorkerProject.countDocuments({
-      workerId: worker._id,
-      status: { $in: ['PENDING', 'IN_PROGRESS'] }
-    });
-
-    // 5. Count Completed Jobs
-    const completedJobsCount = await Booking.countDocuments({
-      workerId: worker._id,
-      status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] }
-    });
-
-    // 6. Calculate Average Rating
-    const ratingStats = await Booking.aggregate([
-      {
-        $match: {
-          workerId: worker._id,
-          rating: { $exists: true, $ne: null }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          avgRating: { $avg: "$rating" }
-        }
-      }
-    ]);
-
     const averageRating = ratingStats.length > 0 ? parseFloat(ratingStats[0].avgRating.toFixed(1)) : (worker.rating || 0);
 
-    // 7. Get Recent Jobs
-    const recentJobs = await Booking.find({ workerId: worker._id })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate('userId', 'name')
-      .populate('serviceId', 'title categoryIcon')
-      .lean();
+    const timeTaken = Date.now() - startTime;
+    console.log(`[API_SUCCESS] GET /api/workers/dashboard/stats - ${timeTaken}ms`);
 
     res.status(200).json({
       success: true,
@@ -106,7 +79,7 @@ const getDashboardStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get worker dashboard stats error:', error);
+    console.error(`[API_ERROR] GET /api/workers/dashboard/stats - ${Date.now() - startTime}ms :`, error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch dashboard statistics'

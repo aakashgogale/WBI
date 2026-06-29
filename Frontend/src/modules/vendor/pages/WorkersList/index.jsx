@@ -214,7 +214,7 @@ const WorkersList = () => {
                     <div className="relative shrink-0">
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 border-2 border-white shadow-sm ring-1 ring-gray-100">
                         {worker.profilePhoto ? (
-                          <img src={worker.profilePhoto} alt={worker.name} className="w-full h-full object-cover" />
+                          <img fetchPriority="low" loading="lazy" src={worker.profilePhoto} alt={worker.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-gray-50">
                             <FiUser className="w-8 h-8 text-gray-300" />

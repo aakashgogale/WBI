@@ -81,8 +81,7 @@ const LazyImage = ({
         className={`flex items-center justify-center bg-gray-50 ${className}`}
         style={{ backgroundColor: hasError ? '#f9fafb' : placeholder }}
       >
-        <img
-          src="/WBI-logo.png"
+        <img fetchPriority="low" loading="lazy"           src="/WBI-logo.png"
           alt="Broken image"
           className="w-12 h-12 object-contain opacity-40 grayscale"
         />

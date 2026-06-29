@@ -107,7 +107,7 @@ const SettlementRequest = () => {
 
   const uploadToCloudinary = async (file) => {
     // 1. Get Signature from Backend
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://app.wbinfs.com';
     const sigRes = await fetch(`${apiUrl}/api/upload/sign-signature`);
     const sigData = await sigRes.json();
 
@@ -331,8 +331,7 @@ const SettlementRequest = () => {
             </label>
             {proofPreview ? (
               <div className="relative">
-                <img
-                  src={proofPreview}
+                <img fetchPriority="low" loading="lazy"                   src={proofPreview}
                   alt="Payment Proof"
                   className="w-full h-56 object-contain bg-gray-50 rounded-xl border-2 border-gray-200"
                 />

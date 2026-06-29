@@ -8,69 +8,39 @@ import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
 import LogoLoader from '../../../components/common/LogoLoader';
 import GlobalWorkerJobAlert from '../components/common/GlobalWorkerJobAlert';
+import { AnimatePresence } from 'framer-motion';
+import AnimatedPage from '../../../components/common/AnimatedPage';
 
-// Lazy load wrapper with error handling
-const lazyLoad = (importFunc) => {
-  return lazy(() => {
-    return Promise.resolve(importFunc()).catch((error) => {
-      console.error('Failed to load worker page:', error);
-      // Return a fallback component wrapped in a Promise
-      return Promise.resolve({
-        default: () => (
-          <div className="flex items-center justify-center min-h-screen bg-white">
-            <div className="text-center p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Failed to load page</h2>
-              <p className="text-gray-600 mb-4">Please refresh the page or try again later.</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90 shadow-md"
-                style={{ backgroundColor: '#3B82F6' }}
-              >
-                Refresh Page
-              </button>
-            </div>
-          </div>
-        ),
-      });
-    });
-  });
-};
-
-// Lazy load worker pages for code splitting
-const Login = lazyLoad(() => import('../pages/login'));
-const Signup = lazyLoad(() => import('../pages/signup'));
-const Dashboard = lazyLoad(() => import('../pages/Dashboard'));
-const AssignedJobs = lazyLoad(() => import('../pages/AssignedJobs'));
-const JobDetails = lazyLoad(() => import('../pages/JobDetails'));
-const JobProgress = lazyLoad(() => import('../pages/JobProgress'));
-const Profile = lazyLoad(() => import('../pages/Profile'));
-const EditProfile = lazyLoad(() => import('../pages/Profile/EditProfile'));
-const PersonalInfo = lazyLoad(() => import('../pages/Profile/PersonalInfo'));
-const BankDetails = lazyLoad(() => import('../pages/Profile/BankDetails'));
-const Documents = lazyLoad(() => import('../pages/Profile/Documents'));
-const WorkLocations = lazyLoad(() => import('../pages/Profile/WorkLocations'));
-const Skills = lazyLoad(() => import('../pages/Profile/Skills'));
-const SubServices = lazyLoad(() => import('../pages/Profile/SubServices'));
-const NotificationSettings = lazyLoad(() => import('../pages/Profile/NotificationSettings'));
-const Support = lazyLoad(() => import('../pages/Profile/Support'));
-const Settings = lazyLoad(() => import('../pages/Settings'));
-const Notifications = lazyLoad(() => import('../pages/Notifications'));
-const JobMap = lazyLoad(() => import('../pages/JobMap'));
-const JobTimeline = lazyLoad(() => import('../pages/JobTimeline'));
-const JobSuccess = lazyLoad(() => import('../pages/JobSuccess'));
-const Projects = lazyLoad(() => import('../pages/Projects'));
-const ProjectDetails = lazyLoad(() => import('../pages/ProjectDetails'));
-const ProjectMilestones = lazyLoad(() => import('../pages/ProjectMilestones'));
-const SubmitMilestone = lazyLoad(() => import('../pages/SubmitMilestone'));
-const ProjectUnderReview = lazyLoad(() => import('../pages/ProjectUnderReview'));
-const Wallet = lazyLoad(() => import('../pages/Wallet'));
-const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
-const Schedule = lazyLoad(() => import('../pages/Schedule'));
-const Proposals = lazyLoad(() => import('../pages/Proposals'));
-
-const LoadingFallback = () => (
-  <div className="min-h-screen bg-[#F8FCFC]" />
-);
+import Login from '../pages/login';
+import Signup from '../pages/signup';
+import Dashboard from '../pages/Dashboard';
+import AssignedJobs from '../pages/AssignedJobs';
+import JobDetails from '../pages/JobDetails';
+import JobProgress from '../pages/JobProgress';
+import Profile from '../pages/Profile';
+import EditProfile from '../pages/Profile/EditProfile';
+import PersonalInfo from '../pages/Profile/PersonalInfo';
+import BankDetails from '../pages/Profile/BankDetails';
+import Documents from '../pages/Profile/Documents';
+import WorkLocations from '../pages/Profile/WorkLocations';
+import Skills from '../pages/Profile/Skills';
+import SubServices from '../pages/Profile/SubServices';
+import NotificationSettings from '../pages/Profile/NotificationSettings';
+import Support from '../pages/Profile/Support';
+import Settings from '../pages/Settings';
+import Notifications from '../pages/Notifications';
+import JobMap from '../pages/JobMap';
+import JobTimeline from '../pages/JobTimeline';
+import JobSuccess from '../pages/JobSuccess';
+import Projects from '../pages/Projects';
+import ProjectDetails from '../pages/ProjectDetails';
+import ProjectMilestones from '../pages/ProjectMilestones';
+import SubmitMilestone from '../pages/SubmitMilestone';
+import ProjectUnderReview from '../pages/ProjectUnderReview';
+import Wallet from '../pages/Wallet';
+import BillingPage from '../pages/BillingPage';
+import Schedule from '../pages/Schedule';
+import Proposals from '../pages/Proposals';
 
 const EngineerRoutes = () => {
   const location = useLocation();
@@ -94,45 +64,46 @@ const EngineerRoutes = () => {
     <ErrorBoundary>
       {/* Main content area - leaves space for bottom nav when needed */}
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
-        <Suspense fallback={<LoadingFallback />}>
-            <Routes>
+            <AnimatePresence mode="wait">
+            <Routes location={location || undefined} key={location ? location.pathname : 'routes'}>
               {/* Public routes */}
-              <Route path="/login" element={<PublicRoute userType="engineer"><Login /></PublicRoute>} />
-              <Route path="/signup" element={<PublicRoute userType="engineer"><Signup /></PublicRoute>} />
+              <Route path="/login" element={<AnimatedPage><PublicRoute userType="engineer"><Login /></PublicRoute></AnimatedPage>} />
+              <Route path="/signup" element={<AnimatedPage><PublicRoute userType="engineer"><Signup /></PublicRoute></AnimatedPage>} />
 
               {/* Protected routes (auth required) */}
-              <Route path="/" element={<ProtectedRoute userType="engineer"><Navigate to="dashboard" replace /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute userType="engineer"><Dashboard /></ProtectedRoute>} />
-              <Route path="/jobs" element={<ProtectedRoute userType="engineer"><AssignedJobs /></ProtectedRoute>} />
-              <Route path="/job/:id" element={<ProtectedRoute userType="engineer"><JobDetails /></ProtectedRoute>} />
-              <Route path="/job/:id/progress" element={<ProtectedRoute userType="engineer"><JobProgress /></ProtectedRoute>} />
-              <Route path="/job/:id/map" element={<ProtectedRoute userType="engineer"><JobMap /></ProtectedRoute>} />
-              <Route path="/job/:id/timeline" element={<ProtectedRoute userType="engineer"><JobTimeline /></ProtectedRoute>} />
-              <Route path="/job/:id/billing" element={<ProtectedRoute userType="engineer"><BillingPage /></ProtectedRoute>} />
-              <Route path="/job/:id/success" element={<ProtectedRoute userType="engineer"><JobSuccess /></ProtectedRoute>} />
-              <Route path="/projects" element={<ProtectedRoute userType="engineer"><Projects /></ProtectedRoute>} />
-              <Route path="/projects/:projectId" element={<ProtectedRoute userType="engineer"><ProjectDetails /></ProtectedRoute>} />
-              <Route path="/projects/:projectId/milestones" element={<ProtectedRoute userType="engineer"><ProjectMilestones /></ProtectedRoute>} />
-              <Route path="/projects/:projectId/milestones/:milestoneId/submit" element={<ProtectedRoute userType="engineer"><SubmitMilestone /></ProtectedRoute>} />
-              <Route path="/projects/:projectId/milestones/:milestoneId/review" element={<ProtectedRoute userType="engineer"><ProjectUnderReview /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute userType="engineer"><Profile /></ProtectedRoute>} />
-              <Route path="/profile/edit" element={<ProtectedRoute userType="engineer"><EditProfile /></ProtectedRoute>} />
-              <Route path="/profile/personal-info" element={<ProtectedRoute userType="engineer"><PersonalInfo /></ProtectedRoute>} />
-              <Route path="/profile/bank-details" element={<ProtectedRoute userType="engineer"><BankDetails /></ProtectedRoute>} />
-              <Route path="/profile/documents" element={<ProtectedRoute userType="engineer"><Documents /></ProtectedRoute>} />
-              <Route path="/profile/work-locations" element={<ProtectedRoute userType="engineer"><WorkLocations /></ProtectedRoute>} />
-              <Route path="/profile/skills" element={<ProtectedRoute userType="engineer"><Skills /></ProtectedRoute>} />
-              <Route path="/profile/sub-services" element={<ProtectedRoute userType="engineer"><SubServices /></ProtectedRoute>} />
+              <Route path="/" element={<AnimatedPage><ProtectedRoute userType="engineer"><Navigate to="dashboard" replace /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/dashboard" element={<AnimatedPage><ProtectedRoute userType="engineer"><Dashboard /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/jobs" element={<AnimatedPage><ProtectedRoute userType="engineer"><AssignedJobs /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/progress" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobProgress /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/map" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobMap /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/timeline" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobTimeline /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/billing" element={<AnimatedPage><ProtectedRoute userType="engineer"><BillingPage /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/success" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobSuccess /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects" element={<AnimatedPage><ProtectedRoute userType="engineer"><Projects /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId" element={<AnimatedPage><ProtectedRoute userType="engineer"><ProjectDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId/milestones" element={<AnimatedPage><ProtectedRoute userType="engineer"><ProjectMilestones /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId/milestones/:milestoneId/submit" element={<AnimatedPage><ProtectedRoute userType="engineer"><SubmitMilestone /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId/milestones/:milestoneId/review" element={<AnimatedPage><ProtectedRoute userType="engineer"><ProjectUnderReview /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile" element={<AnimatedPage><ProtectedRoute userType="engineer"><Profile /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/edit" element={<AnimatedPage><ProtectedRoute userType="engineer"><EditProfile /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/personal-info" element={<AnimatedPage><ProtectedRoute userType="engineer"><PersonalInfo /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/bank-details" element={<AnimatedPage><ProtectedRoute userType="engineer"><BankDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/documents" element={<AnimatedPage><ProtectedRoute userType="engineer"><Documents /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/work-locations" element={<AnimatedPage><ProtectedRoute userType="engineer"><WorkLocations /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/skills" element={<AnimatedPage><ProtectedRoute userType="engineer"><Skills /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/sub-services" element={<AnimatedPage><ProtectedRoute userType="engineer"><SubServices /></ProtectedRoute></AnimatedPage>} />
 
-              <Route path="/profile/notifications" element={<ProtectedRoute userType="engineer"><NotificationSettings /></ProtectedRoute>} />
-              <Route path="/profile/support" element={<ProtectedRoute userType="engineer"><Support /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute userType="engineer"><Settings /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute userType="engineer"><Notifications /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute userType="engineer"><Wallet /></ProtectedRoute>} />
-              <Route path="/schedule" element={<ProtectedRoute userType="engineer"><Schedule /></ProtectedRoute>} />
-              <Route path="/proposals" element={<ProtectedRoute userType="engineer"><Proposals /></ProtectedRoute>} />
+              <Route path="/profile/notifications" element={<AnimatedPage><ProtectedRoute userType="engineer"><NotificationSettings /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/support" element={<AnimatedPage><ProtectedRoute userType="engineer"><Support /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/settings" element={<AnimatedPage><ProtectedRoute userType="engineer"><Settings /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/notifications" element={<AnimatedPage><ProtectedRoute userType="engineer"><Notifications /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/wallet" element={<AnimatedPage><ProtectedRoute userType="engineer"><Wallet /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/schedule" element={<AnimatedPage><ProtectedRoute userType="engineer"><Schedule /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/proposals" element={<AnimatedPage><ProtectedRoute userType="engineer"><Proposals /></ProtectedRoute></AnimatedPage>} />
             </Routes>
-        </Suspense>
+            </AnimatePresence>
+
       </div>
 
       {/* BottomNav is OUTSIDE Suspense so it persists during page loads */}

@@ -82,8 +82,7 @@ const OptimizedImage = ({
         className={`bg-gray-50 flex items-center justify-center ${className}`}
         style={{ width, height, ...style }}
       >
-        <img
-          src="/WBI-logo.png"
+        <img fetchPriority="low" loading="lazy"           src="/WBI-logo.png"
           alt="Image not available"
           className="w-12 h-12 object-contain opacity-40 grayscale"
         />

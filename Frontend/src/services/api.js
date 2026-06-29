@@ -2,12 +2,13 @@ import axios from 'axios';
 import { apiCache } from '../utils/apiCache';
 
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// Fallback dynamically to production URL if not explicitly provided in .env
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com/api';
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 8000, // 8-second timeout to prevent indefinite hanging
+  timeout: 15000, // 15-second timeout as temporary safety net for OTP slowness
   headers: {
     'Content-Type': 'application/json'
   },
@@ -35,10 +36,14 @@ const getTokenKeys = (url) => {
   if (url?.includes('/vendors/auth')) return { access: 'vendorAccessToken', refresh: 'vendorRefreshToken', role: 'vendor' };
   if (url?.includes('/engineers/auth')) return { access: 'engineerAccessToken', refresh: 'engineerRefreshToken', role: 'engineer' };
   if (url?.includes('/workers/auth')) return { access: 'workerAccessToken', refresh: 'workerRefreshToken', role: 'worker' };
+  if (url?.includes('/b2b')) return { access: 'b2bAccessToken', refresh: 'b2bRefreshToken', role: 'b2b' };
 
   // 3. Instead of fallback to user, check for exact match
   if (window.location.pathname.startsWith('/user')) {
     return { access: 'accessToken', refresh: 'refreshToken', role: 'user' };
+  }
+  if (window.location.pathname.startsWith('/b2b')) {
+    return { access: 'b2bAccessToken', refresh: 'b2bRefreshToken', role: 'b2b' };
   }
   
   // Return null or default structure if no match
@@ -121,7 +126,8 @@ api.interceptors.response.use(
           vendor: '/vendors/auth/refresh-token',
           engineer: '/engineers/auth/refresh-token',
           worker: '/workers/auth/refresh-token',
-          admin: '/admin/auth/refresh-token'
+          admin: '/admin/auth/refresh-token',
+          b2b: '/b2b/refresh-token'
         };
         const refreshEndpoint = refreshEndpoints[role] || '/users/auth/refresh-token';
 
@@ -178,6 +184,7 @@ export const handleLogout = (role = null) => {
     else if (path.startsWith('/vendor')) role = 'vendor';
     else if (path.startsWith('/engineer')) role = 'engineer';
     else if (path.startsWith('/worker')) role = 'worker';
+    else if (path.startsWith('/b2b')) role = 'b2b';
     else if (path.startsWith('/user')) role = 'user';
     else role = null; // No default role
   }
@@ -200,7 +207,7 @@ export const handleLogout = (role = null) => {
     localStorage.removeItem(`${prefix}Data`);
   };
 
-  if (['vendor', 'engineer', 'worker', 'admin'].includes(role)) {
+  if (['vendor', 'engineer', 'worker', 'admin', 'b2b'].includes(role)) {
     clearTokens(role);
     const loginPath = `/${role}/login`;
     if (window.location.pathname !== loginPath) {

@@ -22,7 +22,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -389,7 +389,7 @@ const Checkout = () => {
   useEffect(() => {
     if (currentStep !== 'waiting' || !bookingRequest) return;
 
-    const socketUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+    const socketUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
     const socket = io(socketUrl, {
       auth: { token: localStorage.getItem('accessToken') },
       transports: ['websocket', 'polling']
@@ -1211,7 +1211,7 @@ const Checkout = () => {
                 {(brandName || categoryName) && (
                   <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-50">
                     {item.sectionIcon ? (
-                      <img src={toAssetUrl(item.sectionIcon)} className="w-5 h-5 rounded-md object-cover border border-gray-100" alt="" />
+                      <img fetchPriority="low" loading="lazy" src={toAssetUrl(item.sectionIcon)} className="w-5 h-5 rounded-md object-cover border border-gray-100" alt="" />
                     ) : (
                       <div className="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
                         {(brandName || "B").charAt(0)}

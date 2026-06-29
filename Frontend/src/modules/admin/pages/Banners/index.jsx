@@ -193,7 +193,7 @@ const Banners = () => {
               <tr key={banner._id} className="border-b border-gray-50 hover:bg-gray-50/50">
                 <td className="p-4">
                   {banner.imageUrl ? (
-                    <img src={banner.imageUrl} alt={banner.title} className="w-24 h-12 object-cover rounded" />
+                    <img fetchPriority="low" loading="lazy" src={banner.imageUrl} alt={banner.title} className="w-24 h-12 object-cover rounded" />
                   ) : (
                     <div className="w-24 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400">
                       <FiImage size={20} />
@@ -294,7 +294,7 @@ const Banners = () => {
                 <div className="relative border-2 border-dashed border-gray-300 rounded-xl hover:border-[#10AFA5] hover:bg-[#F8FCFC] transition-all overflow-hidden group cursor-pointer bg-gray-50 flex flex-col items-center justify-center aspect-[21/10] w-full max-w-[500px] mx-auto h-auto shadow-inner">
                   {formData.imageUrl ? (
                     <>
-                      <img 
+                      <img fetchPriority="low" loading="lazy" 
                         src={formData.imageUrl} 
                         alt="Preview" 
                         className="absolute inset-0 w-full h-full object-fill" 

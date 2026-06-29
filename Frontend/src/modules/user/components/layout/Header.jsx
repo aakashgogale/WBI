@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { HiLocationMarker, HiChevronDown } from 'react-icons/hi';
 import { FiBell, FiShoppingCart, FiBookmark } from 'react-icons/fi';
@@ -10,6 +11,14 @@ import { useCart } from '../../../../context/CartContext';
 import CitySelectorModal from '../common/CitySelectorModal';
 
 const Header = ({ location, onLocationClick }) => {
+  const { scrollY } = useScroll();
+  const [hidden, setHidden] = React.useState(false);
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const prev = scrollY.getPrevious();
+    if (latest > prev && latest > 100) setHidden(true);
+    else setHidden(false);
+  });
+
   const logoRef = useRef(null);
   const { currentCity } = useCity();
   const { cartCount } = useCart();
@@ -23,11 +32,14 @@ const Header = ({ location, onLocationClick }) => {
   }, []);
 
   return (
-    <header className="relative bg-transparent pt-3 pb-2">
+    <motion.header className="relative bg-transparent pt-3 pb-2 sticky top-0 z-50 bg-white/90 backdrop-blur-md"
+      variants={{ visible: { y: 0 }, hidden: { y: '-100%' } }}
+      animate={hidden ? 'hidden' : 'visible'}
+      transition={{ duration: 0.35, ease: 'easeInOut' }}>
       <div className="px-4 flex items-center justify-between mt-2 mb-2">
         {/* Left: Logo */}
         <Link to="/user/account" className="cursor-pointer shrink-0 flex items-center">
-          <img 
+          <img fetchPriority="low" loading="lazy" 
             src="/logo/WBILogo.jpg" 
             alt="WBI Logo" 
             className="h-[46px] w-[46px] md:w-auto object-cover object-left md:object-contain" 
@@ -62,7 +74,7 @@ const Header = ({ location, onLocationClick }) => {
         isOpen={isCityModalOpen}
         onClose={() => setIsCityModalOpen(false)}
       />
-    </header>
+    </motion.header>
   );
 };
 

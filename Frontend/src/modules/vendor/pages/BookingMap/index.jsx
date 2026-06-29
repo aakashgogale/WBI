@@ -506,8 +506,7 @@ const BookingMap = () => {
             transition: 'transform 0.3s ease-out'
           }}
         >
-          <img
-            src="/MapRider.png"
+          <img fetchPriority="low" loading="lazy"             src="/MapRider.png"
             alt="Rider"
             className="w-full h-full object-contain drop-shadow-xl rounded-full"
           />

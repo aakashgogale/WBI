@@ -38,6 +38,11 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
           refreshTokenKey = 'adminRefreshToken';
           dataKey = 'adminData';
           break;
+        case 'b2b':
+          tokenKey = 'b2bAccessToken';
+          refreshTokenKey = 'b2bRefreshToken';
+          dataKey = 'b2bData';
+          break;
         case 'user':
         default:
           tokenKey = 'accessToken';
@@ -73,7 +78,8 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
               vendor: 'vendor',
               worker: 'worker',
               engineer: 'engineer',
-              admin: 'admin'
+              admin: 'admin',
+              b2b: 'B2B'
             };
 
             if (payload.role === roleMap[userType]) {
@@ -119,7 +125,8 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
       vendor: '/vendor/dashboard',
       worker: '/worker/dashboard',
       engineer: '/engineer/dashboard',
-      admin: '/admin/dashboard'
+      admin: '/admin/dashboard',
+      b2b: '/b2b/dashboard'
     };
 
     const redirectPath = redirectTo || defaultRedirects[userType] || '/user/dashboard';

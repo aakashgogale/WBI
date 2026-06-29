@@ -47,8 +47,8 @@ const addNotesValidation = [
 const { verifyAadhaarPanForJob } = require('../../middleware/verificationMiddleware');
 
 // Routes
-router.get('/jobs', authenticate, isEngineer, verifyAadhaarPanForJob, getAssignedJobs);
-router.get('/jobs/:id', authenticate, isEngineer, verifyAadhaarPanForJob, getJobById);
+router.get('/jobs', authenticate, isEngineer, getAssignedJobs);
+router.get('/jobs/:id', authenticate, isEngineer, getJobById);
 router.put('/jobs/:id/respond', authenticate, isEngineer, verifyAadhaarPanForJob, respondValidation, respondToJob);
 router.put('/jobs/:id/status', authenticate, isEngineer, verifyAadhaarPanForJob, updateStatusValidation, updateJobStatus);
 router.post('/jobs/:id/start', authenticate, isEngineer, verifyAadhaarPanForJob, startJob);

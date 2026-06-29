@@ -8,8 +8,7 @@ import brandConfig from '../../config/brandConfig';
  */
 const Logo = forwardRef(({ className = "h-8 w-auto", ...props }, ref) => {
   return (
-    <img
-      ref={ref}
+    <img fetchPriority="low" loading="lazy"       ref={ref}
       src={brandConfig.logoPath}
       alt={brandConfig.brandName}
       className={`${className} object-contain`}

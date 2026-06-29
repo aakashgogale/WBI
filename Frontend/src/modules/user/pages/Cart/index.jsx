@@ -131,7 +131,7 @@ const Cart = () => {
                   {/* Image */}
                   <div className="w-[84px] h-[84px] rounded-[10px] overflow-hidden bg-gray-50 shrink-0 border border-gray-100 flex items-center justify-center mt-1">
                     {(item.imageUrl || item.card?.imageUrl || item.icon) ? (
-                      <img 
+                      <img fetchPriority="low" loading="lazy" 
                         src={item.imageUrl || item.card?.imageUrl || item.icon} 
                         alt={item.title}
                         className="w-full h-full object-cover"

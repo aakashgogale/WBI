@@ -12,7 +12,7 @@ const toAssetUrl = (url) => {
   if (url.startsWith('/assets/') || url.startsWith('/img/')) return url;
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -242,8 +242,7 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
                       >
                         <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-gray-100 group-hover:bg-primary-50/30 transition-colors">
                           {(item.icon || item.imageUrl || item.brandIcon) ? (
-                            <img
-                              src={toAssetUrl(item.icon || item.brandIcon || item.imageUrl)}
+                            <img fetchPriority="low" loading="lazy"                               src={toAssetUrl(item.icon || item.brandIcon || item.imageUrl)}
                               alt=""
                               className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300"
                             />
@@ -318,8 +317,8 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
                           className="w-full flex items-center justify-between p-4 hover:bg-gray-50 bg-white transition-colors text-left group"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center p-1 shadow-sm shrink-0">
-                              <ServiceIconRenderer categoryName={service.title} />
+                            <div className="w-10 h-10 flex items-center justify-center shrink-0">
+                              <ServiceIconRenderer categoryName={service.title} className="w-full h-full object-cover" />
                             </div>
                             <span className="font-semibold text-gray-700 group-hover:text-gray-900 transition-colors text-[14px]">{service.title}</span>
                           </div>

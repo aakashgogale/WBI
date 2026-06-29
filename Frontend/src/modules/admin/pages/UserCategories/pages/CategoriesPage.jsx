@@ -490,7 +490,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                     <td className="py-4 px-4 text-sm font-semibold text-gray-600">{idx + 1}</td>
                     <td className="py-4 px-4">
                       {c.homeIconUrl ? (
-                        <img src={toAssetUrl(c.homeIconUrl)} alt={c.title} className="h-10 w-10 object-contain rounded bg-gray-50 border border-gray-100" />
+                        <img fetchPriority="low" loading="lazy" src={toAssetUrl(c.homeIconUrl)} alt={c.title} className="h-10 w-10 object-contain rounded bg-gray-50 border border-gray-100" />
                       ) : (
                         <div className="h-12 w-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                           <span className="text-xs text-gray-400">No icon</span>
@@ -624,7 +624,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                 </div>
               )}
               {form.homeIconUrl && !uploadingIcon && (
-                <img src={toAssetUrl(form.homeIconUrl)} alt="Icon Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
+                <img fetchPriority="low" loading="lazy" src={toAssetUrl(form.homeIconUrl)} alt="Icon Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
               )}
             </div>
           </div>
@@ -730,8 +730,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                 </div>
 
                 {category.homeIconUrl ? (
-                  <img
-                    src={toAssetUrl(category.homeIconUrl)}
+                  <img fetchPriority="low" loading="lazy"                     src={toAssetUrl(category.homeIconUrl)}
                     alt={category.title}
                     className="w-8 h-8 object-contain rounded"
                   />

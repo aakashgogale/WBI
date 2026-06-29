@@ -46,6 +46,9 @@ const initializeSocket = (server) => {
       socket.join(`user:${socket.userId.toString()}`);
       socket.join(`user_${socket.userId.toString()}`);
       socket.join(`client:${socket.userId.toString()}`); // New format
+    } else if (socket.userRole === 'B2B') {
+      socket.join(`b2b:${socket.userId.toString()}`);
+      socket.join(`company:${socket.userId.toString()}`);
     } else if (socket.userRole === 'VENDOR') {
       socket.join(`vendor:${socket.userId.toString()}`);
       socket.join(`vendor_${socket.userId.toString()}`);
@@ -148,6 +151,12 @@ const initializeSocket = (server) => {
     socket.on('join_job', (jobId) => {
       socket.join(`job:${jobId}`);
       console.log(`Socket ${socket.userId} joined room job:${jobId}`);
+    });
+
+    // B2B Batch Tracking Room Join
+    socket.on('join_batch', (batchId) => {
+      socket.join(`batch:${batchId}`);
+      console.log(`Socket ${socket.userId} joined room batch:${batchId}`);
     });
 
     // Vendor acknowledges receiving booking alert

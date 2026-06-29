@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiBell, FiSearch, FiX } from 'react-icons/fi';
 import { gsap } from 'gsap';
@@ -15,6 +16,14 @@ const Header = ({
   showNotifications = true,
   notificationCount = 0
 }) => {
+  const { scrollY } = useScroll();
+  const [hidden, setHidden] = React.useState(false);
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const prev = scrollY.getPrevious();
+    if (latest > prev && latest > 100) setHidden(true);
+    else setHidden(false);
+  });
+
   const navigate = useNavigate();
   const logoRef = useRef(null);
   const bellRef = useRef(null);
@@ -96,7 +105,10 @@ const Header = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-slate-50/80 backdrop-blur-md pb-2 pt-1">
+    <motion.header className="sticky top-0 z-40 w-full bg-slate-50/80 backdrop-blur-md pb-2 pt-1"
+      variants={{ visible: { y: 0 }, hidden: { y: '-100%' } }}
+      animate={hidden ? 'hidden' : 'visible'}
+      transition={{ duration: 0.35, ease: 'easeInOut' }}>
       <div className="px-4 py-3 flex items-center justify-between min-h-[60px]">
         {isSearching ? (
           <form 
@@ -144,7 +156,7 @@ const Header = ({
                     if (logoRef.current) gsap.to(logoRef.current, { scale: 1.0, duration: 0.3, ease: 'power2.out' });
                   }}
                 >
-                  <img 
+                  <img fetchPriority="low" loading="lazy" 
                     ref={logoRef}
                     src="/logo/WBILogo.jpg" 
                     alt="WBI Logo" 
@@ -191,7 +203,7 @@ const Header = ({
           </>
         )}
       </div>
-    </header>
+    </motion.header>
   );
 };
 

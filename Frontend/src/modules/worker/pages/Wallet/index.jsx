@@ -5,29 +5,44 @@ import Header from '../../components/layout/Header';
 import workerWalletService from '../../../../services/workerWalletService';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { toast } from 'react-hot-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const Wallet = () => {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [wallet, setWallet] = useState({
+  const queryClient = useQueryClient();
+  const socket = useAppNotifications('worker');
+
+  const { data: walletData, isLoading, isFetching } = useQuery({
+    queryKey: ['workerWalletData'],
+    queryFn: async () => {
+      const [walletRes, txnRes] = await Promise.all([
+        workerWalletService.getWallet(),
+        workerWalletService.getTransactions({ limit: 50 })
+      ]);
+      return {
+        wallet: walletRes.success ? walletRes.data : {
+          totalBalance: 0,
+          availableBalance: 0,
+          pendingBalance: 0,
+          withdrawnAmount: 0
+        },
+        transactions: (txnRes.success ? txnRes.data : []) || []
+      };
+    }
+  });
+
+  const wallet = walletData?.wallet || {
     totalBalance: 0,
     availableBalance: 0,
     pendingBalance: 0,
     withdrawnAmount: 0
-  });
-  const [transactions, setTransactions] = useState([]);
+  };
+  const transactions = walletData?.transactions || [];
   
   // Withdraw Modal State
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [upiId, setUpiId] = useState('');
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
-
-  const socket = useAppNotifications('worker');
-
-  useEffect(() => {
-    loadWalletData();
-  }, []);
 
   useEffect(() => {
     if (socket) {
@@ -41,30 +56,11 @@ const Wallet = () => {
   }, [socket]);
 
   const handleSocketUpdate = () => {
-    loadWalletData(false); // background sync
-  };
-
-  const loadWalletData = async (showLoading = true) => {
-    try {
-      if (showLoading) setLoading(true);
-      const [walletRes, txnRes] = await Promise.all([
-        workerWalletService.getWallet(),
-        workerWalletService.getTransactions({ limit: 50 })
-      ]);
-
-      if (walletRes.success) setWallet(walletRes.data);
-      if (txnRes.success) setTransactions(txnRes.data || []);
-    } catch (error) {
-      toast.error('Failed to sync wallet');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    queryClient.invalidateQueries(['workerWalletData']);
   };
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    loadWalletData(false);
+    queryClient.invalidateQueries(['workerWalletData']);
   };
 
   const handleWithdrawSubmit = async () => {
@@ -84,7 +80,7 @@ const Wallet = () => {
         setWithdrawOpen(false);
         setWithdrawAmount('');
         setUpiId('');
-        loadWalletData(false);
+        queryClient.invalidateQueries(['workerWalletData']);
       }
     } catch (error) {
       toast.error(error.message || 'Failed to request withdrawal');
@@ -130,7 +126,7 @@ const Wallet = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading && !walletData) {
     return (
       <div className="min-h-screen bg-[#F8FCFC] p-4 space-y-4">
         <div className="h-14 bg-white rounded animate-pulse w-full"></div>
@@ -152,7 +148,7 @@ const Wallet = () => {
           <h1 className="text-lg font-bold">Wallet</h1>
           <button 
             onClick={handleRefresh}
-            className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 transition-all ${refreshing ? 'animate-spin' : ''}`}
+            className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-700 transition-all ${isFetching ? 'animate-spin' : ''}`}
           >
             <FiRefreshCw className="w-5 h-5" />
           </button>

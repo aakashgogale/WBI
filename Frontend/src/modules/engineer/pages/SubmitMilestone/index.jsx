@@ -161,7 +161,7 @@ const SubmitMilestone = () => {
             {files.map((f, idx) => (
               <div key={idx} className="w-[85px] h-[85px] rounded-xl border border-gray-200 relative group overflow-hidden bg-gray-50 flex items-center justify-center">
                 {f.type.includes('image') ? (
-                  <img src={f.fileUrl} alt="preview" className="w-full h-full object-cover" />
+                  <img fetchPriority="low" loading="lazy" src={f.fileUrl} alt="preview" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center p-2 text-center text-[#10AFA5]">
                     <FiFileText className="w-6 h-6 mb-1" />

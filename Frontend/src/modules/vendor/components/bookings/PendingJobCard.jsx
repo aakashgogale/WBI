@@ -110,7 +110,7 @@ const PendingJobCard = ({ booking, onAccept, onReject, onClick, loadingAction, s
             {booking.brandName && (
               <div className="flex items-center gap-1.5 mb-1.5 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded-md w-fit">
                 {booking.brandIcon && (
-                  <img src={booking.brandIcon} alt={booking.brandName} className="w-3 h-3 object-contain" />
+                  <img fetchPriority="low" loading="lazy" src={booking.brandIcon} alt={booking.brandName} className="w-3 h-3 object-contain" />
                 )}
                 <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wide">{booking.brandName}</span>
               </div>
@@ -122,7 +122,7 @@ const PendingJobCard = ({ booking, onAccept, onReject, onClick, loadingAction, s
           <div className="flex flex-col items-center shrink-0">
             {booking.categoryIcon || booking.serviceId?.category?.icon ? (
               <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden shadow-sm flex items-center justify-center p-0.5">
-                <img src={booking.categoryIcon || booking.serviceId?.category?.icon} className="max-w-full max-h-full object-contain" alt="Category" />
+                <img fetchPriority="low" loading="lazy" src={booking.categoryIcon || booking.serviceId?.category?.icon} className="max-w-full max-h-full object-contain" alt="Category" />
               </div>
             ) : (
               <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">

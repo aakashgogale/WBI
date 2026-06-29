@@ -20,9 +20,19 @@ const VendorLogin = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
 
   useEffect(() => {
-    // Redirect if already logged in
-    if (localStorage.getItem('vendorAccessToken')) {
-      navigate('/vendor', { replace: true });
+    // Redirect if already logged in and data is valid
+    const token = localStorage.getItem('vendorAccessToken');
+    const data = localStorage.getItem('vendorData');
+    
+    if (token) {
+      if (!data || data === 'undefined' || data === '{}') {
+        // Corrupted session state from cross-role bug, clear it out
+        localStorage.removeItem('vendorAccessToken');
+        localStorage.removeItem('vendorRefreshToken');
+        localStorage.removeItem('vendorData');
+      } else {
+        navigate('/vendor', { replace: true });
+      }
     }
   }, [navigate]);
 

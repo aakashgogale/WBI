@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiBell, FiSearch } from 'react-icons/fi';
-import { motion } from 'framer-motion';
+import { motion , useScroll, useMotionValueEvent } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Logo from '../../../../components/common/Logo';
 import api from '../../../../services/api';
@@ -14,6 +14,14 @@ const Header = memo(({
   showNotifications = true,
   notificationCount = 0
 }) => {
+  const { scrollY } = useScroll();
+  const [hidden, setHidden] = React.useState(false);
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const prev = scrollY.getPrevious();
+    if (latest > prev && latest > 100) setHidden(true);
+    else setHidden(false);
+  });
+
   const navigate = useNavigate();
   const [count, setCount] = useState(notificationCount);
 
@@ -61,8 +69,11 @@ const Header = memo(({
   };
 
   return (
-    <header
+    <motion.header
       className="sticky top-0 z-40 w-full bg-white"
+      variants={{ visible: { y: 0 }, hidden: { y: '-100%' } }}
+      animate={hidden ? 'hidden' : 'visible'}
+      transition={{ duration: 0.35, ease: 'easeInOut' }}
       style={{
         borderBottom: '2px solid rgba(156, 163, 175, 0.3)',
         borderBottomLeftRadius: '20px',
@@ -191,7 +202,7 @@ const Header = memo(({
           )}
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 });
 

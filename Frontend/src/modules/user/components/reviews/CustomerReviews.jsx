@@ -164,7 +164,7 @@ const CustomerReviews = ({ serviceId = 'all' }) => {
           >
             {/* User Info Header */}
             <div className="flex items-center gap-3 mb-3">
-              <img 
+              <img fetchPriority="low" loading="lazy" 
                 src={review.userId?.profilePhoto || `https://i.pravatar.cc/150?u=${review.userId?._id || review._id}`} 
                 alt={review.userId?.name || 'Customer'} 
                 className="w-10 h-10 rounded-full object-cover bg-slate-100"

@@ -47,6 +47,7 @@ const iconMap = {
   "Trust Videos": FiVideo,
   "Premium Services": FiStar,
   "Banners & Offers": FiStar,
+  "Home Content": FiGrid,
   "Digital Solutions": FiGrid,
   "Security Solutions": FiShield,
   "Banking Solutions": FiDollarSign,

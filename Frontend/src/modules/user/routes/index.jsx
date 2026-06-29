@@ -1,11 +1,16 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import AnimatedPage from '../../../components/common/AnimatedPage';
 import BottomNav from '../components/layout/BottomNav';
 import Footer from '../components/layout/Footer';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
+import LogoLoader from '../../../components/common/LogoLoader';
+import PageSkeleton from '../../../components/common/PageSkeleton';
+import LiveBookingCard from '../components/booking/LiveBookingCard';
 
 // Lazy load wrapper with error handling
 const lazyLoad = (importFunc) => {
@@ -125,15 +130,11 @@ const ElectricalSafetyTestEnquiry = lazyLoad(() => import('../pages/ElectricalSa
 const HcPreventiveMaintenanceEnquiry = lazyLoad(() => import('../pages/HcPreventiveMaintenanceEnquiry'));
 const HcAmcEnquiry = lazyLoad(() => import('../pages/HcAmcEnquiry'));
 
-import LogoLoader from '../../../components/common/LogoLoader';
-import PageSkeleton from '../../../components/common/PageSkeleton';
-
 const LoadingFallback = () => (
   <PageSkeleton />
 );
 
-// Import Live Booking Card
-import LiveBookingCard from '../components/booking/LiveBookingCard';
+// Live Booking Card
 
 const UserRoutes = () => {
   const location = useLocation();
@@ -161,81 +162,87 @@ const UserRoutes = () => {
         {/* Main content area - leaves space for bottom nav when needed */}
         <div className={`flex-1 ${shouldShowBottomNav ? "pb-24" : ""}`}>
           <Suspense fallback={<LoadingFallback />}>
-            <Routes>
+            <AnimatePresence mode="wait">
+            <Routes location={location || undefined} key={location ? location.pathname : 'routes'}>
               {/* Public routes */}
-              <Route path="/login" element={<PublicRoute userType="user"><Login /></PublicRoute>} />
-              <Route path="/signup" element={<PublicRoute userType="user"><Signup /></PublicRoute>} />
+              <Route path="/login" element={<AnimatedPage><PublicRoute userType="user"><Login /></PublicRoute></AnimatedPage>} />
+              <Route path="/signup" element={<AnimatedPage><PublicRoute userType="user"><Signup /></PublicRoute></AnimatedPage>} />
 
               {/* Protected routes (auth required) */}
-              <Route path="/" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
-              <Route path="/services" element={<ProtectedRoute userType="user"><Services /></ProtectedRoute>} />
-              <Route path="/service/:slug" element={<ProtectedRoute userType="user"><OneTimeServiceDetail /></ProtectedRoute>} />
-              <Route path="/service/:slug/packages" element={<ProtectedRoute userType="user"><OneTimeServicePackages /></ProtectedRoute>} />
-              <Route path="/one-time-checkout" element={<ProtectedRoute userType="user"><OneTimeServiceCheckout /></ProtectedRoute>} />
-              <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />
-              <Route path="/categories/:slug" element={<ProtectedRoute userType="user"><CategoryDetails /></ProtectedRoute>} />
-              <Route path="/workers/match" element={<ProtectedRoute userType="user"><WorkerSelection /></ProtectedRoute>} />
-              <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
+              <Route path="/" element={<AnimatedPage><ProtectedRoute userType="user"><Home /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/home" element={<AnimatedPage><ProtectedRoute userType="user"><Home /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/services" element={<AnimatedPage><ProtectedRoute userType="user"><Services /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/service/:slug" element={<AnimatedPage><ProtectedRoute userType="user"><OneTimeServiceDetail /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/service/:slug/packages" element={<AnimatedPage><ProtectedRoute userType="user"><OneTimeServicePackages /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/one-time-checkout" element={<AnimatedPage><ProtectedRoute userType="user"><OneTimeServiceCheckout /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/checkout" element={<AnimatedPage><ProtectedRoute userType="user"><Checkout /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/categories/:slug" element={<AnimatedPage><ProtectedRoute userType="user"><CategoryDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/workers/match" element={<AnimatedPage><ProtectedRoute userType="user"><WorkerSelection /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/native" element={<AnimatedPage><ProtectedRoute userType="user"><Native /></ProtectedRoute></AnimatedPage>} />
 
-              <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />
-              <Route path="/account" element={<ProtectedRoute userType="user"><Account /></ProtectedRoute>} />
-              <Route path="/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
-              <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />
-              <Route path="/my-bookings" element={<ProtectedRoute userType="user"><MyBookings /></ProtectedRoute>} />
-              <Route path="/calendar" element={<ProtectedRoute userType="user"><Calendar /></ProtectedRoute>} />
-              <Route path="/inbox" element={<ProtectedRoute userType="user"><Inbox /></ProtectedRoute>} />
-              <Route path="/one-time-review" element={<ProtectedRoute userType="user"><ReviewBooking /></ProtectedRoute>} />
-              <Route path="/booking/searching/:bookingId" element={<ProtectedRoute userType="user"><SearchingTechnician /></ProtectedRoute>} />
-              <Route path="/booking/technician-found/:bookingId" element={<ProtectedRoute userType="user"><TechnicianFound /></ProtectedRoute>} />
-              <Route path="/booking/:id" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
-              <Route path="/booking/:id/track" element={<ProtectedRoute userType="user"><BookingTrack /></ProtectedRoute>} />
-              <Route path="/booking-confirmation/:id" element={<ProtectedRoute userType="user"><BookingConfirmation /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute userType="user"><Settings /></ProtectedRoute>} />
-              <Route path="/manage-payment-methods" element={<ProtectedRoute userType="user"><ManagePaymentMethods /></ProtectedRoute>} />
-              <Route path="/manage-addresses" element={<ProtectedRoute userType="user"><ManageAddresses /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute userType="user"><Wallet /></ProtectedRoute>} />
-              <Route path="/my-plan" element={<ProtectedRoute userType="user"><MyPlan /></ProtectedRoute>} />
-              <Route path="/my-plan/:id" element={<ProtectedRoute userType="user"><PlanDetails /></ProtectedRoute>} />
-              <Route path="/my-rating" element={<ProtectedRoute userType="user"><MyRating /></ProtectedRoute>} />
-              <Route path="/about-wbi" element={<ProtectedRoute userType="user"><AboutWBI /></ProtectedRoute>} />
-              <Route path="/update-profile" element={<ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute>} />
-              <Route path="/scrap" element={<ProtectedRoute userType="user"><Scrap /></ProtectedRoute>} />
-              <Route path="/scrap/add" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute userType="user"><Notifications /></ProtectedRoute>} />
-              <Route path="/help-support" element={<ProtectedRoute userType="user"><HelpSupport /></ProtectedRoute>} />
-              <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />
-              <Route path="/web-development-enquiry" element={<ProtectedRoute userType="user"><WebDevelopmentEnquiry /></ProtectedRoute>} />
-              <Route path="/app-development-enquiry" element={<ProtectedRoute userType="user"><AppDevelopmentEnquiry /></ProtectedRoute>} />
-              <Route path="/crm-enquiry" element={<ProtectedRoute userType="user"><CrmEnquiry /></ProtectedRoute>} />
-              <Route path="/marketing-enquiry" element={<ProtectedRoute userType="user"><MarketingEnquiry /></ProtectedRoute>} />
-              <Route path="/design-enquiry" element={<ProtectedRoute userType="user"><DesignEnquiry /></ProtectedRoute>} />
-              <Route path="/banking-enquiry" element={<ProtectedRoute userType="user"><BankingEnquiry /></ProtectedRoute>} />
-              <Route path="/installation-enquiry" element={<ProtectedRoute userType="user"><InstallationEnquiry /></ProtectedRoute>} />
-              <Route path="/maintenance-enquiry" element={<ProtectedRoute userType="user"><MaintenanceEnquiry /></ProtectedRoute>} />
-              <Route path="/breakdown-enquiry" element={<ProtectedRoute userType="user"><BreakdownEnquiry /></ProtectedRoute>} />
-              <Route path="/sitetesting-enquiry" element={<ProtectedRoute userType="user"><SiteTestingEnquiry /></ProtectedRoute>} />
-              <Route path="/powermonitoring-enquiry" element={<ProtectedRoute userType="user"><PowerMonitoringEnquiry /></ProtectedRoute>} />
-              <Route path="/multipleservices-enquiry" element={<ProtectedRoute userType="user"><MultipleServicesEnquiry /></ProtectedRoute>} />
-              <Route path="/atmservice-enquiry" element={<ProtectedRoute userType="user"><AtmServiceEnquiry /></ProtectedRoute>} />
-              <Route path="/atmcassette-enquiry" element={<ProtectedRoute userType="user"><AtmCassetteService /></ProtectedRoute>} />
-              <Route path="/passbookprinter-enquiry" element={<ProtectedRoute userType="user"><PassbookPrinterService /></ProtectedRoute>} />
-              <Route path="/cdm-enquiry" element={<ProtectedRoute userType="user"><CdmService /></ProtectedRoute>} />
-              <Route path="/pos-enquiry" element={<ProtectedRoute userType="user"><PosService /></ProtectedRoute>} />
-              <Route path="/vsat-enquiry" element={<ProtectedRoute userType="user"><VsatService /></ProtectedRoute>} />
-              <Route path="/barcode-reader-enquiry" element={<ProtectedRoute userType="user"><BarcodeReaderService /></ProtectedRoute>} />
-              <Route path="/dg-service-enquiry" element={<ProtectedRoute userType="user"><DgService /></ProtectedRoute>} />
-              <Route path="/battery-service-enquiry" element={<ProtectedRoute userType="user"><BatteryService /></ProtectedRoute>} />
-              <Route path="/ups-battery-service-enquiry" element={<ProtectedRoute userType="user"><UpsBatteryService /></ProtectedRoute>} />
-              <Route path="/ev-service-enquiry" element={<ProtectedRoute userType="user"><EvService /></ProtectedRoute>} />
-              <Route path="/ac-power-service-enquiry" element={<ProtectedRoute userType="user"><AcPowerService /></ProtectedRoute>} />
-              <Route path="/dc-power-service-enquiry" element={<ProtectedRoute userType="user"><DcPowerService /></ProtectedRoute>} />
-              <Route path="/power-testing-service-enquiry" element={<ProtectedRoute userType="user"><PowerTestingService /></ProtectedRoute>} />
-              <Route path="/medical-equipment-enquiry" element={<ProtectedRoute userType="user"><MedicalEquipmentEnquiry /></ProtectedRoute>} />
-              <Route path="/qc-test-enquiry" element={<ProtectedRoute userType="user"><QualityControlTestEnquiry /></ProtectedRoute>} />
-              <Route path="/safety-test-enquiry" element={<ProtectedRoute userType="user"><ElectricalSafetyTestEnquiry /></ProtectedRoute>} />
-              <Route path="/hc-pm-enquiry" element={<ProtectedRoute userType="user"><HcPreventiveMaintenanceEnquiry /></ProtectedRoute>} />
-              <Route path="/hc-amc-enquiry" element={<ProtectedRoute userType="user"><HcAmcEnquiry /></ProtectedRoute>} />
+              <Route path="/rewards" element={<AnimatedPage><ProtectedRoute userType="user"><Rewards /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/account" element={<AnimatedPage><ProtectedRoute userType="user"><Account /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/cart" element={<AnimatedPage><ProtectedRoute userType="user"><Cart /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/checkout" element={<AnimatedPage><ProtectedRoute userType="user"><Checkout /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/my-bookings" element={<AnimatedPage><ProtectedRoute userType="user"><MyBookings /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/calendar" element={<AnimatedPage><ProtectedRoute userType="user"><Calendar /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/inbox" element={<AnimatedPage><ProtectedRoute userType="user"><Inbox /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/one-time-review" element={<AnimatedPage><ProtectedRoute userType="user"><ReviewBooking /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/booking/searching/:bookingId" element={<AnimatedPage><ProtectedRoute userType="user"><SearchingTechnician /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/booking/technician-found/:bookingId" element={<AnimatedPage><ProtectedRoute userType="user"><TechnicianFound /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/booking/:id" element={<AnimatedPage><ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/booking/:id/track" element={<AnimatedPage><ProtectedRoute userType="user"><BookingTrack /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/booking-confirmation/:id" element={<AnimatedPage><ProtectedRoute userType="user"><BookingConfirmation /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/settings" element={<AnimatedPage><ProtectedRoute userType="user"><Settings /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/manage-payment-methods" element={<AnimatedPage><ProtectedRoute userType="user"><ManagePaymentMethods /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/manage-addresses" element={<AnimatedPage><ProtectedRoute userType="user"><ManageAddresses /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/wallet" element={<AnimatedPage><ProtectedRoute userType="user"><Wallet /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/my-plan" element={<AnimatedPage><ProtectedRoute userType="user"><MyPlan /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/my-plan/:id" element={<AnimatedPage><ProtectedRoute userType="user"><PlanDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/my-rating" element={<AnimatedPage><ProtectedRoute userType="user"><MyRating /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/about-wbi" element={<AnimatedPage><ProtectedRoute userType="user"><AboutWBI /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/update-profile" element={<AnimatedPage><ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/scrap" element={<AnimatedPage><ProtectedRoute userType="user"><Scrap /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/scrap/add" element={<AnimatedPage><ProtectedRoute userType="user"><AddScrap /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/notifications" element={<AnimatedPage><ProtectedRoute userType="user"><Notifications /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/help-support" element={<AnimatedPage><ProtectedRoute userType="user"><HelpSupport /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/cancellation-policy" element={<AnimatedPage><ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/web-development-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><WebDevelopmentEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/app-development-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><AppDevelopmentEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/crm-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><CrmEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/marketing-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><MarketingEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/design-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><DesignEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/banking-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><BankingEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/installation-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><InstallationEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/maintenance-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><MaintenanceEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/breakdown-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><BreakdownEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/sitetesting-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><SiteTestingEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/powermonitoring-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><PowerMonitoringEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/multipleservices-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><MultipleServicesEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/atmservice-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><AtmServiceEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/atmcassette-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><AtmCassetteService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/passbookprinter-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><PassbookPrinterService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/cdm-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><CdmService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/pos-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><PosService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/vsat-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><VsatService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/barcode-reader-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><BarcodeReaderService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/dg-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><DgService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/battery-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><BatteryService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/ups-battery-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><UpsBatteryService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/ev-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><EvService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/ac-power-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><AcPowerService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/dc-power-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><DcPowerService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/power-testing-service-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><PowerTestingService /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/medical-equipment-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><MedicalEquipmentEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/qc-test-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><QualityControlTestEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/safety-test-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><ElectricalSafetyTestEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/hc-pm-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><HcPreventiveMaintenanceEnquiry /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/hc-amc-enquiry" element={<AnimatedPage><ProtectedRoute userType="user"><HcAmcEnquiry /></ProtectedRoute></AnimatedPage>} />
+              
+              {/* Catch-all redirect to prevent blank screens */}
+              <Route path="*" element={<AnimatedPage><ProtectedRoute userType="user"><Home /></ProtectedRoute></AnimatedPage>} />
             </Routes>
+            </AnimatePresence>
         </Suspense>
         </div>
 

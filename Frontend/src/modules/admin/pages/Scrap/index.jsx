@@ -113,7 +113,7 @@ const AdminScrapPage = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {item.images && item.images[0] && (
-                          <img src={item.images[0]} alt="" className="w-8 h-8 rounded object-cover border border-gray-100" />
+                          <img fetchPriority="low" loading="lazy" src={item.images[0]} alt="" className="w-8 h-8 rounded object-cover border border-gray-100" />
                         )}
                         <div>
                           <p className="text-xs font-bold text-gray-900">{item.title}</p>

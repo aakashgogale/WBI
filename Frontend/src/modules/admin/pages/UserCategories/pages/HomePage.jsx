@@ -620,7 +620,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                       <td className="py-2.5 px-3 text-sm font-semibold text-gray-600">{idx + 1}</td>
                       <td className="py-2.5 px-3">
                         {b.imageUrl ? (
-                          <img src={b.imageUrl} alt="Banner" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                          <img fetchPriority="low" loading="lazy" src={b.imageUrl} alt="Banner" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
                         ) : (
                           <div className="h-14 w-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                             <span className="text-[10px] text-gray-400">No img</span>
@@ -728,7 +728,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                       <td className="py-2.5 px-3 text-sm font-semibold text-gray-600">{idx + 1}</td>
                       <td className="py-2.5 px-3">
                         {b.imageUrl ? (
-                          <img src={b.imageUrl} alt="Banner" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                          <img fetchPriority="low" loading="lazy" src={b.imageUrl} alt="Banner" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
                         ) : (
                           <div className="h-14 w-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                             <span className="text-[10px] text-gray-400">No img</span>
@@ -835,7 +835,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                       <td className="py-2.5 px-3 text-sm font-semibold text-gray-600">{idx + 1}</td>
                       <td className="py-2.5 px-3">
                         {p.imageUrl ? (
-                          <img src={p.imageUrl} alt="Promo" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                          <img fetchPriority="low" loading="lazy" src={p.imageUrl} alt="Promo" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
                         ) : (
                           <div className="h-14 w-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                             <span className="text-[10px] text-gray-400">No img</span>
@@ -942,7 +942,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                     <td className="py-2.5 px-3">
                       {s.gifUrl ? (
                         s.gifUrl.match(/\.(gif|webp)$/i) ? (
-                          <img src={s.gifUrl} alt="Preview" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                          <img fetchPriority="low" loading="lazy" src={s.gifUrl} alt="Preview" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
                         ) : (
                           <video src={s.gifUrl} className="h-14 w-14 object-cover rounded-lg border border-gray-200" controls />
                         )
@@ -1051,7 +1051,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                         <td className="py-4 px-4 text-sm font-semibold text-gray-600">{idx + 1}</td>
                         <td className="py-4 px-4">
                           {s.imageUrl ? (
-                            <img src={s.imageUrl} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
+                            <img fetchPriority="low" loading="lazy" src={s.imageUrl} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
                           ) : (
                             <div className="h-16 w-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                               <span className="text-xs text-gray-400">No img</span>
@@ -1160,7 +1160,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                       <td className="py-4 px-4 text-sm font-semibold text-gray-600">{idx + 1}</td>
                       <td className="py-4 px-4">
                         {s.imageUrl ? (
-                          <img src={s.imageUrl} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
+                          <img fetchPriority="low" loading="lazy" src={s.imageUrl} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
                         ) : (
                           <div className="h-16 w-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                             <span className="text-xs text-gray-400">No img</span>
@@ -1332,7 +1332,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                             {(sec.cards || []).slice(0, 5).map((c, i) => (
                               <div key={i} className="relative w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex-shrink-0">
                                 {c.imageUrl ? (
-                                  <img src={c.imageUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                                  <img fetchPriority="low" loading="lazy" src={c.imageUrl} alt="" className="w-full h-full rounded-full object-cover" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 font-bold">?</div>
                                 )}
@@ -1386,7 +1386,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                     <td className="py-4 px-4 text-sm font-semibold text-gray-600">{idx + 1}</td>
                     <td className="py-4 px-4">
                       {c.homeIconUrl ? (
-                        <img src={c.homeIconUrl} alt={c.title} className="h-12 w-12 object-cover rounded-lg border border-gray-200" />
+                        <img fetchPriority="low" loading="lazy" src={c.homeIconUrl} alt={c.title} className="h-12 w-12 object-cover rounded-lg border border-gray-200" />
                       ) : (
                         <div className="h-12 w-12 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                           <span className="text-xs text-gray-400">No icon</span>
@@ -1497,7 +1497,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               )}
               {bannerForm.imageUrl && !uploading && (
                 <div className="relative block w-full max-w-[300px] group">
-                  <img src={bannerForm.imageUrl} alt="Preview" className="w-full aspect-[21/10] object-fill rounded-lg border border-gray-200 shadow-sm" />
+                  <img fetchPriority="low" loading="lazy" src={bannerForm.imageUrl} alt="Preview" className="w-full aspect-[21/10] object-fill rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setBannerForm(p => ({ ...p, imageUrl: "" }))}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
@@ -1615,7 +1615,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               )}
               {promoForm.imageUrl && !uploading && (
                 <div className="relative inline-block group">
-                  <img src={promoForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                  <img fetchPriority="low" loading="lazy" src={promoForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setPromoForm(p => ({ ...p, imageUrl: "" }))}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1773,7 +1773,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               {curatedForm.gifUrl && !uploading && (
                 <div className="mt-3 relative inline-block group">
                   {curatedForm.gifUrl.match(/\.(gif|webp)$/i) ? (
-                    <img src={curatedForm.gifUrl} alt="Preview" className="h-32 w-auto object-cover rounded-lg border border-gray-200" />
+                    <img fetchPriority="low" loading="lazy" src={curatedForm.gifUrl} alt="Preview" className="h-32 w-auto object-cover rounded-lg border border-gray-200" />
                   ) : (
                     <video src={curatedForm.gifUrl} className="h-32 w-auto object-cover rounded-lg border border-gray-200" controls />
                   )}
@@ -1887,7 +1887,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               )}
               {noteworthyForm.imageUrl && !uploading && (
                 <div className="relative inline-block group">
-                  <img src={noteworthyForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                  <img fetchPriority="low" loading="lazy" src={noteworthyForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setNoteworthyForm(p => ({ ...p, imageUrl: "" }))}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1999,7 +1999,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               )}
               {bookedForm.imageUrl && !uploading && (
                 <div className="relative inline-block group">
-                  <img src={bookedForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                  <img fetchPriority="low" loading="lazy" src={bookedForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setBookedForm(p => ({ ...p, imageUrl: "" }))}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -2183,7 +2183,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                     <div key={card.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3 flex-1">
                         {card.imageUrl ? (
-                          <img src={card.imageUrl} alt={card.title} className="h-12 w-12 object-cover rounded-lg border border-gray-200" />
+                          <img fetchPriority="low" loading="lazy" src={card.imageUrl} alt={card.title} className="h-12 w-12 object-cover rounded-lg border border-gray-200" />
                         ) : (
                           <div className="h-12 w-12 bg-gray-200 rounded-lg border border-gray-200 flex items-center justify-center">
                             <span className="text-xs text-gray-400">No img</span>
@@ -2340,7 +2340,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
               )}
               {cardForm.imageUrl && !uploading && (
                 <div className="relative inline-block group">
-                  <img src={cardForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                  <img fetchPriority="low" loading="lazy" src={cardForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setCardForm(p => ({ ...p, imageUrl: "" }))}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -2495,7 +2495,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
             </div>
             {offerBannerForm.imageUrl && (
               <div className="mt-4 p-1 bg-white rounded-xl border border-gray-100 shadow-sm block w-full max-w-[300px]">
-                <img src={offerBannerForm.imageUrl} alt="Preview" className="w-full aspect-[21/10] object-fill rounded-lg" />
+                <img fetchPriority="low" loading="lazy" src={offerBannerForm.imageUrl} alt="Preview" className="w-full aspect-[21/10] object-fill rounded-lg" />
               </div>
             )}
           </div>

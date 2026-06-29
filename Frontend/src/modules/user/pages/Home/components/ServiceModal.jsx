@@ -71,8 +71,7 @@ const ServiceModal = ({ isOpen, onClose, service, location, cartCount }) => {
             {/* Service Image */}
             {service?.image && (
               <div className="mb-6">
-                <img
-                  src={service.image}
+                <img fetchPriority="low" loading="lazy"                   src={service.image}
                   alt={service.title}
                   className="w-full h-48 object-cover rounded-xl"
                 />

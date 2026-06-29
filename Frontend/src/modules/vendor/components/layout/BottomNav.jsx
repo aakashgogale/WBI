@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiHome, FiBriefcase, FiUsers, FiUser } from 'react-icons/fi';
 import { HiHome, HiBriefcase, HiUsers, HiUser } from 'react-icons/hi';
@@ -6,6 +7,14 @@ import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../../theme';
 
 const BottomNav = memo(() => {
+  const { scrollY } = useScroll();
+  const [hidden, setHidden] = React.useState(false);
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const prev = scrollY.getPrevious();
+    if (latest > prev && latest > 150) setHidden(true);
+    else setHidden(false);
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   const [pendingJobsCount, setPendingJobsCount] = useState(0);
@@ -69,8 +78,11 @@ const BottomNav = memo(() => {
   }
 
   return (
-    <nav
+    <motion.nav
       className="fixed bottom-0 left-0 right-0 bg-white"
+      variants={{ visible: { y: 0 }, hidden: { y: '100%' } }}
+      animate={hidden ? 'hidden' : 'visible'}
+      transition={{ duration: 0.35, ease: 'easeInOut' }}
       style={{
         position: 'fixed',
         bottom: 0,
@@ -162,7 +174,7 @@ const BottomNav = memo(() => {
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 });
 

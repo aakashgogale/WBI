@@ -414,7 +414,7 @@ const TechnicianFound = () => {
 
         <div className={styles.profileSection}>
           <div className={styles.imageWrapper}>
-            <img src={workerImage} alt={workerObj.name} className={styles.profileImage} />
+            <img fetchPriority="low" loading="lazy" src={workerImage} alt={workerObj.name} className={styles.profileImage} />
           </div>
           <h2 className={styles.workerName}>{workerObj.name}</h2>
 
@@ -510,7 +510,7 @@ const TechnicianFound = () => {
 
               <div className={styles.chatHeader}>
                 <div className={styles.chatHeaderLeft}>
-                  <img src={workerImage} alt={workerObj.name} className={styles.chatHeaderAvatar} />
+                  <img fetchPriority="low" loading="lazy" src={workerImage} alt={workerObj.name} className={styles.chatHeaderAvatar} />
                   <div>
                     <h3 className={styles.chatHeaderName}>{workerObj.name}</h3>
                     <p className={styles.chatHeaderStatus}>
@@ -557,8 +557,7 @@ const TechnicianFound = () => {
                       >
                         <div className={styles.messageBubble}>
                           {msg.fileUrl && msg.fileType === 'image' && (
-                            <img
-                              src={msg.fileUrl}
+                            <img fetchPriority="low" loading="lazy"                               src={msg.fileUrl}
                               alt="attachment"
                               className={styles.chatImageAttachment}
                             />

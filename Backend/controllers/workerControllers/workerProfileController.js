@@ -458,6 +458,52 @@ const updateSkillsProfile = async (req, res) => {
   }
 };
 
+/**
+ * Upload Worker Profile Photo
+ */
+const uploadProfilePhoto = async (req, res) => {
+  try {
+    const workerId = req.user.id || req.user._id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    // req.file.path contains the Cloudinary URL because we use multer-storage-cloudinary
+    const imageUrl = req.file.path;
+
+    const worker = await Worker.findByIdAndUpdate(
+      workerId,
+      { profilePhoto: imageUrl },
+      { new: true }
+    ).select('-password -__v');
+
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        message: 'Worker not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile photo updated successfully',
+      imageUrl,
+      user: worker
+    });
+  } catch (error) {
+    console.error('Worker profile photo upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Unable to upload photo. Please try again.',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -466,7 +512,8 @@ module.exports = {
   updateBankDetails,
   updateWorkLocations,
   updateDocuments,
-  updateSkillsProfile
+  updateSkillsProfile,
+  uploadProfilePhoto
 };
 
 

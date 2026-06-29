@@ -85,7 +85,7 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline }) => 
   const serviceName = booking.serviceName || 'Service Request';
 
   const CategoryIcon = booking.categoryIcon ? (
-    <img src={booking.categoryIcon} alt={categoryName} className="w-full h-full object-cover" />
+    <img fetchPriority="low" loading="lazy" src={booking.categoryIcon} alt={categoryName} className="w-full h-full object-cover" />
   ) : (
     <span className="text-2xl font-black uppercase text-white">{categoryName.charAt(0)}</span>
   );
@@ -128,7 +128,7 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline }) => 
                   </span>
                   {brandName && (
                     <div className="flex items-center gap-1 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
-                      {booking.brandIcon && <img src={booking.brandIcon} alt={brandName} className="w-3 h-3 object-contain" />}
+                      {booking.brandIcon && <img fetchPriority="low" loading="lazy" src={booking.brandIcon} alt={brandName} className="w-3 h-3 object-contain" />}
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                         {brandName}
                       </span>

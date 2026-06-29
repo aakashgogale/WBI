@@ -91,7 +91,7 @@ export default function DigitalServices() {
     fetchOverview();
     fetchOrders();
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'https://app.wbinfs.com', {
       auth: { token: localStorage.getItem('vendorAccessToken') || sessionStorage.getItem('vendorAccessToken') }
     });
 

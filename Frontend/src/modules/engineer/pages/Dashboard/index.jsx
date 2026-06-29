@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronRight, FiAlertCircle, FiClock, FiMapPin, FiSearch, FiBell, FiCode, FiPhone, FiFigma } from 'react-icons/fi';
 import { FaWallet, FaBriefcase, FaCalendarAlt, FaStar, FaFileSignature } from 'react-icons/fa';
 import { BsDisplay } from 'react-icons/bs';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import engineerService from '../../../../services/engineerService';
 import { engineerAuthService } from '../../../../services/authService';
 import { registerFCMToken } from '../../../../services/pushNotificationService';
@@ -13,28 +14,63 @@ import WorkerJobAlertModal from '../../components/bookings/WorkerJobAlertModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-
-  const [stats, setStats] = useState({
-    pendingJobs: 0,
-    activeProjects: 0,
-    completedJobs: 0,
-    thisMonthEarnings: 0,
-    recentJobs: []
-  });
-
-  const [workerProfile, setWorkerProfile] = useState({
-    name: 'Engineer Name',
-    photo: null,
-    categories: [],
-    address: null,
-  });
-
-  const [profileCompletion, setProfileCompletion] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('New Jobs');
+  const queryClient = useQueryClient();
   const socket = useSocket();
+
+  const [activeTab, setActiveTab] = useState('New Jobs');
   const [alertJobId, setAlertJobId] = useState(null);
   const [incomingJob, setIncomingJob] = useState(null);
+
+  // Queries
+  const { data: profileRes, isLoading: profileLoading } = useQuery({
+    queryKey: ['engineerProfile'],
+    queryFn: () => engineerService.getProfile(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: statsRes, isLoading: statsLoading } = useQuery({
+    queryKey: ['engineerDashboardStats'],
+    queryFn: () => engineerService.getDashboardStats(),
+    staleTime: 1000 * 30, // 30 seconds
+  });
+
+  const { data: completionRes, isLoading: completionLoading } = useQuery({
+    queryKey: ['engineerProfileCompletion'],
+    queryFn: () => engineerAuthService.getProfileCompletion(),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  // Derived State
+  const workerProfile = useMemo(() => {
+    if (profileRes?.success && (profileRes?.engineer || profileRes?.worker)) {
+      const profile = profileRes.engineer || profileRes.worker;
+      return {
+        name: profile.name || 'Engineer Name',
+        photo: profile.profilePhoto || null,
+        categories: profile.serviceCategories || (profile.serviceCategory ? [profile.serviceCategory] : []),
+        address: profile.address,
+        status: profile.status || 'OFFLINE',
+        rating: profile.rating || 0
+      };
+    }
+    return { name: 'Engineer Name', photo: null, categories: [], address: null, status: 'OFFLINE', rating: 0 };
+  }, [profileRes]);
+
+  const stats = useMemo(() => {
+    if (statsRes?.success) {
+      const { totalEarnings, activeJobs, activeProjects, completedJobs, recentJobs } = statsRes.data;
+      return {
+        thisMonthEarnings: totalEarnings || 0,
+        pendingJobs: activeJobs || 0,
+        activeProjects: activeProjects || 0,
+        completedJobs: completedJobs || 0,
+        recentJobs: recentJobs || []
+      };
+    }
+    return { pendingJobs: 0, activeProjects: 0, completedJobs: 0, thisMonthEarnings: 0, recentJobs: [] };
+  }, [statsRes]);
+
+  const profileCompletion = completionRes?.success ? (completionRes.data?.completionPercentage || 0) : 0;
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -53,61 +89,18 @@ const Dashboard = () => {
     };
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [profileRes, statsRes, completionRes] = await Promise.all([
-        engineerService.getProfile(),
-        engineerService.getDashboardStats(),
-        engineerAuthService.getProfileCompletion()
-      ]);
-
-      if (profileRes.success && (profileRes.engineer || profileRes.worker)) {
-        const profile = profileRes.engineer || profileRes.worker;
-        setWorkerProfile({
-          name: profile.name || 'Engineer Name',
-          photo: profile.profilePhoto || null,
-          categories: profile.serviceCategories || (profile.serviceCategory ? [profile.serviceCategory] : []),
-          address: profile.address,
-          status: profile.status || 'OFFLINE',
-          rating: profile.rating || 0
-        });
-      }
-
-      if (completionRes.success) {
-        setProfileCompletion(completionRes.data?.completionPercentage || 0);
-      }
-
-      if (statsRes.success) {
-        const { totalEarnings, activeJobs, activeProjects, completedJobs, recentJobs } = statsRes.data;
-
-        setStats({
-          thisMonthEarnings: totalEarnings || 0,
-          pendingJobs: activeJobs || 0,
-          activeProjects: activeProjects || 0,
-          completedJobs: completedJobs || 0,
-          recentJobs: recentJobs || []
-        });
-      }
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchDashboardData();
     registerFCMToken('worker', true).catch(err => console.error('FCM registration failed:', err));
 
     const handleUpdate = () => {
-      fetchDashboardData();
+      queryClient.invalidateQueries(['engineerDashboardStats']);
     };
     window.addEventListener('workerJobsUpdated', handleUpdate);
 
     return () => {
       window.removeEventListener('workerJobsUpdated', handleUpdate);
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!socket) return;
@@ -115,8 +108,7 @@ const Dashboard = () => {
     const handleNewDigitalJob = (data) => {
       setIncomingJob(data);
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      // Refetch to update the badge count
-      fetchDashboardData();
+      queryClient.invalidateQueries(['engineerDashboardStats']);
     };
 
     socket.on('new_digital_job', handleNewDigitalJob);
@@ -124,7 +116,7 @@ const Dashboard = () => {
     return () => {
       socket.off('new_digital_job', handleNewDigitalJob);
     };
-  }, [socket]);
+  }, [socket, queryClient]);
 
   const handleAcceptIncomingJob = async () => {
     if (!incomingJob) return;
@@ -132,7 +124,7 @@ const Dashboard = () => {
       await engineerService.acceptDigitalJob(incomingJob.jobId);
       import('react-hot-toast').then(m => m.default.success('Job accepted!'));
       setIncomingJob(null);
-      fetchDashboardData();
+      queryClient.invalidateQueries(['engineerDashboardStats']);
     } catch (err) {
       import('react-hot-toast').then(m => m.default.error('Failed to accept job'));
     }
@@ -143,7 +135,7 @@ const Dashboard = () => {
     try {
       await engineerService.rejectDigitalJob(incomingJob.jobId);
       setIncomingJob(null);
-      fetchDashboardData();
+      queryClient.invalidateQueries(['engineerDashboardStats']);
     } catch (err) {
       import('react-hot-toast').then(m => m.default.error('Failed to reject job'));
     }
@@ -160,7 +152,8 @@ const Dashboard = () => {
     return () => socket.off('notification', handleNotification);
   }, [socket]);
 
-  if (loading) {
+  // Only show skeleton if we have NO cached data and are currently fetching
+  if (profileLoading && !profileRes) {
     return (
       <div className="min-h-screen bg-[#F8FCFC] px-4 py-6 space-y-6">
         <SkeletonProfileHeader />
@@ -185,7 +178,7 @@ const Dashboard = () => {
       <header className="px-5 pt-6 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-9 cursor-pointer" onClick={() => navigate('/engineer/dashboard')}>
-            <img src="/logo/WBILogo.jpg" alt="WBI Logo" className="h-full object-contain mix-blend-multiply" />
+            <img fetchPriority="low" loading="lazy" src="/logo/WBILogo.jpg" alt="WBI Logo" className="h-full object-contain mix-blend-multiply" />
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -501,7 +494,7 @@ const Dashboard = () => {
         jobId={alertJobId}
         onClose={() => setAlertJobId(null)}
         onJobAccepted={(id) => {
-          fetchDashboardData();
+          queryClient.invalidateQueries(['engineerDashboardStats']);
           navigate(`/engineer/job/${id}`);
         }}
       />

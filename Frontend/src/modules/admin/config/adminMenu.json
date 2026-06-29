@@ -79,6 +79,15 @@
     "children": []
   },
   {
+    "title": "B2B Approvals",
+    "route": "/admin/b2b-companies",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Bookings",
     "route": "/admin/bookings",
     "allowedRoles": [
@@ -154,6 +163,15 @@
   {
     "title": "Banners & Offers",
     "route": "/admin/banners",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
+    "title": "Home Content",
+    "route": "/admin/home-content",
     "allowedRoles": [
       "super_admin",
       "admin"

@@ -5,31 +5,40 @@ const AuditLog = require('../models/AuditLog');
 const { encrypt, decrypt, maskAccountNumber } = require('../utils/encryption');
 
 exports.getWalletSummary = async (req, res) => {
+  const startTime = Date.now();
+  console.log('[API_START] GET /api/wallet/summary');
   try {
-    const ownerId = req.user._id; // Or req.vendor._id, req.engineer._id based on auth
-    const ownerType = req.user.role; // 'vendor', 'engineer', 'worker'
+    const ownerId = req.user._id;
+    const ownerType = req.user.role;
 
-    let wallet = await Wallet.findOne({ ownerId, ownerType });
+    let wallet = await Wallet.findOne({ ownerId, ownerType }).lean();
     if (!wallet) {
-      wallet = new Wallet({ ownerId, ownerType, availableBalance: 0, pendingBalance: 0, totalEarned: 0 });
-      await wallet.save();
+      wallet = await Wallet.create({ ownerId, ownerType, availableBalance: 0, pendingBalance: 0, totalEarned: 0 });
+      wallet = wallet.toObject();
     }
     
+    console.log(`[API_SUCCESS] GET /api/wallet/summary - ${Date.now() - startTime}ms`);
     res.json({ success: true, data: wallet });
   } catch (error) {
+    console.error(`[API_ERROR] GET /api/wallet/summary - ${Date.now() - startTime}ms :`, error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.getWalletTransactions = async (req, res) => {
+  const startTime = Date.now();
+  console.log('[API_START] GET /api/wallet/transactions');
   try {
     const ownerId = req.user._id;
     const transactions = await WalletTransaction.find({ ownerId })
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)
+      .lean();
       
+    console.log(`[API_SUCCESS] GET /api/wallet/transactions - ${Date.now() - startTime}ms`);
     res.json({ success: true, data: transactions });
   } catch (error) {
+    console.error(`[API_ERROR] GET /api/wallet/transactions - ${Date.now() - startTime}ms :`, error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -40,7 +49,6 @@ exports.requestWithdrawal = async (req, res) => {
     const ownerId = req.user._id;
     const ownerType = req.user.role;
 
-    // Use $inc for atomic update to prevent concurrent double withdrawals bypassing the check
     const wallet = await Wallet.findOneAndUpdate(
       { ownerId, ownerType, availableBalance: { $gte: amount } },
       { 
@@ -79,7 +87,6 @@ exports.requestWithdrawal = async (req, res) => {
     });
     await tx.save();
 
-    // Audit Log
     await AuditLog.create({
       actionType: 'WITHDRAWAL_REQUEST',
       actorId: ownerId,
@@ -97,9 +104,11 @@ exports.requestWithdrawal = async (req, res) => {
 };
 
 exports.getWithdrawals = async (req, res) => {
+  const startTime = Date.now();
   try {
     const ownerId = req.user._id;
-    const withdrawals = await Withdrawal.find({ ownerId }).sort({ createdAt: -1 });
+    const withdrawals = await Withdrawal.find({ ownerId }).sort({ createdAt: -1 }).lean();
+    console.log(`[API_SUCCESS] GET /api/wallet/withdrawals - ${Date.now() - startTime}ms`);
     res.json({ success: true, data: withdrawals });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -108,7 +117,6 @@ exports.getWithdrawals = async (req, res) => {
 
 exports.getAssignedServices = async (req, res) => {
   try {
-    // Dynamic mock for frontend
     res.json({ 
       success: true, 
       data: { 
@@ -124,18 +132,18 @@ exports.getAssignedServices = async (req, res) => {
 };
 
 exports.getPayments = async (req, res) => {
+  const startTime = Date.now();
   try {
-    // Return empty array for now or mock data based on DB
     const Payment = require('../models/Payment');
     const ownerId = req.user._id;
     const ownerType = req.user.role;
     
-    // Find payments related to this engineer/worker
     let query = {};
     if (ownerType === 'engineer') query.engineerId = ownerId;
     if (ownerType === 'worker') query.workerId = ownerId;
     
-    const payments = await Payment.find(query).sort({ createdAt: -1 }).limit(20);
+    const payments = await Payment.find(query).sort({ createdAt: -1 }).limit(20).lean();
+    console.log(`[API_SUCCESS] GET /api/wallet/payments - ${Date.now() - startTime}ms`);
     res.json({ success: true, data: payments });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -143,26 +151,26 @@ exports.getPayments = async (req, res) => {
 };
 
 exports.getBankDetails = async (req, res) => {
+  const startTime = Date.now();
   try {
     const BankAccount = require('../models/BankAccount');
     const ownerId = req.user._id;
     
-    let account = await BankAccount.findOne({ ownerId, isPrimary: true });
+    let account = await BankAccount.findOne({ ownerId, isPrimary: true }).lean();
     if (!account) {
-      account = await BankAccount.findOne({ ownerId });
+      account = await BankAccount.findOne({ ownerId }).lean();
     }
     
     if (account) {
-      // Decrypt and mask before sending to frontend
       const plainAccountNumber = decrypt(account.accountNumberEncrypted);
       const maskedNumber = maskAccountNumber(plainAccountNumber);
       
-      const safeAccount = account.toObject();
-      safeAccount.accountNumberEncrypted = maskedNumber; // Send masked
-      
-      return res.json({ success: true, data: safeAccount });
+      account.accountNumberEncrypted = maskedNumber;
+      console.log(`[API_SUCCESS] GET /api/wallet/bank - ${Date.now() - startTime}ms`);
+      return res.json({ success: true, data: account });
     }
     
+    console.log(`[API_SUCCESS] GET /api/wallet/bank - ${Date.now() - startTime}ms`);
     res.json({ success: true, data: null });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -176,7 +184,6 @@ exports.updateBankDetails = async (req, res) => {
     const ownerType = req.user.role;
     const { accountHolderName, accountNumber, ifsc, bankName } = req.body;
     
-    // Encrypt the plain text account number from frontend
     const encryptedAccountNumber = encrypt(accountNumber);
     
     let account = await BankAccount.findOne({ ownerId });
@@ -200,18 +207,16 @@ exports.updateBankDetails = async (req, res) => {
       });
     }
 
-    // Audit Log
     await AuditLog.create({
       actionType: 'BANK_DETAILS_UPDATE',
       actorId: ownerId,
       actorRole: ownerType,
       targetId: account._id,
       targetType: 'BankAccount',
-      changes: { bankName, ifsc }, // NEVER LOG ACCOUNT NUMBERS
+      changes: { bankName, ifsc }, 
       ipAddress: req.ip
     });
     
-    // Decrypt and mask for immediate response
     const safeAccount = account.toObject();
     safeAccount.accountNumberEncrypted = maskAccountNumber(accountNumber);
     

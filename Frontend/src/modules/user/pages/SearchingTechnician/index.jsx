@@ -30,7 +30,7 @@ L.Icon.Default.mergeOptions({
 const createWorkerIcon = (avatarUrl) => new L.DivIcon({
   className: 'custom-worker-marker',
   html: `<div class="${styles.mapWorkerMarker}">
-           <img src="${avatarUrl || 'https://ui-avatars.com/api/?name=W&background=14B8A6&color=fff'}" alt="worker" />
+           <img fetchPriority="low" loading="lazy" src="${avatarUrl || 'https://ui-avatars.com/api/?name=W&background=14B8A6&color=fff'}" alt="worker" />
          </div>`,
   iconSize: [40, 40],
   iconAnchor: [20, 40]
@@ -73,7 +73,7 @@ const SearchingTechnician = () => {
     window.scrollTo(0, 0);
 
     const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-    const socketBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+    const socketBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
     const socket = io(socketBaseUrl, {
       auth: { token },
       path: '/socket.io/',
@@ -386,7 +386,7 @@ const SearchingTechnician = () => {
                   return (
                     <div key={idx} className={`${styles.expertCard} ${idx === 0 && step >= 3 ? styles.expertCardActive : ''}`}>
                       <div className={styles.expertCardHeader}>
-                        <img src={worker.photo || `https://ui-avatars.com/api/?name=${worker.name}&background=14B8A6&color=fff`} alt={worker.name} className={styles.expertAvatar} />
+                        <img fetchPriority="low" loading="lazy" src={worker.photo || `https://ui-avatars.com/api/?name=${worker.name}&background=14B8A6&color=fff`} alt={worker.name} className={styles.expertAvatar} />
                         <div className={styles.expertInfo}>
                           <h4>{worker.name} <ShieldCheck size={14} color="#14B8A6" /></h4>
                           <div className={styles.expertMeta}>

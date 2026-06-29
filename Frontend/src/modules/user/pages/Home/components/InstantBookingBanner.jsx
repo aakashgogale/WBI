@@ -6,44 +6,7 @@ const InstantBookingBanner = memo(({ promos = [], onPromoClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef(null);
 
-  const displayPromos = promos.length > 0 ? promos : [
-    {
-      id: 'default-1',
-      badge: 'LIMITED TIME OFFER',
-      title: 'AC Service at Just ₹499',
-      subtitle: "UP TO 50% OFF",
-      description: "Full checkup | Gas refill | Deep cleaning",
-      imageUrl: '/img/Technicians.png',
-      isDefault: true
-    },
-    {
-      id: 'default-2',
-      badge: 'SPECIAL DEAL',
-      title: 'Washing Machine Repair at ₹299',
-      subtitle: "EXPERT SERVICE",
-      description: "Motor check | Drum cleaning | Wiring check",
-      imageUrl: '/img/Technicians.png',
-      isDefault: true
-    },
-    {
-      id: 'default-3',
-      badge: 'WINTER READY',
-      title: 'Geyser Servicing at ₹199',
-      subtitle: "STAY WARM",
-      description: "Heating element check | Tank flush | Safety check",
-      imageUrl: '/img/Technicians.png',
-      isDefault: true
-    },
-    {
-      id: 'default-4',
-      badge: 'HEALTH FIRST',
-      title: 'RO Purifier Service at ₹399',
-      subtitle: "PURE WATER",
-      description: "Filter change | TDS check | Tank cleaning",
-      imageUrl: '/img/Technicians.png',
-      isDefault: true
-    }
-  ];
+  const displayPromos = promos || [];
 
   const originalLength = displayPromos.length;
   // Duplicate promos to create a seamless infinite loop (4 sets gives plenty of manual swipe runway)
@@ -127,6 +90,10 @@ const InstantBookingBanner = memo(({ promos = [], onPromoClick }) => {
     'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)', // Ruby Red
     'linear-gradient(135deg, #0ba360 0%, #3cba92 100%)', // Emerald Green
   ];
+
+  if (displayPromos.length === 0) {
+    return null;
+  }
 
   return (
     <div className="mt-2 mb-4">

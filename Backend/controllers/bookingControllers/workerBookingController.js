@@ -7,8 +7,23 @@ const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
  */
 const getAssignedJobs = async (req, res) => {
   try {
-    const workerId = req.user.id;
     const { status, page = 1, limit = 10 } = req.query;
+    
+    console.log('[ENGINEER_JOBS_API_HIT] Status:', status, 'Page:', page);
+    console.log('[ENGINEER_AUTH_USER] Role:', req.userRole, 'ID:', req.user?.id || req.user?._id);
+
+    const workerId = req.user?.id || req.user?._id;
+    
+    if (!workerId) {
+      console.log('[ENGINEER_PROFILE_FOUND] Missing workerId/engineerId');
+      return res.status(400).json({
+        success: false,
+        message: "Failed to load engineer jobs",
+        error: "User profile ID not found in token"
+      });
+    }
+
+    console.log('[ENGINEER_PROFILE_FOUND] ID:', workerId);
 
     // Build query
     const baseQuery = {
@@ -21,7 +36,6 @@ const getAssignedJobs = async (req, res) => {
     let query = { ...baseQuery };
     if (status && status !== 'all') {
       if (status === 'assigned') {
-        // "Assigned" tab should also include broadcasted jobs (which are CONFIRMED) and successfully assigned jobs
         query.status = { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED, BOOKING_STATUS.WORKER_ASSIGNED] };
       } else if (status === 'in_progress') {
         query.status = { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] };
@@ -31,6 +45,8 @@ const getAssignedJobs = async (req, res) => {
         query.status = status;
       }
     }
+
+    console.log('[ENGINEER_JOBS_QUERY]', JSON.stringify(query));
 
     // Pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -50,34 +66,38 @@ const getAssignedJobs = async (req, res) => {
     const total = await Booking.countDocuments(query);
 
     // Get dynamic counts for tabs
-    const [all, assigned, inProgress, completed] = await Promise.all([
+    const [allCount, assignedCount, inProgressCount, completedCount] = await Promise.all([
       Booking.countDocuments(baseQuery),
       Booking.countDocuments({ ...baseQuery, status: { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ACCEPTED, BOOKING_STATUS.WORKER_ASSIGNED] } }),
       Booking.countDocuments({ ...baseQuery, status: { $in: [BOOKING_STATUS.JOURNEY_STARTED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS] } }),
       Booking.countDocuments({ ...baseQuery, status: { $in: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED] } })
     ]);
 
-    res.status(200).json({
+    console.log(`[ENGINEER_JOBS_SUCCESS] Found ${bookings.length} jobs`);
+
+    return res.status(200).json({
       success: true,
-      data: bookings,
-      counts: {
-        all,
-        assigned,
-        in_progress: inProgress,
-        completed
-      },
+      jobs: bookings || [],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit)) || 0
+      },
+      counts: {
+        all: allCount || 0,
+        assigned: assignedCount || 0,
+        inProgress: inProgressCount || 0,
+        completed: completedCount || 0
       }
     });
+
   } catch (error) {
-    console.error('Get assigned jobs error:', error);
-    res.status(500).json({
+    console.error('[ENGINEER_JOBS_ERROR]', error);
+    return res.status(500).json({
       success: false,
-      message: 'Failed to fetch jobs. Please try again.'
+      message: "Failed to load engineer jobs",
+      error: error.message || "Internal server error"
     });
   }
 };

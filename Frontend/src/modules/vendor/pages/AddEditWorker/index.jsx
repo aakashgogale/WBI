@@ -141,7 +141,7 @@ const AddEditWorker = () => {
     let baseUrl = import.meta.env.VITE_API_BASE_URL || '';
     if (!baseUrl) {
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:5000';
+        baseUrl = 'https://app.wbinfs.com';
       } else {
         baseUrl = window.location.origin;
       }
@@ -440,8 +440,7 @@ const AddEditWorker = () => {
                   className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100"
                 >
                   {photoPreview || formData.profilePhoto ? (
-                    <img
-                      src={photoPreview || formData.profilePhoto}
+                    <img fetchPriority="low" loading="lazy"                       src={photoPreview || formData.profilePhoto}
                       alt="Profile"
                       className="w-full h-full object-cover"
                     />

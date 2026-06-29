@@ -35,7 +35,7 @@ const Inbox = () => {
         {mockChats.map((chat) => (
           <StaggerItem key={chat.id} className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm active:scale-[0.98] transition-transform cursor-pointer">
             <div className="relative">
-              <img src={chat.avatar} alt={chat.name} className="w-14 h-14 rounded-full object-cover" />
+              <img fetchPriority="low" loading="lazy" src={chat.avatar} alt={chat.name} className="w-14 h-14 rounded-full object-cover" />
               {chat.unread > 0 && (
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
                   <span className="text-[10px] text-white font-bold">{chat.unread}</span>

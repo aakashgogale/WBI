@@ -158,7 +158,7 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
     }
 
     // Save to backend
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com/api';
     // console.log(`[FCM] Saving to backend: ${baseUrl}${endpoint}`);
 
     const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -228,7 +228,7 @@ async function removeFCMToken(userType = 'user') {
     const authToken = localStorage.getItem(authTokenKey);
     // If we have an auth token, try to remove from backend
     if (authToken) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com/api';
 
       // Call remove endpoint with specific token
       await fetch(`${baseUrl}${endpoint}`, {

@@ -31,8 +31,7 @@ const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, orig
           />
         ) : (
           <div className="w-full h-36 flex items-center justify-center bg-gray-50 border-b border-gray-100">
-            <img
-              src="/WBI-logo.png"
+            <img fetchPriority="low" loading="lazy"               src="/WBI-logo.png"
               alt="Placeholder"
               className="w-12 h-12 object-contain opacity-40 grayscale"
             />

@@ -231,7 +231,7 @@ const ElectricalSafetyTestEnquiries = () => {
                     {selectedEnquiry.attachments.map((file, i) => (
                       <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-[#10AFA5] transition-colors group">
                         {file.url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                          <img src={file.url} alt="Attachment" className="w-full h-24 object-cover rounded-lg mb-2" />
+                          <img fetchPriority="low" loading="lazy" src={file.url} alt="Attachment" className="w-full h-24 object-cover rounded-lg mb-2" />
                         ) : (
                           <FiFileText className="text-4xl text-gray-400 mb-2 group-hover:text-[#10AFA5]" />
                         )}

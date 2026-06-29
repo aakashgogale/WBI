@@ -7,12 +7,10 @@ import { workerAuthService } from '../../../../services/authService';
 import { workerTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import { useQuery } from '@tanstack/react-query';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [completion, setCompletion] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -31,36 +29,36 @@ const Profile = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      setIsLoading(true);
-      try {
-        const [profileRes, completionRes] = await Promise.all([
-          workerAuthService.getProfile(),
-          workerAuthService.getProfileCompletion()
-        ]);
-        
-        if (profileRes.success) {
-          setProfile(profileRes.worker);
-        }
-        if (completionRes.success) {
-          setCompletion(completionRes.data.completionPercentage);
-        }
-      } catch (err) {
-        toast.error('Failed to load profile from server. Loading local data.');
+  const { data: profileData, isLoading, error } = useQuery({
+    queryKey: ['workerProfileData'],
+    queryFn: async () => {
+      const [profileRes, completionRes] = await Promise.all([
+        workerAuthService.getProfile(),
+        workerAuthService.getProfileCompletion()
+      ]);
+      
+      let profile = null;
+      let completion = 0;
+
+      if (profileRes.success) {
+        profile = profileRes.worker;
+      } else {
         const localWorkerData = JSON.parse(localStorage.getItem('workerData') || '{}');
         if (localWorkerData && Object.keys(localWorkerData).length > 0) {
-          setProfile(localWorkerData);
-        } else {
-          setProfile(null);
+          profile = localWorkerData;
         }
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchProfileData();
-  }, []);
+      if (completionRes.success) {
+        completion = completionRes.data?.completionPercentage || 0;
+      }
+
+      return { profile, completion };
+    }
+  });
+
+  const profile = profileData?.profile;
+  const completion = profileData?.completion || 0;
 
   const handleLogout = async () => {
     try {
@@ -113,7 +111,7 @@ const Profile = () => {
         <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 mb-6 flex items-center gap-5 relative overflow-hidden">
           <div className="w-20 h-20 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
             {profile.profilePhoto ? (
-              <img src={profile.profilePhoto} alt={profile.name} className="w-full h-full object-cover" />
+              <img fetchPriority="low" loading="lazy" src={profile.profilePhoto} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
               <FiUser className="w-8 h-8 text-gray-900" />
             )}

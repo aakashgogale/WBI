@@ -64,12 +64,13 @@ const startUrgencyScheduler = () => {
             
             console.log(`[UrgencyScheduler] Successfully auto-assigned booking ${booking.bookingNumber} to Worker ${bestWorker._id}`);
           } else {
-            console.log(`[UrgencyScheduler] No available workers for auto-assigning booking ${booking.bookingNumber}`);
+            // console.log(`[UrgencyScheduler] No available workers for auto-assigning booking ${booking.bookingNumber}`);
             booking.adminLog.push({
               action: 'Auto-Assign Failed',
               reason: 'No online workers found at timeout',
               timestamp: new Date()
             });
+            booking.adminApprovalStatus = 'auto_assign_failed'; // Stop checking every minute
             await booking.save();
           }
         }

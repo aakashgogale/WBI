@@ -203,7 +203,7 @@ const OneTimeServicePackages = () => {
             <span className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Selected Brand</span>
             <div className="flex items-center gap-2 mt-0.5">
               {brand.logo ? (
-                <img src={brand.logo} alt={brand.brandName} className="h-4 object-contain" />
+                <img fetchPriority="low" loading="lazy" src={brand.logo} alt={brand.brandName} className="h-4 object-contain" />
               ) : null}
               <span className="text-sm font-bold text-gray-800">{brand.brandName}</span>
             </div>

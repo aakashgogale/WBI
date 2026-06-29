@@ -1,95 +1,75 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiFilter, FiChevronRight, FiMapPin, FiClock } from 'react-icons/fi';
 import engineerService from '../../../../services/engineerService';
 import { SkeletonList } from '../../../../components/common/SkeletonLoaders';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 
 const AssignedJobs = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [jobs, setJobs] = useState([]);
-  const [counts, setCounts] = useState({ all: 0, assigned: 0, in_progress: 0, completed: 0 });
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', 'assigned', 'in_progress', 'completed'
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const observer = useRef();
+  const queryClient = useQueryClient();
 
-  const fetchJobs = async (pageNum, statusFilter, append = false) => {
-    try {
-      if (pageNum === 1) setLoading(true);
-      else setLoadingMore(true);
-      
-      setError(null);
-
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+    error
+  } = useInfiniteQuery({
+    queryKey: ['engineerAssignedJobs', filter],
+    queryFn: async ({ pageParam = 1 }) => {
       const response = await engineerService.getAssignedJobs({
-        page: pageNum,
+        page: pageParam,
         limit: 10,
-        status: statusFilter
+        status: filter
       });
-
-      if (response.success) {
-        if (append) {
-          setJobs(prev => [...prev, ...response.data]);
-        } else {
-          setJobs(response.data);
-        }
-        
-        if (response.counts) {
-          setCounts(response.counts);
-        }
-        
-        setHasMore(response.pagination.page < response.pagination.pages);
+      if (!response.success) throw new Error('Failed to fetch jobs');
+      return {
+        jobs: response.jobs || response.data || [],
+        pagination: response.pagination || { page: 1, pages: 1 },
+        counts: response.counts || { all: 0, assigned: 0, in_progress: 0, completed: 0 }
+      };
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.pages) {
+        return lastPage.pagination.page + 1;
       }
-    } catch (err) {
-      console.error('Fetch jobs error:', err);
-      setError('Failed to load jobs');
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
+      return undefined;
+    },
+  });
 
-  useEffect(() => {
-    // Reset and fetch when filter changes
-    setPage(1);
-    setJobs([]);
-    setHasMore(true);
-    fetchJobs(1, filter, false);
-  }, [filter]);
+  const jobs = useMemo(() => {
+    return data ? data.pages.flatMap(page => page.jobs) : [];
+  }, [data]);
 
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchJobs(nextPage, filter, true);
-    }
-  }, [loadingMore, hasMore, page, filter]);
+  const counts = data?.pages[0]?.counts || { all: 0, assigned: 0, in_progress: 0, completed: 0 };
+  const loading = status === 'pending';
 
   const lastJobElementRef = useCallback(node => {
-    if (loading || loadingMore) return;
+    if (isFetchingNextPage || loading) return;
     if (observer.current) observer.current.disconnect();
     
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        loadMore();
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
       }
     });
     
     if (node) observer.current.observe(node);
-  }, [loading, loadingMore, hasMore, loadMore]);
+  }, [isFetchingNextPage, loading, hasNextPage, fetchNextPage]);
 
   // Handle global update event
   useEffect(() => {
     const handleUpdate = () => {
-      setPage(1);
-      fetchJobs(1, filter, false);
+      queryClient.invalidateQueries(['engineerAssignedJobs']);
     };
     window.addEventListener('workerJobsUpdated', handleUpdate);
     return () => window.removeEventListener('workerJobsUpdated', handleUpdate);
-  }, [filter]);
+  }, [queryClient]);
 
   const getStatusConfig = (status) => {
     const s = (status || '').toLowerCase();
@@ -188,13 +168,13 @@ const AssignedJobs = () => {
 
       {/* Jobs List */}
       <main className="px-4 py-4">
-        {loading && page === 1 ? (
+        {loading ? (
           <SkeletonList count={5} cardHeight="120px" />
         ) : error ? (
           <div className="text-center py-12 text-red-500 bg-white rounded-2xl border border-red-100 shadow-sm">
-            <p className="font-semibold">{error}</p>
+            <p className="font-semibold">{error?.message || 'Failed to load jobs'}</p>
             <button 
-              onClick={() => fetchJobs(1, filter, false)}
+              onClick={() => queryClient.invalidateQueries(['engineerAssignedJobs'])}
               className="mt-3 text-sm font-bold text-teal-600 hover:text-teal-700"
             >
               Try Again
@@ -227,9 +207,9 @@ const AssignedJobs = () => {
                     {/* Left Icon Area */}
                     <div className="w-14 h-14 bg-[#F0FDFA] rounded-2xl flex items-center justify-center shrink-0 border border-teal-50">
                       {job.serviceId?.categoryIcon ? (
-                        <img src={job.serviceId.categoryIcon} alt="service" className="w-7 h-7 object-contain opacity-90" />
+                        <img fetchPriority="low" loading="lazy" src={job.serviceId.categoryIcon} alt="service" className="w-7 h-7 object-contain opacity-90" />
                       ) : job.serviceId?.iconUrl ? (
-                        <img src={job.serviceId.iconUrl} alt="service" className="w-7 h-7 object-contain opacity-90" />
+                        <img fetchPriority="low" loading="lazy" src={job.serviceId.iconUrl} alt="service" className="w-7 h-7 object-contain opacity-90" />
                       ) : (
                         <div className="w-7 h-7 flex items-center justify-center rounded-lg text-[#0D9488]">
                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -277,7 +257,7 @@ const AssignedJobs = () => {
               );
             })}
 
-            {loadingMore && (
+            {isFetchingNextPage && (
               <div className="py-4 flex justify-center">
                 <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
               </div>

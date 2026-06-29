@@ -9,6 +9,7 @@ const VendorRoutes = React.lazy(() => import('../modules/vendor/routes'));
 const WorkerRoutes = React.lazy(() => import('../modules/worker/routes'));
 const EngineerRoutes = React.lazy(() => import('../modules/engineer/routes'));
 const AdminRoutes = React.lazy(() => import('../modules/admin/routes'));
+const B2BRoutes = React.lazy(() => import('../modules/b2b/routes'));
 const LandingPage = React.lazy(() => import('../modules/landing/pages/LandingPage'));
 
 const AppRoutes = () => {
@@ -63,6 +64,12 @@ const AppRoutes = () => {
       <Route path="/admin/*" element={
         <Suspense fallback={<PageSkeleton />}>
           <AdminRoutes />
+        </Suspense>
+      } />
+
+      <Route path="/b2b/*" element={
+        <Suspense fallback={<PageSkeleton />}>
+          <B2BRoutes />
         </Suspense>
       } />
     </Routes>

@@ -74,8 +74,7 @@ const LogoLoader = ({ fullScreen = false, overlay = false, inline = false, size 
             animate={{ rotate: 360 }}
             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
           />
-          <img
-            src={brandConfig.logoPath}
+          <img fetchPriority="low" loading="lazy"             src={brandConfig.logoPath}
             alt={brandConfig.brandName}
             className="w-16 h-16 object-contain relative z-10"
           />

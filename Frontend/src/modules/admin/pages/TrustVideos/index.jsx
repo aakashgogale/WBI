@@ -284,7 +284,7 @@ const TrustVideos = () => {
               {/* Thumbnail with play overlay */}
               <div className="relative aspect-video bg-gray-100 group cursor-pointer" onClick={() => handlePreview(video)}>
                 {video.thumbnail ? (
-                  <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+                  <img fetchPriority="low" loading="lazy" src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <FiImage size={40} />
@@ -483,7 +483,7 @@ const TrustVideos = () => {
                   </div>
                   {form.thumbnail && (
                     <div className="mt-2 relative w-32 h-20 rounded-lg overflow-hidden border border-gray-200">
-                      <img src={form.thumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                      <img fetchPriority="low" loading="lazy" src={form.thumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
                     </div>
                   )}
                 </div>

@@ -199,7 +199,7 @@ const Login = () => {
       
       {/* Top Logo Area */}
       <div className="w-full flex justify-center mb-10 h-16 items-center mt-2 shrink-0">
-          <img 
+          <img fetchPriority="low" loading="lazy" 
             src="/logo/logo.webp" 
             alt="WBI Logo" 
             className="h-full w-auto max-w-[180px] object-contain"

@@ -44,11 +44,16 @@ export const verifyLogin = async (data) => {
 
     // Check if vendor is pending approval
     const isPending = response.data.vendor?.adminApproval?.toLowerCase() === 'pending';
+    
+    // Check if user has vendor role
+    const roleStr = response.data.role || response.data.user?.role || response.data.vendor?.role || '';
+    const roles = response.data.roles || response.data.user?.roles || [roleStr];
+    const isVendor = roles.includes('vendor') || roles.includes('VENDOR');
 
-    if (response.data.success && !response.data.isNewUser && response.data.accessToken && !isPending) {
+    if (response.data.success && !response.data.isNewUser && response.data.accessToken && !isPending && isVendor) {
       localStorage.setItem('vendorAccessToken', response.data.accessToken);
       localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
-      localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+      localStorage.setItem('vendorData', JSON.stringify(response.data.vendor || {}));
 
       // Notify Flutter about the login for mobile app FCM token handling
       notifyFlutterLogin(response.data);
@@ -59,6 +64,7 @@ export const verifyLogin = async (data) => {
         console.error('[VENDOR AUTH] FCM token registration failed:', err);
       });
     }
+
     return response.data;
   } catch (error) {
     console.error('Error verifying login:', error);

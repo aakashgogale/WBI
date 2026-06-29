@@ -12,8 +12,7 @@ const ProfessionalCard = ({ image, onClick }) => {
       onClick={onClick}
     >
       {image ? (
-        <img
-          src={image}
+        <img fetchPriority="low" loading="lazy"           src={image}
           alt="Professional"
           className="w-full h-full object-cover"
         />

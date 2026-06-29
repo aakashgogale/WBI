@@ -163,7 +163,7 @@ const OneTimeServices = () => {
                 <tr key={service._id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="p-4">
                     {service.image ? (
-                      <img src={service.image} alt={service.name} className="w-12 h-12 rounded object-cover" />
+                      <img fetchPriority="low" loading="lazy" src={service.image} alt={service.name} className="w-12 h-12 rounded object-cover" />
                     ) : (
                       <div className="w-12 h-12 bg-gray-200 rounded"></div>
                     )}

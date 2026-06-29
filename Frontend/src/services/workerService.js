@@ -18,6 +18,19 @@ const workerService = {
     return response.data;
   },
 
+  uploadProfilePhoto: async (formData) => {
+    const response = await api.post('/workers/profile/photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    if (response.data.success && response.data.user) {
+      const existingWorker = JSON.parse(localStorage.getItem('workerData') || '{}');
+      localStorage.setItem('workerData', JSON.stringify({ ...existingWorker, profilePhoto: response.data.user.profilePhoto }));
+    }
+    return response.data;
+  },
+
   updateSkillsProfile: async (payload) => {
     const response = await api.put('/workers/profile/skills', payload);
     if (response.data.success && response.data.worker) {

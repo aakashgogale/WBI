@@ -178,7 +178,7 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg shadow-sm">
               {booking.categoryIcon ? (
-                <img src={booking.categoryIcon} alt="Cat" className="w-4 h-4 object-contain" />
+                <img fetchPriority="low" loading="lazy" src={booking.categoryIcon} alt="Cat" className="w-4 h-4 object-contain" />
               ) : (
                 <span className="w-4 h-4 flex items-center justify-center bg-gray-200 rounded-full text-[9px]">⚡</span>
               )}

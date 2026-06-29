@@ -250,7 +250,7 @@ const ProjectDetails = () => {
           <div className="space-y-4">
             {project.vendorId && (
               <div className="flex items-center gap-3">
-                <img src={project.vendorId.profilePic || 'https://placehold.co/100'} alt="Vendor" className="w-10 h-10 rounded-full bg-gray-100 object-cover" />
+                <img fetchPriority="low" loading="lazy" src={project.vendorId.profilePic || 'https://placehold.co/100'} alt="Vendor" className="w-10 h-10 rounded-full bg-gray-100 object-cover" />
                 <div>
                   <p className="font-bold text-sm text-gray-900">{project.vendorId.companyName || project.vendorId.name}</p>
                   <p className="text-xs text-gray-500">Assigned Vendor</p>
@@ -259,7 +259,7 @@ const ProjectDetails = () => {
             )}
             {project.workerId && (
               <div className="flex items-center gap-3">
-                <img src={project.workerId.profilePic || 'https://placehold.co/100'} alt="Worker" className="w-10 h-10 rounded-full bg-gray-100 object-cover" />
+                <img fetchPriority="low" loading="lazy" src={project.workerId.profilePic || 'https://placehold.co/100'} alt="Worker" className="w-10 h-10 rounded-full bg-gray-100 object-cover" />
                 <div>
                   <p className="font-bold text-sm text-gray-900">{project.workerId.name}</p>
                   <p className="text-xs text-gray-500">Assigned Worker (You)</p>

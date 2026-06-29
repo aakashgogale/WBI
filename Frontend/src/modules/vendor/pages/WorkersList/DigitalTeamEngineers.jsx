@@ -252,7 +252,7 @@ const DigitalTeamEngineers = memo(() => {
                       <tr key={member._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors text-xs">
                         <td className="py-3 px-2">
                           <div className="flex items-center gap-2">
-                            <img src={member.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f3f4f6&color=333`} alt="" className="w-8 h-8 rounded-full" />
+                            <img fetchPriority="low" loading="lazy" src={member.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f3f4f6&color=333`} alt="" className="w-8 h-8 rounded-full" />
                             <div>
                               <p className="font-bold text-gray-800 whitespace-nowrap">{member.name}</p>
                               <p className="text-[10px] text-gray-500">{member.email}</p>
@@ -308,7 +308,7 @@ const DigitalTeamEngineers = memo(() => {
                   {assignments.slice(0, 4).map(a => (
                     <div key={a._id} className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                        <img src={a.memberId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.memberId?.name || 'U')}`} className="w-6 h-6 rounded-full"/>
+                        <img fetchPriority="low" loading="lazy" src={a.memberId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.memberId?.name || 'U')}`} className="w-6 h-6 rounded-full"/>
                         <div>
                           <p className="font-bold text-gray-800">{a.memberId?.name}</p>
                           <p className="text-[9px] text-gray-500">{a.projectName}</p>
@@ -338,7 +338,7 @@ const DigitalTeamEngineers = memo(() => {
                     <div key={p._id} className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${i===0?'bg-yellow-100 text-yellow-600':i===1?'bg-gray-100 text-gray-600':i===2?'bg-orange-100 text-orange-600':'bg-gray-50 text-gray-400'}`}>{i+1}</div>
-                        <img src={p.memberId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.memberId?.name || 'U')}`} className="w-6 h-6 rounded-full"/>
+                        <img fetchPriority="low" loading="lazy" src={p.memberId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.memberId?.name || 'U')}`} className="w-6 h-6 rounded-full"/>
                         <div>
                           <p className="font-bold text-gray-800">{p.memberId?.name}</p>
                           <p className="text-[9px] text-gray-500">{p.completedTasks} Projects</p>
@@ -368,7 +368,7 @@ const DigitalTeamEngineers = memo(() => {
                   {leaves.map((l, i) => (
                     <div key={i} className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <img src={l.memberId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(l.memberId?.name || 'U')}`} className="w-8 h-8 rounded-full"/>
+                        <img fetchPriority="low" loading="lazy" src={l.memberId?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(l.memberId?.name || 'U')}`} className="w-8 h-8 rounded-full"/>
                         <div>
                           <p className="text-xs font-bold text-gray-800">{l.memberId?.name}</p>
                           <p className="text-[9px] text-gray-500">{l.memberId?.roleId?.title}</p>

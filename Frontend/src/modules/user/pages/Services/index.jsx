@@ -11,7 +11,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -256,7 +256,7 @@ const Services = () => {
               </motion.div>
               
               {/* Professional image */}
-              <img 
+              <img fetchPriority="low" loading="lazy" 
                 src="https://res.cloudinary.com/dcbcojo24/image/upload/v1731518018/uploads/x69wz81p8t08er78ssli.png" // using a reliable transparent mechanic/professional image
                 alt="Support Expert" 
                 className="absolute bottom-0 right-0 w-[120px] object-contain drop-shadow-md z-10"

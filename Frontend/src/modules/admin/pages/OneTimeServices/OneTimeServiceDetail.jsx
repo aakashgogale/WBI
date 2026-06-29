@@ -51,7 +51,7 @@ const BrandsTab = ({ serviceId }) => {
       <div className="grid grid-cols-4 gap-4">
         {brands.map(b => (
           <div key={b._id} className="border p-4 rounded-xl flex flex-col items-center relative group">
-            {b.logo ? <img src={b.logo} alt={b.brandName} className="h-12 object-contain mb-2" /> : <div className="h-12 mb-2 font-bold text-gray-400">No Logo</div>}
+            {b.logo ? <img fetchPriority="low" loading="lazy" src={b.logo} alt={b.brandName} className="h-12 object-contain mb-2" /> : <div className="h-12 mb-2 font-bold text-gray-400">No Logo</div>}
             <p className="font-semibold text-sm">{b.brandName}</p>
             <button onClick={() => handleDelete(b._id)} className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition"><FiTrash2 /></button>
           </div>

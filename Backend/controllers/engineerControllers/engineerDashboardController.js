@@ -9,102 +9,86 @@ const { BOOKING_STATUS } = require('../../utils/constants');
  * Get engineer dashboard statistics
  */
 const getDashboardStats = async (req, res) => {
+  const startTime = Date.now();
+  console.log('[API_START] GET /api/engineers/dashboard/stats');
   try {
     const engineerId = req.user.id;
-
-    const engineer = await Engineer.findById(engineerId);
+    const engineer = await Engineer.findById(engineerId).lean();
 
     if (!engineer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Engineer not found'
-      });
+      return res.status(404).json({ success: false, message: 'Engineer not found' });
     }
 
-    // 2. Calculate Total Earnings
-    // Hardware earnings
-    const hardwareEarningStats = await Booking.aggregate([
-      {
-        $match: {
-          engineerId: engineer._id,
-          status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] }
-        }
-      },
-      {
-        $group: { _id: null, total: { $sum: "$finalAmount" } }
-      }
+    const [
+      hardwareEarningStats,
+      digitalEarningStats,
+      hardwareActiveJobsCount,
+      digitalActiveJobsCount,
+      hardwareActiveProjectsCount,
+      digitalActiveProjectsCount,
+      completedHardwareCount,
+      completedDigitalCount,
+      ratingStats,
+      recentHardwareJobs,
+      recentDigitalJobs
+    ] = await Promise.all([
+      Booking.aggregate([
+        { $match: { workerId: engineer._id, status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] } } },
+        { $group: { _id: null, total: { $sum: "$finalAmount" } } }
+      ]),
+      DigitalAssignment.aggregate([
+        { $match: { engineerId: engineer._id, status: 'Completed' } },
+        { $group: { _id: null, total: { $sum: "$earnings" } } }
+      ]),
+      Booking.countDocuments({
+        workerId: engineer._id,
+        status: { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CONFIRMED] }
+      }),
+      DigitalJob.countDocuments({
+        assignedEngineer: engineer._id,
+        status: { $in: ['Assigned', 'In Progress'] }
+      }),
+      WorkerProject.countDocuments({
+        workerId: engineer._id,
+        status: { $in: ['PENDING', 'IN_PROGRESS'] }
+      }),
+      DigitalAssignment.countDocuments({
+        engineerId: engineer._id,
+        status: 'Active'
+      }),
+      Booking.countDocuments({
+        workerId: engineer._id,
+        status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] }
+      }),
+      DigitalJob.countDocuments({
+        assignedEngineer: engineer._id,
+        status: 'Completed'
+      }),
+      Booking.aggregate([
+        { $match: { workerId: engineer._id, rating: { $exists: true, $ne: null } } },
+        { $group: { _id: null, avgRating: { $avg: "$rating" } } }
+      ]),
+      Booking.find({ workerId: engineer._id })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('userId', 'name')
+        .populate('serviceId', 'title categoryIcon')
+        .lean(),
+      DigitalJob.find({ assignedEngineer: engineer._id })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('vendorId', 'companyName')
+        .lean()
     ]);
+
     const hardwareEarnings = hardwareEarningStats.length > 0 ? hardwareEarningStats[0].total : 0;
-
-    // Digital earnings
-    const digitalEarningStats = await DigitalAssignment.aggregate([
-      { $match: { engineerId: engineer._id, status: 'Completed' } },
-      { $group: { _id: null, total: { $sum: "$earnings" } } }
-    ]);
     const digitalEarnings = digitalEarningStats.length > 0 ? digitalEarningStats[0].total : 0;
-
     const totalEarnings = hardwareEarnings + digitalEarnings;
-
-    // 3. Count Active Jobs
-    const hardwareActiveJobsCount = await Booking.countDocuments({
-      engineerId: engineer._id,
-      status: { $in: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CONFIRMED] }
-    });
-
-    const digitalActiveJobsCount = await DigitalJob.countDocuments({
-      assignedEngineer: engineer._id,
-      status: { $in: ['Assigned', 'In Progress'] }
-    });
-
     const activeJobsCount = hardwareActiveJobsCount + digitalActiveJobsCount;
-
-    // 4. Count Active Projects
-    const hardwareActiveProjectsCount = await WorkerProject.countDocuments({
-      engineerId: engineer._id,
-      status: { $in: ['PENDING', 'IN_PROGRESS'] }
-    });
-
-    const digitalActiveProjectsCount = await DigitalAssignment.countDocuments({
-      engineerId: engineer._id,
-      status: 'Active'
-    });
-
     const activeProjectsCount = hardwareActiveProjectsCount + digitalActiveProjectsCount;
-
-    // 5. Count Completed Jobs
-    const completedHardwareCount = await Booking.countDocuments({
-      engineerId: engineer._id,
-      status: { $in: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE] }
-    });
-
-    const completedDigitalCount = await DigitalJob.countDocuments({
-      assignedEngineer: engineer._id,
-      status: 'Completed'
-    });
-
     const completedJobsCount = completedHardwareCount + completedDigitalCount;
-
-    // 6. Calculate Average Rating (Hardware only for now or fallback)
-    const ratingStats = await Booking.aggregate([
-      { $match: { engineerId: engineer._id, rating: { $exists: true, $ne: null } } },
-      { $group: { _id: null, avgRating: { $avg: "$rating" } } }
-    ]);
-
     const averageRating = ratingStats.length > 0 ? parseFloat(ratingStats[0].avgRating.toFixed(1)) : (engineer.rating || 0);
 
-    // 7. Get Recent Jobs (Hardware + Digital)
-    const recentHardwareJobs = await Booking.find({ engineerId: engineer._id })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate('userId', 'name')
-      .populate('serviceId', 'title categoryIcon');
-      
-    const recentDigitalJobs = await DigitalJob.find({ assignedEngineer: engineer._id })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate('vendorId', 'companyName');
-
-    // Combine and sort
     const allRecentJobs = [...recentHardwareJobs, ...recentDigitalJobs.map(job => ({
       _id: job._id,
       serviceCategory: job.serviceType,
@@ -116,6 +100,9 @@ const getDashboardStats = async (req, res) => {
       status: job.status === 'Assigned' && job.assignmentStatus === 'Pending' ? 'NEW' : job.status,
       isDigital: true
     }))].sort((a, b) => new Date(b.createdAt || b.scheduledDate) - new Date(a.createdAt || a.scheduledDate)).slice(0, 5);
+
+    const timeTaken = Date.now() - startTime;
+    console.log(`[API_SUCCESS] GET /api/engineers/dashboard/stats - ${timeTaken}ms`);
 
     res.status(200).json({
       success: true,
@@ -130,7 +117,7 @@ const getDashboardStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get engineer dashboard stats error:', error);
+    console.error(`[API_ERROR] GET /api/engineers/dashboard/stats - ${Date.now() - startTime}ms :`, error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch dashboard statistics'

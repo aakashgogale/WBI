@@ -5,7 +5,7 @@ const { authenticate } = require('../../middleware/authMiddleware');
 const { isWorker } = require('../../middleware/roleMiddleware');
 const { 
   getProfile, updateProfile, updateLocation,
-  getProfileCompletion, updateBankDetails, updateWorkLocations, updateDocuments, updateSkillsProfile 
+  getProfileCompletion, updateBankDetails, updateWorkLocations, updateDocuments, updateSkillsProfile, uploadProfilePhoto 
 } = require('../../controllers/workerControllers/workerProfileController');
 
 // Validation rules
@@ -21,10 +21,13 @@ router.put('/profile', authenticate, isWorker, updateProfileValidation, updatePr
 router.put('/profile/skills', authenticate, isWorker, updateSkillsProfile);
 router.put('/profile/location', authenticate, isWorker, updateLocation);
 
+const { uploadProfileImage } = require('../../middleware/uploadMiddleware');
+
 router.get('/profile/completion', authenticate, isWorker, getProfileCompletion);
 router.put('/profile/bank-details', authenticate, isWorker, updateBankDetails);
 router.put('/profile/work-locations', authenticate, isWorker, updateWorkLocations);
 router.post('/profile/documents', authenticate, isWorker, updateDocuments);
+router.post('/profile/photo', authenticate, isWorker, uploadProfileImage, uploadProfilePhoto);
 
 module.exports = router;
 

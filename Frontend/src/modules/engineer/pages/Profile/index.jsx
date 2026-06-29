@@ -1,18 +1,42 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiUser, FiEdit, FiStar, FiChevronRight, FiShield, FiCreditCard, FiFileText, FiMapPin, FiBell, FiHelpCircle, FiLogOut } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { useQuery } from '@tanstack/react-query';
 import { engineerAuthService } from '../../../../services/authService';
+import engineerService from '../../../../services/engineerService';
 import { workerTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
-  const [completion, setCompletion] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { data: profileRes, isLoading: profileLoading } = useQuery({
+    queryKey: ['engineerProfile'],
+    queryFn: () => engineerService.getProfile(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: completionRes, isLoading: completionLoading } = useQuery({
+    queryKey: ['engineerProfileCompletion'],
+    queryFn: () => engineerAuthService.getProfileCompletion(),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  const profile = useMemo(() => {
+    if (profileRes?.success && (profileRes?.engineer || profileRes?.worker)) {
+      return profileRes.engineer || profileRes.worker;
+    }
+    const localEngineerData = JSON.parse(localStorage.getItem('engineerData') || '{}');
+    if (localEngineerData && Object.keys(localEngineerData).length > 0) {
+      return localEngineerData;
+    }
+    return null;
+  }, [profileRes]);
+
+  const completion = completionRes?.success ? completionRes.data?.completionPercentage : 0;
 
   useLayoutEffect(() => {
     const html = document.documentElement;
@@ -29,37 +53,6 @@ const Profile = () => {
       if (body) body.style.background = '';
       if (root) root.style.background = '';
     };
-  }, []);
-
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      setIsLoading(true);
-      try {
-        const [profileRes, completionRes] = await Promise.all([
-          engineerAuthService.getProfile(),
-          engineerAuthService.getProfileCompletion()
-        ]);
-        
-        if (profileRes.success) {
-          setProfile(profileRes.engineer || profileRes.worker);
-        }
-        if (completionRes.success) {
-          setCompletion(completionRes.data.completionPercentage);
-        }
-      } catch (err) {
-        toast.error('Failed to load profile from server. Loading local data.');
-        const localEngineerData = JSON.parse(localStorage.getItem('engineerData') || '{}');
-        if (localEngineerData && Object.keys(localEngineerData).length > 0) {
-          setProfile(localEngineerData);
-        } else {
-          setProfile(null);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfileData();
   }, []);
 
   const handleLogout = async () => {
@@ -88,7 +81,7 @@ const Profile = () => {
     { id: 'support', title: 'Help & Support', icon: <FiHelpCircle />, route: `${basePath}/profile/support`, color: 'text-gray-800', bgColor: 'bg-gray-50' }
   ];
 
-  if (isLoading) return <LogoLoader />;
+  if (profileLoading && !profile) return <LogoLoader />;
   if (!profile) return null;
 
   return (
@@ -113,7 +106,7 @@ const Profile = () => {
         <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 mb-6 flex items-center gap-5 relative overflow-hidden">
           <div className="w-20 h-20 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
             {profile.profilePhoto ? (
-              <img src={profile.profilePhoto} alt={profile.name} className="w-full h-full object-cover" />
+              <img fetchPriority="low" loading="lazy" src={profile.profilePhoto} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
               <FiUser className="w-8 h-8 text-gray-900" />
             )}

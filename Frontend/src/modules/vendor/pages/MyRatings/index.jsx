@@ -127,7 +127,7 @@ const MyRatings = () => {
                   <div className="flex gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center overflow-hidden border border-teal-100/50">
                       {rating.userId?.profilePhoto ? (
-                        <img src={rating.userId.profilePhoto} alt={rating.userId.name} className="w-full h-full object-cover" />
+                        <img fetchPriority="low" loading="lazy" src={rating.userId.profilePhoto} alt={rating.userId.name} className="w-full h-full object-cover" />
                       ) : (
                         <FiUser className="w-6 h-6 text-teal-400" />
                       )}
@@ -161,7 +161,7 @@ const MyRatings = () => {
                 {rating.reviewImages && rating.reviewImages.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                     {rating.reviewImages.map((img, i) => (
-                      <img key={i} src={img} className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-gray-100" alt="Review" />
+                      <img fetchPriority="low" loading="lazy" key={i} src={img} className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-gray-100" alt="Review" />
                     ))}
                   </div>
                 )}

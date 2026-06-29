@@ -126,7 +126,7 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
                 <div className="grid grid-cols-3 gap-3">
                   {workPhotos.map((photo, index) => (
                     <div key={index} className="aspect-square rounded-2xl bg-gray-100 border border-gray-100 relative overflow-hidden group">
-                      <img src={photo} className="w-full h-full object-cover" alt="work" />
+                      <img fetchPriority="low" loading="lazy" src={photo} className="w-full h-full object-cover" alt="work" />
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <button
                         onClick={() => handleRemovePhoto(index)}

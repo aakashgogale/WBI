@@ -8,7 +8,8 @@ const USER_ROLES = {
   VENDOR: 'VENDOR',
   WORKER: 'WORKER',
   ENGINEER: 'ENGINEER',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  B2B: 'B2B'
 };
 
 // Token Types

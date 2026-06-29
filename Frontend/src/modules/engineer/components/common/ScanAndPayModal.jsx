@@ -30,8 +30,7 @@ const ScanAndPayModal = ({
               className="bg-gray-50 rounded-3xl overflow-hidden mb-6 border border-gray-100 shadow-inner transition-transform active:scale-95 cursor-zoom-in relative group"
               onClick={() => setIsZoomed(true)}
             >
-              <img
-                src={qrImageUrl}
+              <img fetchPriority="low" loading="lazy"                 src={qrImageUrl}
                 alt="Payment QR"
                 className="w-full h-auto max-h-[400px] mx-auto mix-blend-multiply object-contain block"
               />
@@ -68,7 +67,7 @@ const ScanAndPayModal = ({
         >
           <div className="relative w-full max-w-xl flex flex-col items-center animate-in zoom-in-95 duration-300">
             <div className="bg-white p-4 rounded-[2rem] shadow-2xl w-full mb-6 text-center">
-               <img 
+               <img fetchPriority="low" loading="lazy" 
                 src={qrImageUrl} 
                 alt="Zoomed QR" 
                 className="w-full h-auto max-h-[80vh] object-contain rounded-xl block mx-auto"

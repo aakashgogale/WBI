@@ -146,4 +146,6 @@ workerProjectSchema.pre('save', function(next) {
   next();
 });
 
+workerProjectSchema.index({ workerId: 1, status: 1 });
+
 module.exports = mongoose.model('WorkerProject', workerProjectSchema);

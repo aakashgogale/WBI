@@ -195,8 +195,7 @@ const Account = () => {
             <div className="relative mb-4">
               <div className="w-24 h-24 rounded-full p-1 bg-white shadow-purple-soft">
                 {userProfile.profilePhoto ? (
-                  <img
-                    src={userProfile.profilePhoto}
+                  <img fetchPriority="low" loading="lazy"                     src={userProfile.profilePhoto}
                     alt={userProfile.name}
                     className="w-full h-full rounded-full object-cover"
                   />

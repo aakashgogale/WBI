@@ -5,7 +5,7 @@ const toAssetUrl = (url) => {
   if (!url) return '';
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
@@ -100,7 +100,7 @@ const PopularBrandsWeService = ({ brands = [], onSeeAllClick, isLoading = false,
           >
             {brand.iconUrl ? (
               <div className="flex flex-col items-center justify-center w-full h-full gap-1">
-                <img 
+                <img fetchPriority="low" loading="lazy" 
                   src={toAssetUrl(brand.iconUrl)} 
                   alt={brand.title} 
                   className="h-[24px] max-w-full object-contain opacity-95 transition-opacity duration-300 group-hover:opacity-100"

@@ -39,11 +39,10 @@ export const useWalletData = () => {
       }
     },
     
-    staleTime: 5 * 60 * 1000,        // 5 minutes
-    gcTime: 10 * 60 * 1000,          // 10 minutes (was cacheTime)
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,        // 1 minute
+    gcTime: 5 * 60 * 1000,       // 5 minutes
+    retry: 1,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
   

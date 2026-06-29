@@ -8,6 +8,8 @@ import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
 import LogoLoader from '../../../components/common/LogoLoader';
 import GlobalWorkerJobAlert from '../components/common/GlobalWorkerJobAlert';
+import { AnimatePresence } from 'framer-motion';
+import AnimatedPage from '../../../components/common/AnimatedPage';
 import { useWorkerLocationTracker } from '../hooks/useWorkerLocation';
 
 // Lazy load wrapper with error handling
@@ -96,40 +98,42 @@ const WorkerRoutes = () => {
       {/* Main content area - leaves space for bottom nav when needed */}
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
         <Suspense fallback={<LoadingFallback />}>
-            <Routes>
+            <AnimatePresence mode="wait">
+            <Routes location={location || undefined} key={location ? location.pathname : 'routes'}>
               {/* Public routes */}
-              <Route path="/login" element={<PublicRoute userType="worker"><Login /></PublicRoute>} />
-              <Route path="/signup" element={<PublicRoute userType="worker"><Signup /></PublicRoute>} />
+              <Route path="/login" element={<AnimatedPage><PublicRoute userType="worker"><Login /></PublicRoute></AnimatedPage>} />
+              <Route path="/signup" element={<AnimatedPage><PublicRoute userType="worker"><Signup /></PublicRoute></AnimatedPage>} />
 
               {/* Protected routes (auth required) */}
-              <Route path="/" element={<ProtectedRoute userType="worker"><Navigate to="dashboard" replace /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute userType="worker"><Dashboard /></ProtectedRoute>} />
-              <Route path="/jobs" element={<ProtectedRoute userType="worker"><AssignedJobs /></ProtectedRoute>} />
-              <Route path="/job/:id" element={<ProtectedRoute userType="worker"><JobDetails /></ProtectedRoute>} />
-              <Route path="/job/:id/progress" element={<ProtectedRoute userType="worker"><JobProgress /></ProtectedRoute>} />
-              <Route path="/job/:id/map" element={<ProtectedRoute userType="worker"><JobMap /></ProtectedRoute>} />
-              <Route path="/job/:id/timeline" element={<ProtectedRoute userType="worker"><JobTimeline /></ProtectedRoute>} />
-              <Route path="/job/:id/billing" element={<ProtectedRoute userType="worker"><BillingPage /></ProtectedRoute>} />
-              <Route path="/job/:id/success" element={<ProtectedRoute userType="worker"><JobSuccess /></ProtectedRoute>} />
-              <Route path="/projects" element={<ProtectedRoute userType="worker"><Projects /></ProtectedRoute>} />
-              <Route path="/projects/:projectId" element={<ProtectedRoute userType="worker"><ProjectDetails /></ProtectedRoute>} />
-              <Route path="/projects/:projectId/milestones" element={<ProtectedRoute userType="worker"><ProjectMilestones /></ProtectedRoute>} />
-              <Route path="/projects/:projectId/milestones/:milestoneId/submit" element={<ProtectedRoute userType="worker"><SubmitMilestone /></ProtectedRoute>} />
-              <Route path="/projects/:projectId/milestones/:milestoneId/review" element={<ProtectedRoute userType="worker"><ProjectUnderReview /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute userType="worker"><Profile /></ProtectedRoute>} />
-              <Route path="/profile/edit" element={<ProtectedRoute userType="worker"><EditProfile /></ProtectedRoute>} />
-              <Route path="/profile/personal-info" element={<ProtectedRoute userType="worker"><PersonalInfo /></ProtectedRoute>} />
-              <Route path="/profile/bank-details" element={<ProtectedRoute userType="worker"><BankDetails /></ProtectedRoute>} />
-              <Route path="/profile/documents" element={<ProtectedRoute userType="worker"><Documents /></ProtectedRoute>} />
-              <Route path="/profile/skills" element={<ProtectedRoute userType="worker"><Skills /></ProtectedRoute>} />
-              <Route path="/profile/work-locations" element={<ProtectedRoute userType="worker"><WorkLocations /></ProtectedRoute>} />
+              <Route path="/" element={<AnimatedPage><ProtectedRoute userType="worker"><Navigate to="dashboard" replace /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/dashboard" element={<AnimatedPage><ProtectedRoute userType="worker"><Dashboard /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/jobs" element={<AnimatedPage><ProtectedRoute userType="worker"><AssignedJobs /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id" element={<AnimatedPage><ProtectedRoute userType="worker"><JobDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/progress" element={<AnimatedPage><ProtectedRoute userType="worker"><JobProgress /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/map" element={<AnimatedPage><ProtectedRoute userType="worker"><JobMap /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/timeline" element={<AnimatedPage><ProtectedRoute userType="worker"><JobTimeline /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/billing" element={<AnimatedPage><ProtectedRoute userType="worker"><BillingPage /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/job/:id/success" element={<AnimatedPage><ProtectedRoute userType="worker"><JobSuccess /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects" element={<AnimatedPage><ProtectedRoute userType="worker"><Projects /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId" element={<AnimatedPage><ProtectedRoute userType="worker"><ProjectDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId/milestones" element={<AnimatedPage><ProtectedRoute userType="worker"><ProjectMilestones /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId/milestones/:milestoneId/submit" element={<AnimatedPage><ProtectedRoute userType="worker"><SubmitMilestone /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/projects/:projectId/milestones/:milestoneId/review" element={<AnimatedPage><ProtectedRoute userType="worker"><ProjectUnderReview /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile" element={<AnimatedPage><ProtectedRoute userType="worker"><Profile /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/edit" element={<AnimatedPage><ProtectedRoute userType="worker"><EditProfile /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/personal-info" element={<AnimatedPage><ProtectedRoute userType="worker"><PersonalInfo /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/bank-details" element={<AnimatedPage><ProtectedRoute userType="worker"><BankDetails /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/documents" element={<AnimatedPage><ProtectedRoute userType="worker"><Documents /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/skills" element={<AnimatedPage><ProtectedRoute userType="worker"><Skills /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/work-locations" element={<AnimatedPage><ProtectedRoute userType="worker"><WorkLocations /></ProtectedRoute></AnimatedPage>} />
 
-              <Route path="/profile/notifications" element={<ProtectedRoute userType="worker"><NotificationSettings /></ProtectedRoute>} />
-              <Route path="/profile/support" element={<ProtectedRoute userType="worker"><Support /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute userType="worker"><Settings /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute userType="worker"><Notifications /></ProtectedRoute>} />
-              <Route path="/wallet" element={<ProtectedRoute userType="worker"><Wallet /></ProtectedRoute>} />
+              <Route path="/profile/notifications" element={<AnimatedPage><ProtectedRoute userType="worker"><NotificationSettings /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/support" element={<AnimatedPage><ProtectedRoute userType="worker"><Support /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/settings" element={<AnimatedPage><ProtectedRoute userType="worker"><Settings /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/notifications" element={<AnimatedPage><ProtectedRoute userType="worker"><Notifications /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/wallet" element={<AnimatedPage><ProtectedRoute userType="worker"><Wallet /></ProtectedRoute></AnimatedPage>} />
             </Routes>
+            </AnimatePresence>
         </Suspense>
       </div>
 

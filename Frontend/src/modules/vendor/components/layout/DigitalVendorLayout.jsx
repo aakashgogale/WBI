@@ -11,6 +11,8 @@ import {
 import Logo from '../../../../components/common/Logo';
 import { logout } from '../../services/authService';
 import toast from 'react-hot-toast';
+import CashLimitModal from '../common/CashLimitModal';
+import GlobalBookingAlert from '../common/GlobalBookingAlert';
 
 const navItems = [
   { name: 'Dashboard', path: '/vendor/digital-solution/dashboard', icon: FiHome },
@@ -40,9 +42,12 @@ const DigitalVendorLayout = () => {
 
   useEffect(() => {
     const data = localStorage.getItem('vendorData');
-    if (data) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setVendorData(JSON.parse(data));
+    if (data && data !== 'undefined') {
+      try {
+        setVendorData(JSON.parse(data));
+      } catch (e) {
+        console.error('Failed to parse vendorData from localStorage', e);
+      }
     }
   }, []);
 
@@ -250,6 +255,10 @@ const DigitalVendorLayout = () => {
         </main>
         
       </div>
+      
+      {/* Global Alerts for authenticated vendors */}
+      <CashLimitModal />
+      <GlobalBookingAlert />
     </div>
   );
 };

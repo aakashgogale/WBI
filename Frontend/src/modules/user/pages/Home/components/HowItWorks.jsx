@@ -1,108 +1,109 @@
 import React from 'react';
-import { FiSearch, FiCalendar, FiUser, FiShield } from 'react-icons/fi';
 import { themeColors } from '../../../../../theme';
+import * as Icons from 'react-icons/fi';
 
-const defaultSteps = [
-  {
-    id: 1,
-    title: 'Search Service',
-    description: 'Search for the service you need',
-    icon: FiSearch,
-  },
-  {
-    id: 2,
-    title: 'Book Service',
-    description: 'Choose time & book your service',
-    icon: FiCalendar,
-  },
-  {
-    id: 3,
-    title: 'Expert Arrives',
-    description: 'Our expert will reach your location',
-    icon: FiUser,
-  },
-  {
-    id: 4,
-    title: 'Service Done',
-    description: 'Sit back & relax, we do the rest',
-    icon: FiShield,
-  }
-];
+// Dynamic Icon Component
+const DynamicFiIcon = ({ name, className, style }) => {
+  const IconComponent = Icons[name];
+  if (!IconComponent) return <Icons.FiSearch className={className} style={style} />;
+  return <IconComponent className={className} style={style} />;
+};
 
-const HowItWorks = ({ steps = [], isLoading = false }) => {
+const HowItWorks = ({ steps = [], isLoading = false, data = null }) => {
   const brandColor = themeColors?.brand?.teal || '#23b0a7';
-
-  // Use dynamic steps if provided and not empty, else fallback to default
-  const displaySteps = steps?.length > 0 ? steps : defaultSteps;
 
   if (isLoading) {
     return <div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />;
   }
 
+  // Use dynamic data if provided
+  const activeSection = data && data.isActive;
+  if (data && !activeSection) return null;
+
+  const sectionTitle = data?.title || 'How It Works';
+  const displaySteps = data?.items?.length > 0 
+    ? data.items.filter(s => s.isActive).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)) 
+    : steps;
+
+  if (!displaySteps || displaySteps.length === 0) return null;
+
   return (
-    <section className="py-2 px-4 mb-6 relative overflow-hidden">
-      <div className="flex justify-between items-center mb-5">
-        <h2 className="text-[20px] font-bold text-[#0F172A] tracking-tight">How It Works</h2>
-        <button 
-          className="text-[14px] font-medium flex items-center gap-1 active:opacity-70 transition-opacity"
-          style={{ color: brandColor }}
-        >
-          See All 
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
+    <section className="py-4 px-4 mb-6 relative overflow-hidden">
+      {/* Section Title with bottom bar */}
+      <div className="flex flex-col items-start mb-6">
+        <h2 className="text-[20px] font-black text-[#0F172A] tracking-tight">
+          {sectionTitle}
+        </h2>
+        <div 
+          className="h-[3px] w-8 rounded mt-1.5"
+          style={{ backgroundColor: brandColor }}
+        />
       </div>
 
       <div className="relative">
         {/* Dotted connecting line background */}
         <div 
-          className="absolute top-[85px] left-[15%] right-[15%] h-[2px] z-0" 
+          className="absolute top-[28px] left-[12%] right-[12%] h-[1px] z-0" 
           style={{
             backgroundImage: `linear-gradient(to right, ${brandColor} 33%, transparent 0%)`,
             backgroundPosition: 'bottom',
-            backgroundSize: '12px 2px',
+            backgroundSize: '10px 1px',
             backgroundRepeat: 'repeat-x',
-            opacity: 0.5
+            opacity: 0.3
           }}
         />
 
         {/* Scrollable Container */}
-        <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-hide snap-x relative z-10">
+        <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide snap-x relative z-10">
           {displaySteps.map((step, index) => {
-            // Icon fallback logic
-            const Icon = step.icon || defaultSteps[index % defaultSteps.length].icon;
-            
             return (
               <div 
-                key={step.id || index} 
-                className="min-w-[150px] w-[150px] flex-shrink-0 bg-white rounded-2xl p-4 flex flex-col items-center text-center shadow-sm border border-gray-50 snap-center relative"
+                key={step._id || index} 
+                className="min-w-[125px] w-[125px] flex-shrink-0 flex flex-col items-center text-center snap-center relative"
               >
                 {/* Icon Circle */}
                 <div 
-                  className="w-[60px] h-[60px] rounded-full flex items-center justify-center mb-5 relative"
-                  style={{ backgroundColor: `${brandColor}0D` }} // very light teal
+                  className="w-14 h-14 rounded-full border bg-white flex items-center justify-center relative shadow-sm transition-transform duration-300 hover:scale-105"
+                  style={{ borderColor: `${brandColor}30` }} // border with opacity
                 >
                   {step.iconUrl ? (
-                    <img src={step.iconUrl} alt={step.title} className="w-7 h-7 object-contain" />
+                    <img 
+                      fetchPriority="low" 
+                      loading="lazy" 
+                      src={step.iconUrl} 
+                      alt={step.title} 
+                      className="w-6 h-6 object-contain animate-fadeIn" 
+                    />
                   ) : (
-                    <Icon className="w-7 h-7" style={{ color: brandColor }} strokeWidth={1.5} />
+                    <DynamicFiIcon 
+                      name={step.iconName || 'FiSearch'} 
+                      className="w-6 h-6" 
+                      style={{ color: brandColor }} 
+                    />
                   )}
                   
                   {/* Number Badge */}
                   <div 
-                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold text-white border-2 border-white shadow-sm"
+                    className="absolute -bottom-2 bg-[#23b0a7] text-white w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black border-2 border-white shadow-sm"
                     style={{ backgroundColor: brandColor }}
                   >
-                    {index + 1}
+                    {step.stepNumber || (index + 1)}
                   </div>
                 </div>
 
+                {/* Step Subtitle */}
+                <span 
+                  className="text-[9.5px] font-black uppercase tracking-wider mt-4"
+                  style={{ color: brandColor }}
+                >
+                  Step {step.stepNumber || (index + 1)}
+                </span>
+
                 {/* Text Content */}
-                <h3 className="text-[#0F172A] font-bold text-[14px] leading-tight mb-2 mt-2">
+                <h3 className="text-[#0F172A] font-black text-[12px] leading-tight mt-1 mb-1 max-w-[110px] truncate-2-lines">
                   {step.title}
                 </h3>
-                <p className="text-[#64748B] text-[12px] leading-snug">
+                <p className="text-[#64748B] text-[10.5px] leading-snug font-medium max-w-[115px]">
                   {step.description}
                 </p>
               </div>

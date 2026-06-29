@@ -339,7 +339,7 @@ const JobDetails = () => {
               {(job.workPhotos?.length > 0 || job.progressVideos?.length > 0) && (
                 <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
                   {job.workPhotos?.map((p, i) => (
-                     <img key={i} src={p} alt="progress" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
+                     <img fetchPriority="low" loading="lazy" key={i} src={p} alt="progress" className="w-16 h-16 rounded-lg object-cover border border-gray-200 shrink-0" />
                   ))}
                   {job.progressVideos?.map((v, i) => (
                      <div key={`vid-${i}`} className="w-16 h-16 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">

@@ -6,6 +6,7 @@ import BottomNav from '../../components/layout/BottomNav';
 import SearchBar from './components/SearchBar';
 import ServiceCategories from './components/ServiceCategories';
 import { publicCatalogService } from '../../../../services/catalogService';
+import { userHomeService } from '../../../../services/userHomeService';
 import { useCart } from '../../../../context/CartContext';
 import { useCity } from '../../../../context/CityContext';
 import { toast } from 'react-hot-toast';
@@ -15,17 +16,18 @@ import { motion } from 'framer-motion';
 // Lazy load heavy components for better initial load performance
 import PromoCarousel from './components/PromoCarousel';
 // Lazy load OTHER heavy components
-const NewAndNoteworthy = lazy(() => import('./components/NewAndNoteworthy'));
-const MostBookedServices = lazy(() => import('./components/MostBookedServices'));
-const CuratedServices = lazy(() => import('./components/CuratedServices'));
-const ServiceSectionWithRating = lazy(() => import('./components/ServiceSectionWithRating'));
-const Banner = lazy(() => import('./components/Banner'));
-const ReferEarnSection = lazy(() => import('./components/ReferEarnSection'));
-const TrustVideosSection = lazy(() => import('./components/TrustVideosSection'));
-const HowItWorks = lazy(() => import('./components/HowItWorks'));
-const CustomerReviews = lazy(() => import('../../components/reviews/CustomerReviews'));
-const ExtendedServiceCategories = lazy(() => import('./components/ExtendedServiceCategories'));
-const OfferBannerSlider = lazy(() => import('./components/OfferBannerSlider'));
+import NewAndNoteworthy from './components/NewAndNoteworthy';
+import MostBookedServices from './components/MostBookedServices';
+import OurServicesSection from './components/OurServicesSection';
+import CuratedServices from './components/CuratedServices';
+import ServiceSectionWithRating from './components/ServiceSectionWithRating';
+import Banner from './components/Banner';
+import ReferEarnSection from './components/ReferEarnSection';
+import TrustVideosSection from './components/TrustVideosSection';
+import HowItWorks from './components/HowItWorks';
+import CustomerReviews from '../../components/reviews/CustomerReviews';
+import ExtendedServiceCategories from './components/ExtendedServiceCategories';
+import OfferBannerSlider from './components/OfferBannerSlider';
 import TrustStrip from './components/TrustStrip';
 import CategoryModal from './components/CategoryModal';
 import SearchOverlay from './components/SearchOverlay';
@@ -34,10 +36,12 @@ import RecentBookings from './components/RecentBookings';
 import InstantBookingBanner from './components/InstantBookingBanner';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import { SkeletonLine, SkeletonCircle, SkeletonCard } from '../../../../components/common/SkeletonLoaders';
-const AddressSelectionModal = lazy(() => import('../Checkout/components/AddressSelectionModal'));
 import ScrapPromotionCard from './components/ScrapPromotionCard';
 import DebugConsole from '../../components/common/DebugConsole';
 import { optimizeCloudinaryUrl } from '../../../../utils/cloudinaryOptimize';
+
+const AddressSelectionModal = lazy(() => import('../Checkout/components/AddressSelectionModal'));
+const CarePlanBanner = lazy(() => import('./components/CarePlanBanner'));
 
 const toAssetUrl = (url, width) => {
   if (!url) return '';
@@ -45,8 +49,11 @@ const toAssetUrl = (url, width) => {
   const clean = url.replace('/api/upload', '/upload');
   if (clean.startsWith('http')) {
     finalUrl = clean;
+  } else if (clean.startsWith('/') && !clean.startsWith('/upload')) {
+    // Local public folder asset
+    return clean;
   } else {
-    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+    const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
     finalUrl = `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
   }
   return optimizeCloudinaryUrl(finalUrl, { width: width || 800, quality: 'auto:good', format: 'webp' });
@@ -276,10 +283,10 @@ const Home = () => {
       const cityId = currentCity?._id || currentCity?.id;
 
       // Optionally fetch old catalog data if needed for fallback, but here we prioritize dynamic data
-      const [oldResponse, newResponse] = await Promise.all([
-        publicCatalogService.getHomeData(cityId).catch(() => ({})),
-        import('../../../../services/userHomeService').then(m => m.userHomeService.getHomeData(cityId)).catch(() => ({}))
-      ]);
+        const [oldResponse, newResponse] = await Promise.all([
+          publicCatalogService.getHomeData(cityId).catch(() => ({})),
+          userHomeService.getHomeData(cityId).catch(() => ({}))
+        ]);
 
       let categoriesToSet = [];
       let homeContentToSet = {};
@@ -325,20 +332,7 @@ const Home = () => {
           isHowItWorksVisible: true
         };
 
-        const dbOffers = (newResponse.offers && newResponse.offers.length > 0) ? newResponse.offers : [
-          {
-            _id: 'default-offer-1',
-            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782306566/appzeto/ChatGPT_Image_Jun_24__2026__06_38_54_PM-1782306562558.jpg',
-            redirectValue: '/user/home',
-            sortOrder: 0
-          },
-          {
-            _id: 'default-offer-2',
-            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782306783/appzeto/ChatGPT_Image_Jun_24__2026__06_42_36_PM-1782306780035.jpg',
-            redirectValue: '/user/home',
-            sortOrder: 1
-          }
-        ];
+        const dbOffers = newResponse.offers || [];
 
         homeContentToSet.offerBanners = dbOffers.map((offer, idx) => ({
           id: offer._id,
@@ -347,36 +341,7 @@ const Home = () => {
           order: offer.sortOrder || idx
         }));
 
-        const dbPromos = (newResponse.promos && newResponse.promos.length > 0) ? newResponse.promos : [
-          {
-            _id: 'default-promo-1',
-            badge: 'LIMITED TIME OFFER',
-            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782305467/appzeto/ChatGPT_Image_Jun_24__2026__06_20_36_PM-1782305459696.jpg',
-            redirectValue: '/user/home',
-            sortOrder: 0
-          },
-          {
-            _id: 'default-promo-2',
-            badge: 'SPECIAL DEAL',
-            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782305760/appzeto/ChatGPT_Image_Jun_24__2026__06_25_01_PM-1782305754765.jpg',
-            redirectValue: '/user/home',
-            sortOrder: 1
-          },
-          {
-            _id: 'default-promo-3',
-            badge: 'WINTER READY',
-            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782305943/appzeto/ChatGPT_Image_Jun_24__2026__06_28_14_PM-1782305936603.jpg',
-            redirectValue: '/user/home',
-            sortOrder: 2
-          },
-          {
-            _id: 'default-promo-4',
-            badge: 'HEALTH FIRST',
-            imageUrl: 'https://res.cloudinary.com/dygbp3ten/image/upload/v1782306120/appzeto/ChatGPT_Image_Jun_24__2026__06_31_10_PM-1782306115852.jpg',
-            redirectValue: '/user/home',
-            sortOrder: 3
-          }
-        ];
+        const dbPromos = newResponse.promos || [];
 
         homeContentToSet.promos = dbPromos.map((promo, idx) => ({
           id: promo._id,
@@ -407,6 +372,16 @@ const Home = () => {
         if (newResponse.banners && newResponse.banners.length > 0) {
             // Banners mapping could be used in PromoCarousel
             homeContentToSet.heroBanners = newResponse.banners;
+        }
+
+        if (newResponse.carePlan) {
+          homeContentToSet.carePlan = newResponse.carePlan;
+        }
+        if (newResponse.whyChoose) {
+          homeContentToSet.whyChoose = newResponse.whyChoose;
+        }
+        if (newResponse.howItWorks) {
+          homeContentToSet.howItWorks = newResponse.howItWorks;
         }
       }
 
@@ -685,7 +660,7 @@ const Home = () => {
           ) : (
             <>
               {/* 0. Hero Banners */}
-              {/* homeContent?.isBannersVisible !== false && (homeContent?.heroBanners?.length > 0) && (
+              {homeContent?.isBannersVisible !== false && (homeContent?.heroBanners?.length > 0) && (
                 <div className="relative z-10 pt-2">
                   <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
                     <OfferBannerSlider 
@@ -698,7 +673,7 @@ const Home = () => {
                     />
                   </Suspense>
                 </div>
-              ) */}
+              )}
 
 
               {/* 1. Quick Services Category Row (Moved above Banner) */}
@@ -757,17 +732,20 @@ const Home = () => {
                 </Suspense>
               </div>
 
-              {/* 5. How It Works */}
-              {homeContent?.isHowItWorksVisible !== false && (
+
+
+              {/* 7. How It Works */}
+              {homeContent?.howItWorks?.isActive && (
                 <div className="relative z-10 mt-6">
-                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-2xl mx-4" />}>
+                  <Suspense fallback={<div className="h-40 bg-slate-50 animate-pulse rounded-2xl mx-4" />}>
                     <HowItWorks 
-                      steps={(homeContent?.howItWorks || []).sort((a,b) => (a.order||0) - (b.order||0)).map(s => ({
-                        id: s.id || s._id,
-                        title: s.title,
-                        description: s.description,
-                        iconUrl: s.iconUrl ? toAssetUrl(s.iconUrl) : null
-                      }))}
+                      data={{
+                        ...homeContent.howItWorks,
+                        items: homeContent.howItWorks.items ? homeContent.howItWorks.items.map(item => ({
+                          ...item,
+                          iconUrl: item.iconUrl ? toAssetUrl(item.iconUrl) : null
+                        })) : []
+                      }}
                       isLoading={loading}
                     />
                   </Suspense>
@@ -829,6 +807,22 @@ const Home = () => {
                 </section>
               )}
 
+              {/* End of Home - Our Services Section */}
+              <OurServicesSection />
+              
+              {/* Care Plan Banner */}
+              {homeContent?.carePlan?.isActive !== false && (
+                <div className="relative z-10 mt-6 mb-6">
+                  <Suspense fallback={<div className="h-40 bg-slate-50 animate-pulse rounded-3xl mx-4" />}>
+                    <CarePlanBanner 
+                      data={{
+                        ...homeContent?.carePlan,
+                        imageUrl: homeContent?.carePlan?.imageUrl ? toAssetUrl(homeContent.carePlan.imageUrl) : null
+                      }} 
+                    />
+                  </Suspense>
+                </div>
+              )}
             </>
           )}
         </main>

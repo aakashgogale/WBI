@@ -416,8 +416,7 @@ const AllEngineers = () => {
                 {selectedEngineer.documents.aadhar && (
                   <div>
                     <label className="block text-xs text-gray-600 mb-2">Aadhar Front</label>
-                    <img
-                      src={selectedEngineer.documents.aadhar}
+                    <img fetchPriority="low" loading="lazy"                       src={selectedEngineer.documents.aadhar}
                       alt="Aadhar Front"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
                     />
@@ -434,8 +433,7 @@ const AllEngineers = () => {
                 {selectedEngineer.documents.aadharBack && (
                   <div>
                     <label className="block text-xs text-gray-600 mb-2">Aadhar Back</label>
-                    <img
-                      src={selectedEngineer.documents.aadharBack}
+                    <img fetchPriority="low" loading="lazy"                       src={selectedEngineer.documents.aadharBack}
                       alt="Aadhar Back"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
                     />
@@ -452,8 +450,7 @@ const AllEngineers = () => {
                 {selectedEngineer.documents.pan && (
                   <div>
                     <label className="block text-xs text-gray-600 mb-2">PAN Document</label>
-                    <img
-                      src={selectedEngineer.documents.pan}
+                    <img fetchPriority="low" loading="lazy"                       src={selectedEngineer.documents.pan}
                       alt="PAN"
                       className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
                     />

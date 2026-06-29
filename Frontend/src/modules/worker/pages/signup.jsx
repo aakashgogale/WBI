@@ -331,7 +331,7 @@ export default function WorkerSignup() {
                             onClick={() => handleCategoryToggle(cat.id || cat._id)}
                             className="cursor-pointer flex items-center gap-3"
                           >
-                            {cat.icon && <img src={cat.icon} className={`w-8 h-8 object-contain transition-all ${isSelected ? 'scale-110' : 'grayscale opacity-60'}`} alt=""/>}
+                            {cat.icon && <img fetchPriority="low" loading="lazy" src={cat.icon} className={`w-8 h-8 object-contain transition-all ${isSelected ? 'scale-110' : 'grayscale opacity-60'}`} alt=""/>}
                             <span className="text-sm font-bold leading-tight">{cat.name || cat.title}</span>
                           </div>
                           
@@ -364,22 +364,22 @@ export default function WorkerSignup() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex gap-4 pt-8 mt-8 border-t border-gray-100">
+            <div className="flex gap-3 pt-6 border-t mt-8">
               {currentStep > 1 && (
-                <button type="button" onClick={prevStep} className="px-6 py-4 border-2 border-gray-100 text-gray-600 rounded-2xl font-bold flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all">
-                  <FiChevronLeft className="w-5 h-5" />
+                <button type="button" onClick={prevStep} className="flex-none px-4 sm:px-6 py-4 border-2 border-gray-200 text-gray-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition-all">
+                  <FiChevronLeft className="w-5 h-5" /> <span className="hidden sm:inline">Back</span>
                 </button>
               )}
               {currentStep < totalSteps ? (
-                <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all">
+                <button type="button" onClick={nextStep} className="flex-1 py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all text-sm sm:text-base whitespace-nowrap">
                   Continue <FiArrowRight className="w-5 h-5" />
                 </button>
               ) : (
-                <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all disabled:opacity-70 disabled:active:scale-100">
+                <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="flex-1 py-4 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-gray-800 active:scale-95 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all disabled:opacity-70 disabled:active:scale-100 text-sm sm:text-base whitespace-nowrap">
                   {isSubmitting ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <>Complete Registration <FiCheckCircle className="w-5 h-5" /></>
+                    <>Complete Registration <FiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" /></>
                   )}
                 </button>
               )}

@@ -1,5 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import AnimatedPage from '../../../components/common/AnimatedPage';
 import VendorLayout from '../components/layout/VendorLayout';
 import DigitalVendorLayout from '../components/layout/DigitalVendorLayout';
 import ErrorBoundary from '../components/common/ErrorBoundary';
@@ -70,58 +72,59 @@ const DigitalProfile = lazyLoad(() => import('../pages/Profile/DigitalProfile'))
 const DigitalTeamEngineers = lazyLoad(() => import('../pages/WorkersList/DigitalTeamEngineers'));
 const DigitalServices = lazyLoad(() => import('../pages/DigitalServices/DigitalServices'));
 
-import LogoLoader from '../../../components/common/LogoLoader';
 const LoadingFallback = () => (
   <div className="min-h-screen bg-[#F8FCFC]" />
 );
 
 const VendorRoutes = () => {
+  const location = useLocation();
   return (
     <ErrorBoundary>
       <Suspense fallback={<LoadingFallback />}>
-          <Routes>
+          <AnimatePresence mode="wait">
+            <Routes location={location || undefined} key={location ? location.pathname : 'routes'}>
             {/* Public routes */}
-            <Route path="/login" element={<PublicRoute userType="vendor"><Login /></PublicRoute>} />
-            <Route path="/signup" element={<PublicRoute userType="vendor"><Signup /></PublicRoute>} />
+            <Route path="/login" element={<AnimatedPage><PublicRoute userType="vendor"><Login /></PublicRoute></AnimatedPage>} />
+            <Route path="/signup" element={<AnimatedPage><PublicRoute userType="vendor"><Signup /></PublicRoute></AnimatedPage>} />
 
             {/* Base Redirect */}
             <Route path="/" element={<Navigate to="digital-solution/dashboard" replace />} />
 
             {/* Digital Solution specific routes (Main Vendor Layout now) */}
-            <Route element={<ProtectedRoute userType="vendor"><DigitalVendorLayout /></ProtectedRoute>}>
-              <Route path="/digital-solution/dashboard" element={<Dashboard />} />
-              <Route path="/digital-solution/my-profile" element={<DigitalProfile />} />
-              <Route path="/digital-solution/booking-alerts" element={<BookingAlerts />} />
-              <Route path="/digital-solution/booking-alert/:id" element={<BookingAlert />} />
-              <Route path="/digital-solution/booking/:id" element={<BookingDetails />} />
-              <Route path="/digital-solution/booking/:id/map" element={<BookingMap />} />
-              <Route path="/digital-solution/booking/:id/billing" element={<BillingPage />} />
-              <Route path="/digital-solution/booking/:id/timeline" element={<BookingTimeline />} />
-              <Route path="/digital-solution/jobs" element={<ActiveJobs />} />
-              <Route path="/digital-solution/engineers" element={<DigitalTeamEngineers />} />
-              <Route path="/digital-solution/services" element={<DigitalServices />} />
-              <Route path="/digital-solution/workers" element={<WorkersList />} />
-              <Route path="/digital-solution/projects" element={<Projects />} />
-              <Route path="/digital-solution/work-orders" element={<WorkOrders />} />
-              <Route path="/digital-solution/amc" element={<AmcContracts />} />
-              <Route path="/digital-solution/workers/add" element={<AddEditWorker />} />
-              <Route path="/digital-solution/workers/:id/edit" element={<AddEditWorker />} />
-              <Route path="/digital-solution/booking/:id/assign-worker" element={<AssignWorker />} />
-              <Route path="/digital-solution/earnings" element={<Earnings />} />
-              <Route path="/digital-solution/wallet" element={<Wallet />} />
-              <Route path="/digital-solution/wallet/withdraw" element={<WithdrawalRequest />} />
-              <Route path="/digital-solution/wallet/settle" element={<SettlementRequest />} />
-              <Route path="/digital-solution/wallet/settlements" element={<SettlementHistory />} />
-              <Route path="/digital-solution/profile" element={<Profile />} />
-              <Route path="/digital-solution/profile/details" element={<ProfileDetails />} />
-              <Route path="/digital-solution/profile/edit" element={<EditProfile />} />
-              <Route path="/digital-solution/settings" element={<Settings />} />
-              <Route path="/digital-solution/address-management" element={<AddressManagement />} />
-              <Route path="/digital-solution/notifications" element={<Notifications />} />
-              <Route path="/digital-solution/my-ratings" element={<MyRatings />} />
-              <Route path="/digital-solution/reviews" element={<MyRatings />} />
-              <Route path="/digital-solution/support" element={<AboutWBI />} />
-              <Route path="/digital-solution/about-wbi" element={<AboutWBI />} />
+            <Route element={<AnimatedPage><ProtectedRoute userType="vendor"><DigitalVendorLayout /></ProtectedRoute></AnimatedPage>}>
+              <Route path="/digital-solution/dashboard" element={<AnimatedPage><Dashboard /></AnimatedPage>} />
+              <Route path="/digital-solution/my-profile" element={<AnimatedPage><DigitalProfile /></AnimatedPage>} />
+              <Route path="/digital-solution/booking-alerts" element={<AnimatedPage><BookingAlerts /></AnimatedPage>} />
+              <Route path="/digital-solution/booking-alert/:id" element={<AnimatedPage><BookingAlert /></AnimatedPage>} />
+              <Route path="/digital-solution/booking/:id" element={<AnimatedPage><BookingDetails /></AnimatedPage>} />
+              <Route path="/digital-solution/booking/:id/map" element={<AnimatedPage><BookingMap /></AnimatedPage>} />
+              <Route path="/digital-solution/booking/:id/billing" element={<AnimatedPage><BillingPage /></AnimatedPage>} />
+              <Route path="/digital-solution/booking/:id/timeline" element={<AnimatedPage><BookingTimeline /></AnimatedPage>} />
+              <Route path="/digital-solution/jobs" element={<AnimatedPage><ActiveJobs /></AnimatedPage>} />
+              <Route path="/digital-solution/engineers" element={<AnimatedPage><DigitalTeamEngineers /></AnimatedPage>} />
+              <Route path="/digital-solution/services" element={<AnimatedPage><DigitalServices /></AnimatedPage>} />
+              <Route path="/digital-solution/workers" element={<AnimatedPage><WorkersList /></AnimatedPage>} />
+              <Route path="/digital-solution/projects" element={<AnimatedPage><Projects /></AnimatedPage>} />
+              <Route path="/digital-solution/work-orders" element={<AnimatedPage><WorkOrders /></AnimatedPage>} />
+              <Route path="/digital-solution/amc" element={<AnimatedPage><AmcContracts /></AnimatedPage>} />
+              <Route path="/digital-solution/workers/add" element={<AnimatedPage><AddEditWorker /></AnimatedPage>} />
+              <Route path="/digital-solution/workers/:id/edit" element={<AnimatedPage><AddEditWorker /></AnimatedPage>} />
+              <Route path="/digital-solution/booking/:id/assign-worker" element={<AnimatedPage><AssignWorker /></AnimatedPage>} />
+              <Route path="/digital-solution/earnings" element={<AnimatedPage><Earnings /></AnimatedPage>} />
+              <Route path="/digital-solution/wallet" element={<AnimatedPage><Wallet /></AnimatedPage>} />
+              <Route path="/digital-solution/wallet/withdraw" element={<AnimatedPage><WithdrawalRequest /></AnimatedPage>} />
+              <Route path="/digital-solution/wallet/settle" element={<AnimatedPage><SettlementRequest /></AnimatedPage>} />
+              <Route path="/digital-solution/wallet/settlements" element={<AnimatedPage><SettlementHistory /></AnimatedPage>} />
+              <Route path="/digital-solution/profile" element={<AnimatedPage><Profile /></AnimatedPage>} />
+              <Route path="/digital-solution/profile/details" element={<AnimatedPage><ProfileDetails /></AnimatedPage>} />
+              <Route path="/digital-solution/profile/edit" element={<AnimatedPage><EditProfile /></AnimatedPage>} />
+              <Route path="/digital-solution/settings" element={<AnimatedPage><Settings /></AnimatedPage>} />
+              <Route path="/digital-solution/address-management" element={<AnimatedPage><AddressManagement /></AnimatedPage>} />
+              <Route path="/digital-solution/notifications" element={<AnimatedPage><Notifications /></AnimatedPage>} />
+              <Route path="/digital-solution/my-ratings" element={<AnimatedPage><MyRatings /></AnimatedPage>} />
+              <Route path="/digital-solution/reviews" element={<AnimatedPage><MyRatings /></AnimatedPage>} />
+              <Route path="/digital-solution/support" element={<AnimatedPage><AboutWBI /></AnimatedPage>} />
+              <Route path="/digital-solution/about-wbi" element={<AnimatedPage><AboutWBI /></AnimatedPage>} />
               <Route path="/digital-solution/*" element={<Navigate to="/vendor/digital-solution/dashboard" replace />} />
             </Route>
 
@@ -136,11 +139,8 @@ const VendorRoutes = () => {
             <Route path="/reviews" element={<Navigate to="/vendor/digital-solution/reviews" replace />} />
             <Route path="/support" element={<Navigate to="/vendor/digital-solution/support" replace />} />
           </Routes>
+            </AnimatePresence>
       </Suspense>
-
-      {/* Global Alerts inside Vendor boundary but outside specific page routes */}
-      <CashLimitModal />
-      <GlobalBookingAlert />
     </ErrorBoundary>
   );
 };

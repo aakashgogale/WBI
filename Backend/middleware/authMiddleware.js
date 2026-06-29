@@ -85,6 +85,10 @@ const authenticate = async (req, res, next) => {
       case USER_ROLES.ADMIN:
         user = await Admin.findById(decoded.userId).select('-password').lean();
         break;
+      case USER_ROLES.B2B:
+        const B2BCompany = require('../models/B2BCompany');
+        user = await B2BCompany.findById(decoded.userId).select('-passwordHash').lean();
+        break;
       default:
         console.error('Role mismatch in middleware:', decoded.role);
         return res.status(401).json({

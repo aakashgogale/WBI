@@ -231,7 +231,7 @@ const EditProfile = () => {
     if (!baseUrl) {
       // If no env var, check hostname to determine dev vs prod
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:5000';
+        baseUrl = 'https://app.wbinfs.com';
       } else {
         // In production, fallback to same origin (relative path)
         baseUrl = window.location.origin;
@@ -408,8 +408,7 @@ const EditProfile = () => {
                 onClick={() => handleImageClick('photo')}
               >
                 {photoPreview || formData.profilePhoto ? (
-                  <img
-                    src={photoPreview || formData.profilePhoto}
+                  <img fetchPriority="low" loading="lazy"                     src={photoPreview || formData.profilePhoto}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -704,8 +703,7 @@ const EditProfile = () => {
                 ) : formData.aadharDocument ? (
                   <div className="flex flex-col items-center gap-2 w-full">
                     <div className="w-full h-32 rounded-lg overflow-hidden border border-gray-200 mb-2 relative group-hover:opacity-75 transition-opacity">
-                      <img
-                        src={formData.aadharDocument}
+                      <img fetchPriority="low" loading="lazy"                         src={formData.aadharDocument}
                         alt="Aadhar Preview"
                         className="w-full h-full object-cover"
                       />

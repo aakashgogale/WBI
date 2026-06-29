@@ -114,7 +114,7 @@ const WorkerLogin = () => {
           Welcome Back!
         </h2>
         <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
-          Login to your worker account
+          Login to your Worker / Engineer account
         </p>
       </div>
 

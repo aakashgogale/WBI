@@ -933,7 +933,7 @@ const VerificationManagement = () => {
                             
                             {/* File Preview */}
                             <div className="bg-[#F8FAFC] border border-slate-100 p-3 rounded-xl flex flex-col items-center justify-center relative min-h-64 group">
-                              <img 
+                              <img fetchPriority="low" loading="lazy" 
                                 src={doc.signedPreviewUrl || doc.fileUrl} 
                                 alt={doc.documentType} 
                                 className="max-h-60 object-contain rounded shadow-sm bg-white" 
