@@ -72,6 +72,12 @@ const AppRoutes = () => {
           <B2BRoutes />
         </Suspense>
       } />
+
+      {/* Typo catchers */}
+      <Route path="/engineers/*" element={<Navigate to="/engineer" replace />} />
+      <Route path="/workers/*" element={<Navigate to="/worker" replace />} />
+      <Route path="/vendors/*" element={<Navigate to="/vendor" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
