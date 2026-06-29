@@ -4,6 +4,7 @@ const Redis = require('ioredis');
 // Ensure we have a valid Redis connection for BullMQ
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
   maxRetriesPerRequest: null,
+  retryStrategy: times => Math.min(times * 200, 5000)
 });
 
 redisConnection.on('error', (err) => {

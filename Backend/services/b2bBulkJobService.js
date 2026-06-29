@@ -323,7 +323,7 @@ const processValidation = async (batchId, app) => {
           batchId: batch._id,
           rowNumber: rowNum,
           rowData: mapped,
-          errors: errors
+          errorList: errors
         });
       } else {
         validRows++;

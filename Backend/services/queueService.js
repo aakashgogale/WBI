@@ -4,7 +4,10 @@ const Booking = require('../models/Booking');
 const { getIO } = require('../sockets');
 
 // Initialize Redis connection
-const redisOptions = { maxRetriesPerRequest: null };
+const redisOptions = { 
+  maxRetriesPerRequest: null,
+  retryStrategy: times => Math.min(times * 200, 5000)
+};
 const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', redisOptions);
 
 connection.on('error', (err) => {

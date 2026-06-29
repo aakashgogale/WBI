@@ -3,7 +3,10 @@ const IORedis = require('ioredis');
 const mongoose = require('mongoose');
 
 // Initialize Redis connection for BullMQ
-const redisOptions = { maxRetriesPerRequest: null };
+const redisOptions = { 
+  maxRetriesPerRequest: null,
+  retryStrategy: times => Math.min(times * 200, 5000)
+};
 const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', redisOptions);
 
 connection.on('error', (err) => {

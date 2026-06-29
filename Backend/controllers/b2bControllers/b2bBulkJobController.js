@@ -312,7 +312,7 @@ const downloadErrorReport = async (req, res) => {
       'City': err.rowData.city || 'N/A',
       'Pincode': err.rowData.pincode || 'N/A',
       'Service Name': err.rowData.service || 'N/A',
-      'Validation Failure Reason(s)': err.errors.join(' | ')
+      'Validation Failure Reason(s)': (err.errorList || []).join(' | ')
     }));
 
     const wb = XLSX.utils.book_new();

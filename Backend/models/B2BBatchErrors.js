@@ -15,13 +15,12 @@ const b2bBatchErrorsSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
-  errors: {
+  errorList: {
     type: [String],
     required: true
   }
 }, {
-  timestamps: true,
-  suppressReservedKeysWarning: true
+  timestamps: true
 });
 
 b2bBatchErrorsSchema.index({ batchId: 1, rowNumber: 1 });
