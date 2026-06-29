@@ -8,8 +8,6 @@ import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
 import LogoLoader from '../../../components/common/LogoLoader';
 import GlobalWorkerJobAlert from '../components/common/GlobalWorkerJobAlert';
-import { AnimatePresence } from 'framer-motion';
-import AnimatedPage from '../../../components/common/AnimatedPage';
 
 import Login from '../pages/login';
 import Signup from '../pages/signup';
@@ -64,47 +62,44 @@ const EngineerRoutes = () => {
     <ErrorBoundary>
       {/* Main content area - leaves space for bottom nav when needed */}
       <div className={shouldShowBottomNav ? "pb-24" : ""}>
-            <AnimatePresence mode="wait">
             <Routes location={location || undefined}>
               {/* Public routes */}
-              <Route path="/login" element={<AnimatedPage><PublicRoute userType="engineer"><Login /></PublicRoute></AnimatedPage>} />
-              <Route path="/signup" element={<AnimatedPage><PublicRoute userType="engineer"><Signup /></PublicRoute></AnimatedPage>} />
+              <Route path="/login" element={<PublicRoute userType="engineer"><Login /></PublicRoute>} />
+              <Route path="/signup" element={<PublicRoute userType="engineer"><Signup /></PublicRoute>} />
 
               {/* Protected routes (auth required) */}
-              <Route path="/" element={<AnimatedPage><ProtectedRoute userType="engineer"><Navigate to="dashboard" replace /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/dashboard" element={<AnimatedPage><ProtectedRoute userType="engineer"><Dashboard /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/jobs" element={<AnimatedPage><ProtectedRoute userType="engineer"><AssignedJobs /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/job/:id" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobDetails /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/job/:id/progress" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobProgress /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/job/:id/map" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobMap /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/job/:id/timeline" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobTimeline /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/job/:id/billing" element={<AnimatedPage><ProtectedRoute userType="engineer"><BillingPage /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/job/:id/success" element={<AnimatedPage><ProtectedRoute userType="engineer"><JobSuccess /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/projects" element={<AnimatedPage><ProtectedRoute userType="engineer"><Projects /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/projects/:projectId" element={<AnimatedPage><ProtectedRoute userType="engineer"><ProjectDetails /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/projects/:projectId/milestones" element={<AnimatedPage><ProtectedRoute userType="engineer"><ProjectMilestones /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/projects/:projectId/milestones/:milestoneId/submit" element={<AnimatedPage><ProtectedRoute userType="engineer"><SubmitMilestone /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/projects/:projectId/milestones/:milestoneId/review" element={<AnimatedPage><ProtectedRoute userType="engineer"><ProjectUnderReview /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile" element={<AnimatedPage><ProtectedRoute userType="engineer"><Profile /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/edit" element={<AnimatedPage><ProtectedRoute userType="engineer"><EditProfile /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/personal-info" element={<AnimatedPage><ProtectedRoute userType="engineer"><PersonalInfo /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/bank-details" element={<AnimatedPage><ProtectedRoute userType="engineer"><BankDetails /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/documents" element={<AnimatedPage><ProtectedRoute userType="engineer"><Documents /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/work-locations" element={<AnimatedPage><ProtectedRoute userType="engineer"><WorkLocations /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/skills" element={<AnimatedPage><ProtectedRoute userType="engineer"><Skills /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/sub-services" element={<AnimatedPage><ProtectedRoute userType="engineer"><SubServices /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/" element={<ProtectedRoute userType="engineer"><Navigate to="dashboard" replace /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute userType="engineer"><Dashboard /></ProtectedRoute>} />
+              <Route path="/jobs" element={<ProtectedRoute userType="engineer"><AssignedJobs /></ProtectedRoute>} />
+              <Route path="/job/:id" element={<ProtectedRoute userType="engineer"><JobDetails /></ProtectedRoute>} />
+              <Route path="/job/:id/progress" element={<ProtectedRoute userType="engineer"><JobProgress /></ProtectedRoute>} />
+              <Route path="/job/:id/map" element={<ProtectedRoute userType="engineer"><JobMap /></ProtectedRoute>} />
+              <Route path="/job/:id/timeline" element={<ProtectedRoute userType="engineer"><JobTimeline /></ProtectedRoute>} />
+              <Route path="/job/:id/billing" element={<ProtectedRoute userType="engineer"><BillingPage /></ProtectedRoute>} />
+              <Route path="/job/:id/success" element={<ProtectedRoute userType="engineer"><JobSuccess /></ProtectedRoute>} />
+              <Route path="/projects" element={<ProtectedRoute userType="engineer"><Projects /></ProtectedRoute>} />
+              <Route path="/projects/:projectId" element={<ProtectedRoute userType="engineer"><ProjectDetails /></ProtectedRoute>} />
+              <Route path="/projects/:projectId/milestones" element={<ProtectedRoute userType="engineer"><ProjectMilestones /></ProtectedRoute>} />
+              <Route path="/projects/:projectId/milestones/:milestoneId/submit" element={<ProtectedRoute userType="engineer"><SubmitMilestone /></ProtectedRoute>} />
+              <Route path="/projects/:projectId/milestones/:milestoneId/review" element={<ProtectedRoute userType="engineer"><ProjectUnderReview /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute userType="engineer"><Profile /></ProtectedRoute>} />
+              <Route path="/profile/edit" element={<ProtectedRoute userType="engineer"><EditProfile /></ProtectedRoute>} />
+              <Route path="/profile/personal-info" element={<ProtectedRoute userType="engineer"><PersonalInfo /></ProtectedRoute>} />
+              <Route path="/profile/bank-details" element={<ProtectedRoute userType="engineer"><BankDetails /></ProtectedRoute>} />
+              <Route path="/profile/documents" element={<ProtectedRoute userType="engineer"><Documents /></ProtectedRoute>} />
+              <Route path="/profile/work-locations" element={<ProtectedRoute userType="engineer"><WorkLocations /></ProtectedRoute>} />
+              <Route path="/profile/skills" element={<ProtectedRoute userType="engineer"><Skills /></ProtectedRoute>} />
+              <Route path="/profile/sub-services" element={<ProtectedRoute userType="engineer"><SubServices /></ProtectedRoute>} />
 
-              <Route path="/profile/notifications" element={<AnimatedPage><ProtectedRoute userType="engineer"><NotificationSettings /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/profile/support" element={<AnimatedPage><ProtectedRoute userType="engineer"><Support /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/settings" element={<AnimatedPage><ProtectedRoute userType="engineer"><Settings /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/notifications" element={<AnimatedPage><ProtectedRoute userType="engineer"><Notifications /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/wallet" element={<AnimatedPage><ProtectedRoute userType="engineer"><Wallet /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/schedule" element={<AnimatedPage><ProtectedRoute userType="engineer"><Schedule /></ProtectedRoute></AnimatedPage>} />
-              <Route path="/proposals" element={<AnimatedPage><ProtectedRoute userType="engineer"><Proposals /></ProtectedRoute></AnimatedPage>} />
+              <Route path="/profile/notifications" element={<ProtectedRoute userType="engineer"><NotificationSettings /></ProtectedRoute>} />
+              <Route path="/profile/support" element={<ProtectedRoute userType="engineer"><Support /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute userType="engineer"><Settings /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute userType="engineer"><Notifications /></ProtectedRoute>} />
+              <Route path="/wallet" element={<ProtectedRoute userType="engineer"><Wallet /></ProtectedRoute>} />
+              <Route path="/schedule" element={<ProtectedRoute userType="engineer"><Schedule /></ProtectedRoute>} />
+              <Route path="/proposals" element={<ProtectedRoute userType="engineer"><Proposals /></ProtectedRoute>} />
             </Routes>
-            </AnimatePresence>
-
-      </div>
+            </div>
 
       {/* BottomNav is OUTSIDE Suspense so it persists during page loads */}
       {shouldShowBottomNav && <BottomNav />}
@@ -115,4 +110,5 @@ const EngineerRoutes = () => {
 };
 
 export default EngineerRoutes;
+
 
