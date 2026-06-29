@@ -9,7 +9,7 @@ const path = require('path');
 // Initialize Firebase Admin SDK
 // Initialize Firebase Admin SDK
 let serviceAccount;
-console.log('ðŸ” Loading Firebase credentials...',process.env.FIREBASE_CONFIG);
+console.log('ðŸ”  Loading Firebase credentials...');
 try {
   if (process.env.FIREBASE_CONFIG) {
     // Production: Use environment variable JSON content

@@ -77,7 +77,7 @@ const bookingSchema = new mongoose.Schema({
   },
   adminApprovalStatus: {
     type: String,
-    enum: ['pending', 'approved', 'auto_assigned', 'bypassed'],
+    enum: ['pending', 'approved', 'auto_assigned', 'bypassed', 'auto_assign_failed'],
     default: 'pending',
     index: true
   },

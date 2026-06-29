@@ -26,6 +26,7 @@ initRedis();
 
 // Initialize Express app
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Nginx) for express-rate-limit
 
 // Security middleware
 app.use(helmet({
