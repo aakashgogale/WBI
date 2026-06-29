@@ -1,4 +1,9 @@
-const XLSX = require('xlsx');
+let XLSX;
+try {
+  XLSX = require('xlsx');
+} catch (err) {
+  console.error('[Dependency Warning]: xlsx module is missing. Excel features will not work until installed.');
+}
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');

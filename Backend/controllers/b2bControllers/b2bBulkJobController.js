@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
-const XLSX = require('xlsx');
 
+let XLSX;
+try {
+  XLSX = require('xlsx');
+} catch (err) {
+  console.error('[Dependency Warning]: xlsx module is missing. Excel features will not work until installed.');
+}
 const B2BBatch = require('../../models/B2BBatch');
 const B2BBatchErrors = require('../../models/B2BBatchErrors');
 const B2BJob = require('../../models/B2BJob');
@@ -131,6 +136,21 @@ const uploadFile = async (req, res) => {
       targetType: 'B2BBatch',
       changes: { fileName: req.file.originalname, status: 'uploaded' }
     });
+
+    // Quick validation to ensure file is a readable Excel/CSV before accepting
+    try {
+      if (!XLSX) throw new Error('Missing xlsx module');
+      const workbook = XLSX.readFile(req.file.path);
+      if (!workbook || workbook.SheetNames.length === 0) {
+        throw new Error('Empty or invalid workbook');
+      }
+    } catch(err) {
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ 
+        success: false, 
+        message: "Unable to process Excel file. Please upload a valid .xlsx/.xls/.csv file." 
+      });
+    }
 
     // Enqueue Validation Job in BullMQ
     await bulkJobQueue.add('validateBatch', { batchId: batch._id.toString() });

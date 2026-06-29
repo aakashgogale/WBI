@@ -124,6 +124,7 @@ app.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'WBI API is running',
+    uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
 });
