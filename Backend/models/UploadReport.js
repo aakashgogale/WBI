@@ -28,6 +28,5 @@ const uploadReportsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-uploadReportsSchema.index({ batchId: 1 });
 
 module.exports = mongoose.model('UploadReport', uploadReportsSchema);

@@ -20,7 +20,8 @@ const b2bBatchErrorsSchema = new mongoose.Schema({
     required: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  suppressReservedKeysWarning: true
 });
 
 b2bBatchErrorsSchema.index({ batchId: 1, rowNumber: 1 });
