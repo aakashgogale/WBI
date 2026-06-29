@@ -273,7 +273,7 @@ const Wallet = () => {
     );
   }
 
-  const { wallet, context, payments, transactions, withdrawals, bankDetails } = walletData;
+  const { wallet, context, payments, withdrawals, bankDetails } = walletData;
   const pendingReleases = payments.filter(p => ['Pending', 'Vendor Approved', 'Client Approved'].includes(p.status));
 
   return (
