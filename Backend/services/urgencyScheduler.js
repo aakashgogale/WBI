@@ -8,25 +8,24 @@ const startUrgencyScheduler = () => {
   cron.schedule('* * * * *', async () => {
     try {
       const now = new Date();
-      
-      // Find all bookings pending admin approval
+      const thirtyMinsAgo = new Date(now.getTime() - 30 * 60000);
+      const tenMinsAgo = new Date(now.getTime() - 10 * 60000);
+
+      // Find timed out bookings (Batch of 50 to prevent memory bloat)
       const pendingBookings = await Booking.find({
-        adminApprovalStatus: 'pending'
-      }).populate('userId', 'name phone')
-        .populate('serviceId', 'title');
+        adminApprovalStatus: 'pending',
+        $or: [
+          { urgencyLevel: 'normal', urgencyTimerStartedAt: { $lte: thirtyMinsAgo } },
+          { urgencyLevel: 'urgent', urgencyTimerStartedAt: { $lte: tenMinsAgo } },
+          { urgencyLevel: { $exists: false }, urgencyTimerStartedAt: { $lte: thirtyMinsAgo } } // fallback
+        ]
+      }).limit(50);
 
       for (const booking of pendingBookings) {
-        const timeDiffMinutes = (now - new Date(booking.urgencyTimerStartedAt)) / (1000 * 60);
-        let shouldAutoAssign = false;
-        let timeoutReason = '';
-
-        if (booking.urgencyLevel === 'normal' && timeDiffMinutes >= 30) {
-          shouldAutoAssign = true;
-          timeoutReason = 'Normal request exceeded 30 mins admin timeout';
-        } else if (booking.urgencyLevel === 'urgent' && timeDiffMinutes >= 10) {
-          shouldAutoAssign = true;
-          timeoutReason = 'Urgent request exceeded 10 mins admin timeout';
-        }
+        let shouldAutoAssign = true;
+        let timeoutReason = booking.urgencyLevel === 'urgent' 
+          ? 'Urgent request exceeded 10 mins admin timeout'
+          : 'Normal request exceeded 30 mins admin timeout';
 
         if (shouldAutoAssign) {
           console.log(`[UrgencyScheduler] Auto-assigning booking ${booking.bookingNumber} (${timeoutReason})`);
