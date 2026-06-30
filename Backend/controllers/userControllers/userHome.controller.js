@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const OneTimeService = require('../../models/OneTimeService');
 const Banner = require('../../models/Banner');
 const Notification = require('../../models/Notification');
-const ServiceCategory = require('../../models/ServiceCategory');
+const Category = require('../../models/Category');
 const SubService = require('../../models/SubService');
 const HomeSection = require('../../models/HomeSection');
 const HomeContent = require('../../models/HomeContent');
@@ -92,12 +92,15 @@ const getHomeData = async (req, res) => {
       HomeSection.find({ isActive: true }).lean(),
       
       // 7b. Fetch Global Home Content config
-      HomeContent.findOne({ isActive: true }).lean(),
+      HomeContent.getHomeContent(cityId),
       
       // 8. Fetch Categories (merged from catalogController)
-      ServiceCategory.find({ isActive: true, showOnApp: true })
-        .select('name slug icon saleBadgeText')
-        .sort({ displayOrder: 1 })
+      Category.find({ 
+        status: 'active', 
+        ...(cityId ? { cityIds: { $in: [cityId, new mongoose.Types.ObjectId(cityId)] } } : { cityIds: { $exists: true } }) 
+      })
+        .select('title slug homeIconUrl homeBadge hasSaleBadge')
+        .sort({ homeOrder: 1 })
         .lean(),
 
       // 9. Unread Notifications
@@ -123,12 +126,49 @@ const getHomeData = async (req, res) => {
 
     const categories = categoriesRes.map(cat => ({
       id: cat._id.toString(),
-      title: cat.name,
+      title: cat.title,
       slug: cat.slug,
-      icon: cat.icon || '',
-      hasSaleBadge: !!cat.saleBadgeText,
-      badge: cat.saleBadgeText || null
+      icon: cat.homeIconUrl || '',
+      hasSaleBadge: cat.hasSaleBadge || false,
+      badge: cat.homeBadge || ''
     }));
+
+    // If homeContentRes is a Mongoose document (from getHomeContent), convert it
+    let homeContentObj = homeContentRes;
+    if (homeContentRes && typeof homeContentRes.toObject === 'function') {
+      homeContentObj = homeContentRes.toObject();
+    }
+
+    if (homeContentObj) {
+      formattedContent.banners = (homeContentObj.banners || []).map(item => ({
+        imageUrl: item.imageUrl,
+        targetCategoryId: item.targetCategoryId?.toString() || null,
+        slug: item.slug,
+        order: item.order
+      }));
+      formattedContent.offerBanners = (homeContentObj.offerBanners || []).map(item => ({
+        imageUrl: item.imageUrl,
+        targetCategoryId: item.targetCategoryId?.toString() || null,
+        slug: item.slug,
+        order: item.order
+      }));
+      formattedContent.promos = (homeContentObj.promos || []).map(item => ({
+        title: item.title,
+        subtitle: item.subtitle,
+        imageUrl: item.imageUrl,
+        targetCategoryId: item.targetCategoryId?.toString() || null,
+        order: item.order
+      }));
+      formattedContent.booked = (homeContentObj.booked || []).map(item => ({
+        id: item._id ? item._id.toString() : item.id,
+        title: item.title,
+        rating: item.rating,
+        price: item.price,
+        imageUrl: item.imageUrl,
+        targetCategoryId: item.targetCategoryId?.toString() || null,
+        order: item.order
+      }));
+    }
 
     console.log('[USER_HOME_BANNERS_COUNT] Banners count: ' + banners.length);
     console.log('[USER_HOME_SERVICES_COUNT] Services count: ' + quickServices.length);
