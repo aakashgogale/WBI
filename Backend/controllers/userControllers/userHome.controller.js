@@ -4,6 +4,7 @@ const Notification = require('../../models/Notification');
 const ServiceCategory = require('../../models/ServiceCategory');
 const SubService = require('../../models/SubService');
 const HomeSection = require('../../models/HomeSection');
+const Brand = require('../../models/Brand');
 // Import Cart logic if it's stored in DB, otherwise cart count might be handled purely frontend or different logic.
 // Based on typical implementation, we might not fetch cart from DB if it's local storage, but assuming DB here if auth'd.
 
@@ -14,6 +15,13 @@ const getHomeData = async (req, res) => {
   try {
     const { cityId } = req.query; // If needed for location-based filtering later
     
+    console.log('[USER_HOME_FETCH_START] Fetching user home data for cityId: ' + cityId);
+
+    // Set headers to disable browser caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     // 1. Fetch active Quick Services (One-Time Services)
     const quickServices = await OneTimeService.find({ 
       isActive: true, 
@@ -24,11 +32,21 @@ const getHomeData = async (req, res) => {
     .limit(12)
     .lean();
 
+    const now = new Date();
+    // Helper query object to filter by active date range
+    const activeDateFilter = {
+      $and: [
+        { $or: [{ startDate: null }, { startDate: { $lte: now } }] },
+        { $or: [{ endDate: null }, { endDate: { $gte: now } }] }
+      ]
+    };
+
     // 2. Fetch Banners (home_banner)
     const banners = await Banner.find({ 
       isActive: true, 
       isDeleted: { $ne: true },
-      bannerType: 'home_banner' 
+      bannerType: 'home_banner',
+      ...activeDateFilter
     })
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean();
@@ -37,7 +55,8 @@ const getHomeData = async (req, res) => {
     const offers = await Banner.find({ 
       isActive: true, 
       isDeleted: { $ne: true },
-      bannerType: 'offer_banner' 
+      bannerType: 'offer_banner',
+      ...activeDateFilter
     })
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean();
@@ -46,7 +65,8 @@ const getHomeData = async (req, res) => {
     const promos = await Banner.find({ 
       isActive: true, 
       isDeleted: { $ne: true },
-      bannerType: 'promo_banner' 
+      bannerType: 'promo_banner',
+      ...activeDateFilter
     })
     .sort({ sortOrder: 1, createdAt: -1 })
     .lean();
@@ -61,7 +81,18 @@ const getHomeData = async (req, res) => {
     .limit(10)
     .lean();
 
-    // 6. Notifications Count (If user is authenticated)
+    // 6. Fetch Popular Brands dynamically
+    const popularBrands = await Brand.find({ 
+      status: 'active', 
+      $or: [{ isPopular: true }, { isFeatured: true }],
+      ...(cityId ? { cityIds: cityId } : {})
+    })
+    .select('title slug iconUrl logo imageUrl badge')
+    .sort({ rating: -1, totalBookings: -1, createdAt: -1 })
+    .limit(30)
+    .lean();
+
+    // 7. Notifications Count (If user is authenticated)
     let unreadNotifications = 0;
     if (req.user) {
       unreadNotifications = await Notification.countDocuments({ 
@@ -70,11 +101,20 @@ const getHomeData = async (req, res) => {
       });
     }
 
-    // 7. Fetch dynamic Home Sections (Care Plan, Why Choose, How It Works)
+    // 8. Fetch dynamic Home Sections (Care Plan, Why Choose, How It Works)
     const sections = await HomeSection.find({ isActive: true }).lean();
     const carePlan = sections.find(s => s.sectionKey === 'care_plan') || null;
     const whyChoose = sections.find(s => s.sectionKey === 'why_choose') || null;
     const howItWorks = sections.find(s => s.sectionKey === 'how_it_works') || null;
+
+    console.log('[USER_HOME_BANNERS_COUNT] Banners count: ' + banners.length);
+    console.log('[USER_HOME_SERVICES_COUNT] Services count: ' + quickServices.length);
+    console.log('[USER_HOME_RESPONSE_SOURCE_DB] User Home response fetched successfully from MongoDB database');
+    
+    // Log dynamic icon URLs
+    quickServices.forEach(qs => {
+      console.log('[USER_HOME_ICON_FROM_DB] Service Name: ' + qs.name + ', Icon/Image: ' + (qs.image || 'None'));
+    });
 
     res.status(200).json({
       success: true,
@@ -83,6 +123,7 @@ const getHomeData = async (req, res) => {
       offers,
       promos,
       mostBookedServices,
+      popularBrands,
       unreadNotifications,
       cartCount: 0, // Replace with actual Cart DB logic if needed
       carePlan,

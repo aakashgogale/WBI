@@ -6,38 +6,12 @@ const THEME = {
   text: '#111827',
 };
 
-const ServiceCategories = React.memo(({ onCategoryClick, onSeeAllClick }) => {
-  const [displayCategories, setDisplayCategories] = useState([]);
-
-  useEffect(() => {
-    const fetchTrending = async () => {
-      try {
-        const m = await import('../../../../../services/userHomeService');
-        const res = await m.userHomeService.getMostBooked();
-        let fetched = [];
-        if (res.success && res.data && res.data.length > 0) {
-          fetched = res.data.map(s => ({
-            id: s._id,
-            title: s.name,
-            slug: s.slug || s._id
-          }));
-        }
-
-        // Ensure we always have up to 4 dynamic slots + 1 'More'
-        const dynamicSlots = fetched.slice(0, 4);
-        
-        const finalCategories = [...dynamicSlots];
-        finalCategories.push({ id: 'more', title: 'More Services', isMore: true });
-        
-        setDisplayCategories(finalCategories);
-      } catch (error) {
-        console.error("Failed to load dynamic trending services", error);
-        // Minimal absolute fallback to prevent breaking UI if API fails completely
-        setDisplayCategories([{ id: 'more', title: 'More Services', isMore: true }]);
-      }
-    };
-    fetchTrending();
-  }, []);
+const ServiceCategories = React.memo(({ categories = [], onCategoryClick, onSeeAllClick }) => {
+  const displayCategories = React.useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+    const sliced = categories.slice(0, 4);
+    return [...sliced, { id: 'more', title: 'More Services', isMore: true }];
+  }, [categories]);
 
   if (displayCategories.length === 0) return null;
 
@@ -71,7 +45,11 @@ const ServiceCategories = React.memo(({ onCategoryClick, onSeeAllClick }) => {
                   </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[#10AFA5]">
-                    <ServiceIconRenderer categoryName={category.title} className="w-full h-full object-cover" />
+                    {category.icon ? (
+                      <img src={category.icon} className="w-full h-full object-contain" alt={category.title} />
+                    ) : (
+                      <ServiceIconRenderer categoryName={category.title} className="w-full h-full object-cover" />
+                    )}
                   </div>
                 )}
               </div>

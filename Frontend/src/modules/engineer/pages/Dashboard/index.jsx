@@ -4,6 +4,7 @@ import { FiChevronRight, FiAlertCircle, FiClock, FiMapPin, FiSearch, FiBell, FiC
 import { FaWallet, FaBriefcase, FaCalendarAlt, FaStar, FaFileSignature } from 'react-icons/fa';
 import { BsDisplay } from 'react-icons/bs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import api from '../../../../services/api';
 import engineerService from '../../../../services/engineerService';
 import { engineerAuthService } from '../../../../services/authService';
 import { registerFCMToken } from '../../../../services/pushNotificationService';
@@ -40,6 +41,15 @@ const Dashboard = () => {
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
+  const { data: projectsRes, isLoading: projectsLoading } = useQuery({
+    queryKey: ['engineerProjectsDashboard', 'In Progress'],
+    queryFn: async () => {
+      const res = await api.get('/engineers/projects?status=In Progress&page=1&limit=3');
+      return res.data;
+    },
+    staleTime: 1000 * 30, // 30 seconds
+  });
+
   // Derived State
   const workerProfile = useMemo(() => {
     if (profileRes?.success && (profileRes?.engineer || profileRes?.worker)) {
@@ -72,6 +82,10 @@ const Dashboard = () => {
 
   const profileCompletion = completionRes?.success ? (completionRes.data?.completionPercentage || 0) : 0;
 
+  const activeProjectsList = useMemo(() => {
+    return projectsRes?.success ? (projectsRes.data || []) : [];
+  }, [projectsRes]);
+
   useLayoutEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -93,7 +107,7 @@ const Dashboard = () => {
     registerFCMToken('worker', true).catch(err => console.error('FCM registration failed:', err));
 
     const handleUpdate = () => {
-      queryClient.invalidateQueries(['engineerDashboardStats']);
+      queryClient.invalidateQueries({ queryKey: ['engineerDashboardStats'] });
     };
     window.addEventListener('workerJobsUpdated', handleUpdate);
 
@@ -108,7 +122,7 @@ const Dashboard = () => {
     const handleNewDigitalJob = (data) => {
       setIncomingJob(data);
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-      queryClient.invalidateQueries(['engineerDashboardStats']);
+      queryClient.invalidateQueries({ queryKey: ['engineerDashboardStats'] });
     };
 
     socket.on('new_digital_job', handleNewDigitalJob);
@@ -124,7 +138,7 @@ const Dashboard = () => {
       await engineerService.acceptDigitalJob(incomingJob.jobId);
       import('react-hot-toast').then(m => m.default.success('Job accepted!'));
       setIncomingJob(null);
-      queryClient.invalidateQueries(['engineerDashboardStats']);
+      queryClient.invalidateQueries({ queryKey: ['engineerDashboardStats'] });
     } catch (err) {
       import('react-hot-toast').then(m => m.default.error('Failed to accept job'));
     }
@@ -135,7 +149,7 @@ const Dashboard = () => {
     try {
       await engineerService.rejectDigitalJob(incomingJob.jobId);
       setIncomingJob(null);
-      queryClient.invalidateQueries(['engineerDashboardStats']);
+      queryClient.invalidateQueries({ queryKey: ['engineerDashboardStats'] });
     } catch (err) {
       import('react-hot-toast').then(m => m.default.error('Failed to reject job'));
     }
@@ -308,7 +322,7 @@ const Dashboard = () => {
                   try {
                     const newStatus = workerProfile?.status === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
                     await engineerService.updateProfile({ status: newStatus });
-                    setWorkerProfile(prev => ({ ...prev, status: newStatus }));
+                    queryClient.invalidateQueries({ queryKey: ['engineerProfile'] });
                     import('react-hot-toast').then(m => m.default.success(`You are now ${newStatus === 'ONLINE' ? 'Available' : 'Unavailable'} for work!`));
                   } catch (err) {
                     import('react-hot-toast').then(m => m.default.error('Failed to update status'));
@@ -357,92 +371,79 @@ const Dashboard = () => {
             {activeTab === 'New Jobs' && (
               <>
                 {stats?.recentJobs && stats.recentJobs.length > 0 ? (
-                  stats.recentJobs.map((job) => (
-                    <div 
-                      key={job?._id || Math.random()} 
-                      onClick={() => navigate(`/engineer/job/${job?._id}`)}
-                      className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-transform"
-                    >
-                      <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center shrink-0">
-                          <FiCode className="w-5 h-5 text-teal-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="bg-teal-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">New</span>
-                            <span className="text-gray-400 text-xs font-medium">2h ago</span>
+                  stats.recentJobs.map((job) => {
+                    const isDigital = !!job.isDigital;
+                    const jobTitle = job?.serviceId?.name || job?.serviceId?.title || job?.serviceCategory || 'Service Task';
+                    const clientName = isDigital ? (job?.address?.city || 'Digital Client') : (job?.userId?.name || 'Onsite Customer');
+                    const priceDisplay = isDigital 
+                      ? `₹${Number(job?.basePrice || 0).toLocaleString()} - ₹${Number(job?.finalAmount || 0).toLocaleString()}`
+                      : `₹${Number(job?.finalAmount || job?.basePrice || 0).toLocaleString()}`;
+                    
+                    const displayDate = job?.scheduledDate || job?.createdAt
+                      ? new Date(job.scheduledDate || job.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                      : 'N/A';
+
+                    return (
+                      <div 
+                        key={job?._id || Math.random()} 
+                        onClick={() => navigate(isDigital ? `/engineer/projects` : `/engineer/job/${job?._id}`)}
+                        className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 cursor-pointer active:scale-[0.99] transition-transform"
+                      >
+                        <div className="flex gap-4">
+                          <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center shrink-0">
+                            <FiCode className="w-5 h-5 text-teal-600" />
                           </div>
-                          <h3 className="font-bold text-gray-900 text-[15px] mb-1">
-                            {job?.serviceId?.name || job?.serviceCategory || 'Website Development'}
-                          </h3>
-                          <div className="flex items-center gap-1.5 mb-3 text-gray-500 text-xs font-medium">
-                            <BsDisplay className="w-3.5 h-3.5" />
-                            <span>Digital Web Solutions Pvt. Ltd.</span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <div className="flex items-center gap-3 text-xs font-medium text-gray-500">
-                              <span>₹{job?.basePrice || '15,000'} - ₹{job?.finalAmount || '25,000'}</span>
-                              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                              <div className="flex items-center gap-1">
-                                <FiClock className="w-3 h-3" />
-                                <span>5-10 Days</span>
-                              </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${isDigital ? 'bg-indigo-500' : 'bg-teal-500'}`}>
+                                {isDigital ? 'Digital' : 'Onsite'}
+                              </span>
+                              <span className="text-gray-400 text-xs font-medium">{displayDate}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-teal-600 text-xs font-bold bg-teal-50 px-2 py-1 rounded-md">Full Time</span>
-                              <FiChevronRight className="w-4 h-4 text-gray-400" />
+                            <h3 className="font-bold text-gray-900 text-[15px] mb-1 truncate">
+                              {jobTitle}
+                            </h3>
+                            <div className="flex items-center gap-1.5 mb-3 text-gray-500 text-xs font-medium truncate">
+                              <BsDisplay className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{clientName}</span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                              <div className="flex items-center gap-3 text-xs font-medium text-gray-500">
+                                <span>{priceDisplay}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${isDigital ? 'text-indigo-600 bg-indigo-50' : 'text-teal-600 bg-teal-50'}`}>
+                                  {String(job?.status || 'New').replace('_', ' ')}
+                                </span>
+                                <FiChevronRight className="w-4 h-4 text-gray-400" />
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
-                  <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 cursor-pointer">
-                      <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center shrink-0">
-                          <FiCode className="w-5 h-5 text-teal-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="bg-teal-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">New</span>
-                            <span className="text-gray-400 text-xs font-medium">2h ago</span>
-                          </div>
-                          <h3 className="font-bold text-gray-900 text-[15px] mb-1">Website Development</h3>
-                          <div className="flex items-center gap-1.5 mb-3 text-gray-500 text-xs font-medium">
-                            <BsDisplay className="w-3.5 h-3.5" />
-                            <span>Digital Web Solutions Pvt. Ltd.</span>
-                          </div>
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <div className="flex items-center gap-3 text-xs font-medium text-gray-500">
-                              <span>₹15,000 - ₹25,000</span>
-                              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                              <div className="flex items-center gap-1">
-                                <FiClock className="w-3 h-3" />
-                                <span>5-10 Days</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="text-teal-600 text-xs font-bold bg-teal-50 px-2 py-1 rounded-md">Full Time</span>
-                              <FiChevronRight className="w-4 h-4 text-gray-400" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                      <FaBriefcase className="text-gray-300 text-2xl" />
+                    </div>
+                    <h4 className="text-gray-900 font-bold mb-1">No Jobs Found</h4>
+                    <p className="text-gray-500 text-sm max-w-[200px]">You have no recent jobs assigned</p>
                   </div>
                 )}
               </>
             )}
 
             {activeTab !== 'New Jobs' && (
-               <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
-               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                 <FaBriefcase className="text-gray-300 text-2xl" />
-               </div>
-               <h4 className="text-gray-900 font-bold mb-1">No Activity Found</h4>
-               <p className="text-gray-500 text-sm max-w-[200px]">Check back later for updates</p>
-             </div>
+              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                  <FaBriefcase className="text-gray-300 text-2xl" />
+                </div>
+                <h4 className="text-gray-900 font-bold mb-1">No Activity Found</h4>
+                <p className="text-gray-500 text-sm max-w-[200px]">Check back later for updates</p>
+              </div>
             )}
           </div>
         </div>
@@ -454,37 +455,62 @@ const Dashboard = () => {
             <button className="text-teal-600 text-sm font-bold pb-1" onClick={() => navigate('/engineer/projects')}>View All</button>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
-                <BsDisplay className="w-5 h-5 text-teal-600" />
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900 text-[15px] mb-1">Company Website Redesign</h4>
-                <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium">
-                  <FiMapPin className="w-3.5 h-3.5" />
-                  <span>Digital Web Solutions Pvt. Ltd.</span>
-                </div>
-              </div>
-            </div>
+          {projectsLoading ? (
+            <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 animate-pulse h-36"></div>
+          ) : activeProjectsList.length > 0 ? (
+            <div className="space-y-4">
+              {activeProjectsList.map((project) => {
+                const dueDateDisplay = project.dueDate 
+                  ? new Date(project.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                  : 'N/A';
 
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex justify-between items-end mb-2">
-                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden flex-1 mr-3">
-                  <div className="h-full bg-teal-500 rounded-full" style={{ width: '60%' }}></div>
-                </div>
-                <span className="text-gray-900 font-bold text-sm leading-none">60%</span>
-              </div>
-            </div>
+                return (
+                  <div key={project.projectId} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
+                        <BsDisplay className="w-5 h-5 text-teal-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-gray-900 text-[15px] mb-1 truncate">{project.projectName}</h4>
+                        <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium truncate">
+                          <FiMapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{project.clientName}</span>
+                        </div>
+                      </div>
+                    </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-              <span className="text-gray-500 text-xs font-medium">Due Date: 25 Dec 2024</span>
-              <button className="text-teal-600 font-bold text-xs border border-teal-600 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors">
-                View Details
-              </button>
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between items-end mb-2">
+                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden flex-1 mr-3">
+                          <div className="h-full bg-teal-500 rounded-full" style={{ width: `${project.progress || 0}%` }}></div>
+                        </div>
+                        <span className="text-gray-900 font-bold text-sm leading-none">{project.progress || 0}%</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                      <span className="text-gray-500 text-xs font-medium">Due Date: {dueDateDisplay}</span>
+                      <button 
+                        onClick={() => navigate(`/engineer/projects/${project.projectId}`)}
+                        className="text-teal-600 font-bold text-xs border border-teal-600 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                <BsDisplay className="text-gray-300 text-2xl" />
+              </div>
+              <h4 className="text-gray-900 font-bold mb-1">No Projects in Progress</h4>
+              <p className="text-gray-500 text-sm max-w-[200px]">You have no active projects at the moment</p>
+            </div>
+          )}
         </div>
 
       </main>
@@ -494,7 +520,7 @@ const Dashboard = () => {
         jobId={alertJobId}
         onClose={() => setAlertJobId(null)}
         onJobAccepted={(id) => {
-          queryClient.invalidateQueries(['engineerDashboardStats']);
+          queryClient.invalidateQueries({ queryKey: ['engineerDashboardStats'] });
           navigate(`/engineer/job/${id}`);
         }}
       />

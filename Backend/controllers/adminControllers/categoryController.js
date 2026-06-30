@@ -1,6 +1,7 @@
 const Category = require('../../models/Category');
 const { validationResult } = require('express-validator');
 const { SERVICE_STATUS } = require('../../utils/constants');
+const { delCache } = require('../../services/redisService');
 
 /**
  * Get all categories
@@ -201,6 +202,9 @@ const createCategory = async (req, res) => {
       createdBy: req.user.id
     });
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(201).json({
       success: true,
       message: 'Category created successfully',
@@ -340,6 +344,9 @@ const updateCategory = async (req, res) => {
 
     await category.save();
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(200).json({
       success: true,
       message: 'Category updated successfully',
@@ -400,6 +407,9 @@ const deleteCategory = async (req, res) => {
     category.status = SERVICE_STATUS.DELETED;
     await category.save();
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(200).json({
       success: true,
       message: 'Category deleted successfully'
@@ -440,6 +450,9 @@ const updateCategoryOrder = async (req, res) => {
 
     category.homeOrder = Number(homeOrder);
     await category.save();
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(200).json({
       success: true,

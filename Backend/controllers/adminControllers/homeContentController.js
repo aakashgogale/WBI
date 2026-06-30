@@ -1,5 +1,6 @@
 const HomeContent = require('../../models/HomeContent');
 const { validationResult } = require('express-validator');
+const { delCache } = require('../../services/redisService');
 
 /**
  * Get Home Content
@@ -137,6 +138,9 @@ const updateHomeContent = async (req, res) => {
     if (req.body.isHowItWorksVisible !== undefined) homeContent.isHowItWorksVisible = req.body.isHowItWorksVisible;
 
     await homeContent.save();
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(200).json({
       success: true,

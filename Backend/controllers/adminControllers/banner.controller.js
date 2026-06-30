@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Banner = require('../../models/Banner');
 const fs = require('fs');
 const path = require('path');
+const { delCache } = require('../../services/redisService');
 const logFile = path.join(__dirname, '../../debug.log');
 const log = (msg) => {
   try {
@@ -70,7 +71,14 @@ const getBanner = async (req, res) => {
 // @access  Private/Admin
 const createBanner = async (req, res) => {
   try {
+    console.log('[ADMIN_BANNER_SAVE_START] Creating a new banner');
     const banner = await Banner.create(req.body);
+
+    console.log('[ADMIN_BANNER_SAVE_SUCCESS] Banner created successfully. ID: ' + banner._id);
+    console.log('[ADMIN_BANNER_IMAGE_URL] Image URL: ' + banner.imageUrl);
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(201).json({
       success: true,
@@ -90,6 +98,7 @@ const createBanner = async (req, res) => {
 // @access  Private/Admin
 const updateBanner = async (req, res) => {
   try {
+    console.log('[ADMIN_BANNER_SAVE_START] Updating banner ID: ' + req.params.id);
     let banner = await Banner.findById(req.params.id);
 
     if (!banner) {
@@ -100,6 +109,12 @@ const updateBanner = async (req, res) => {
       new: true,
       runValidators: true
     });
+
+    console.log('[ADMIN_BANNER_SAVE_SUCCESS] Banner updated successfully. ID: ' + req.params.id);
+    console.log('[ADMIN_BANNER_IMAGE_URL] Image URL: ' + banner.imageUrl);
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(200).json({
       success: true,
@@ -132,6 +147,9 @@ const deleteBanner = async (req, res) => {
     await banner.save();
     log(`deleteBanner: Banner deleted successfully: ${req.params.id}`);
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(200).json({
       success: true,
       data: {}
@@ -162,6 +180,9 @@ const updateBannerOrder = async (req, res) => {
     });
 
     await Promise.all(updates);
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(200).json({
       success: true,

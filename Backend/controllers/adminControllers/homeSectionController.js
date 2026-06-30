@@ -1,4 +1,5 @@
 const HomeSection = require('../../models/HomeSection');
+const { delCache } = require('../../services/redisService');
 
 // Helper to get or initialize a home section by key
 const getOrInitSection = async (sectionKey) => {
@@ -125,6 +126,9 @@ const createSection = async (req, res) => {
 
     const section = await HomeSection.create(sectionData);
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(201).json({
       success: true,
       message: 'Home section created successfully',
@@ -183,6 +187,9 @@ const updateSectionById = async (req, res) => {
       { $set: updateData },
       { new: true, runValidators: true }
     );
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(200).json({
       success: true,

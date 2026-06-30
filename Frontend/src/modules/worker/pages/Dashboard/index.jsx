@@ -336,7 +336,7 @@ const Dashboard = () => {
         jobId={alertJobId}
         onClose={() => setAlertJobId(null)}
         onJobAccepted={(id) => {
-          fetchDashboardData();
+          queryClient.invalidateQueries({ queryKey: ['workerDashboardStats'] });
           navigate(`/worker/job/${id}`);
         }}
       />

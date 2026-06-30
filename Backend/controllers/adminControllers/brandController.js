@@ -2,6 +2,7 @@ const Brand = require('../../models/Brand');
 const Category = require('../../models/Category');
 const { validationResult } = require('express-validator');
 const { SERVICE_STATUS } = require('../../utils/constants');
+const { delCache } = require('../../services/redisService');
 
 /**
  * Get all brands
@@ -280,6 +281,9 @@ const createBrand = async (req, res) => {
       createdBy: req.user.id
     });
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(201).json({
       success: true,
       message: 'Brand created successfully',
@@ -425,6 +429,9 @@ const updateBrand = async (req, res) => {
 
     await brand.save();
 
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(200).json({
       success: true,
       message: 'Brand updated successfully',
@@ -481,6 +488,9 @@ const deleteBrand = async (req, res) => {
     // Soft delete - set status to deleted
     brand.status = SERVICE_STATUS.DELETED;
     await brand.save();
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
 
     res.status(200).json({
       success: true,

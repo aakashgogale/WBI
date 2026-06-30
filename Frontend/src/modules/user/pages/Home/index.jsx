@@ -56,6 +56,12 @@ const toAssetUrl = (url, width) => {
     const base = (import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com').replace(/\/api$/, '');
     finalUrl = `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
   }
+
+  // Cache buster to ensure uploaded banners/icons/popularBrands update instantly on refreshing
+  const version = Math.floor(Date.now() / 60000); // 1-minute resolution cache buster
+  const separator = finalUrl.includes('?') ? '&' : '?';
+  finalUrl = `${finalUrl}${separator}v=${version}`;
+
   return optimizeCloudinaryUrl(finalUrl, { width: width || 800, quality: 'auto:good', format: 'webp' });
 };
 
@@ -382,6 +388,15 @@ const Home = () => {
         }
         if (newResponse.howItWorks) {
           homeContentToSet.howItWorks = newResponse.howItWorks;
+        }
+        if (newResponse.popularBrands && newResponse.popularBrands.length > 0) {
+          setPopularBrands(newResponse.popularBrands.map(brand => ({
+            id: brand._id || brand.id,
+            title: brand.title,
+            slug: brand.slug,
+            iconUrl: toAssetUrl(brand.iconUrl || brand.logo || brand.imageUrl),
+            badge: brand.badge || ''
+          })));
         }
       }
 
@@ -713,7 +728,7 @@ const Home = () => {
                         price: item.price,
                         originalPrice: item.originalPrice,
                         discount: item.discount,
-                        image: toAssetUrl(item.imageUrl),
+                        image: item.image,
                         targetCategoryId: item.targetCategoryId,
                         slug: item.slug
                       }))}

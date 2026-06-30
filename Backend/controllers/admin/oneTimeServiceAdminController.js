@@ -3,6 +3,7 @@ const ServiceBrand = require('../../models/ServiceBrand');
 const ServiceIssue = require('../../models/ServiceIssue');
 const ServicePackage = require('../../models/ServicePackage');
 const ServicePricingRule = require('../../models/ServicePricingRule');
+const { delCache } = require('../../services/redisService');
 
 // ==========================================
 // OneTimeService APIs
@@ -12,6 +13,11 @@ exports.createService = async (req, res) => {
   try {
     const service = await OneTimeService.create(req.body);
     
+    console.log('[ADMIN_SERVICE_ICON_UPDATED] Service: ' + service.name + ', Icon/Image: ' + service.image);
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     // Create a default pricing rule for the service
     await ServicePricingRule.create({
       serviceId: service._id,
@@ -42,6 +48,12 @@ exports.updateService = async (req, res) => {
       runValidators: true
     });
     if (!service) return res.status(404).json({ success: false, error: 'Service not found' });
+    
+    console.log('[ADMIN_SERVICE_ICON_UPDATED] Service: ' + service.name + ', Icon/Image: ' + service.image);
+
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     res.status(200).json({ success: true, data: service });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -53,6 +65,9 @@ exports.deleteService = async (req, res) => {
     const service = await OneTimeService.findByIdAndDelete(req.params.id);
     if (!service) return res.status(404).json({ success: false, error: 'Service not found' });
     
+    // Invalidate Redis cache
+    await delCache('home_data:*');
+
     // Cleanup related data
     await ServiceBrand.deleteMany({ serviceId: req.params.id });
     await ServiceIssue.deleteMany({ serviceId: req.params.id });
