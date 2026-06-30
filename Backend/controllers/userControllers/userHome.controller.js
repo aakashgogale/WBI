@@ -95,12 +95,9 @@ const getHomeData = async (req, res) => {
       HomeContent.getHomeContent(cityId),
       
       // 8. Fetch Categories (merged from catalogController)
-      Category.find({ 
-        status: 'active', 
-        ...(cityId ? { cityIds: { $in: [cityId, new mongoose.Types.ObjectId(cityId)] } } : { cityIds: { $exists: true } }) 
-      })
-        .select('title slug homeIconUrl homeBadge hasSaleBadge')
-        .sort({ homeOrder: 1 })
+      ServiceCategory.find({ isActive: true, showOnApp: true })
+        .select('name slug icon saleBadgeText')
+        .sort({ displayOrder: 1 })
         .lean(),
 
       // 9. Unread Notifications
@@ -126,11 +123,11 @@ const getHomeData = async (req, res) => {
 
     const categories = categoriesRes.map(cat => ({
       id: cat._id.toString(),
-      title: cat.title,
+      title: cat.name,
       slug: cat.slug,
-      icon: cat.homeIconUrl || '',
-      hasSaleBadge: cat.hasSaleBadge || false,
-      badge: cat.homeBadge || ''
+      icon: cat.icon || '',
+      hasSaleBadge: !!cat.saleBadgeText,
+      badge: cat.saleBadgeText || null
     }));
 
     // If homeContentRes is a Mongoose document (from getHomeContent), convert it
