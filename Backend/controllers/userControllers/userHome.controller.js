@@ -27,15 +27,7 @@ const getHomeData = async (req, res) => {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
 
-    // 1. Fetch active Quick Services (One-Time Services)
-    const quickServices = await OneTimeService.find({ 
-      isActive: true, 
-      categoryType: 'one_time' 
-    })
-    .select('name slug image rating totalReviews startingPrice')
-    .sort({ sortOrder: 1, createdAt: -1 })
-    .limit(12)
-    .lean();
+
 
     const now = new Date();
     // Helper query object to filter by active date range
