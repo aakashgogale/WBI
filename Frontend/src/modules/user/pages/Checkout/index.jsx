@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { io } from 'socket.io-client';
 import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle, FiInfo } from 'react-icons/fi';
 import { MdStar } from 'react-icons/md';
 import { toast } from 'react-hot-toast';

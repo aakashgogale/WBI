@@ -77,7 +77,7 @@ const SearchingTechnician = () => {
     const socket = io(socketBaseUrl, {
       auth: { token },
       path: '/socket.io/',
-      transports: ['polling', 'websocket']
+      transports: ['websocket']
     });
     socketRef.current = socket;
 

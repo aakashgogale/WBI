@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const OneTimeService = require('../../models/OneTimeService');
 const Banner = require('../../models/Banner');
 const Notification = require('../../models/Notification');
-const Category = require('../../models/Category');
+const ServiceCategory = require('../../models/ServiceCategory');
 const SubService = require('../../models/SubService');
 const HomeSection = require('../../models/HomeSection');
 const HomeContent = require('../../models/HomeContent');
@@ -22,10 +22,12 @@ const getHomeData = async (req, res) => {
     
     console.log('[USER_HOME_FETCH_START] Fetching user home data for cityId: ' + cityId);
 
-    // Set headers to disable browser caching
-    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+    // Set headers to disable browser caching if supported
+    if (res && typeof res.setHeader === 'function') {
+      res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
 
 
 

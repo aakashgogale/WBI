@@ -6,7 +6,6 @@ import {
   FiBox, FiCheckSquare, FiDollarSign, FiShoppingBag, FiArrowUpRight, FiArrowDownRight
 } from 'react-icons/fi';
 import api from '../../../../services/api';
-import { io } from 'socket.io-client';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const iconMap = {

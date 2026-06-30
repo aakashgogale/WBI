@@ -79,6 +79,7 @@ export const SocketProvider = ({ children }) => {
 
   // Determine user type based on path
   const getUserType = (path) => {
+    if (path.includes('/login') || path.includes('/signup')) return null;
     if (path.startsWith('/vendor')) return 'vendor';
     if (path.startsWith('/worker')) return 'worker';
     if (path.startsWith('/admin')) return 'admin';
@@ -152,7 +153,7 @@ export const SocketProvider = ({ children }) => {
       auth: {
         token: token
       },
-      transports: ['polling', 'websocket'], // Try polling first for reliability, then upgrade
+      transports: ['websocket'], // Use WebSocket directly to prevent CORS/polling errors
       withCredentials: true,
       secure: SOCKET_URL.startsWith('https'),
       rejectUnauthorized: false,

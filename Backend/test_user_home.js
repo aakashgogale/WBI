@@ -8,7 +8,7 @@ mongoose.connect(process.env.MONGODB_URI).then(async () => {
     status: (s) => ({
       json: (data) => {
         console.log('User Home Status:', s);
-        console.log('Banners:', JSON.stringify(data.banners, null, 2));
+        console.log('Data:', JSON.stringify(data, null, 2));
         mongoose.disconnect();
       }
     })

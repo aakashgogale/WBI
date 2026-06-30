@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, lazy, Suspense, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
@@ -266,10 +267,135 @@ const Home = () => {
     }
   }, []);
 
-  const [categories, setCategories] = useState([]);
-  const [homeContent, setHomeContent] = useState(null);
-  const [popularBrands, setPopularBrands] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cityId = currentCity?._id || currentCity?.id;
+
+  // React Query useQuery migration to optimize caching & eliminate skeleton flashes
+  const { data: homeData, isLoading: homeQueryLoading } = useQuery({
+    queryKey: ['homeData', cityId],
+    queryFn: async () => {
+      const res = await userHomeService.getHomeData(cityId);
+      return res || {};
+    },
+    staleTime: 5 * 60 * 1000, // Keep fresh for 5 mins
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 mins
+    placeholderData: (previousData) => previousData, // keepPreviousData replacement in react-query v5
+    refetchOnWindowFocus: false
+  });
+
+  const mappedData = React.useMemo(() => {
+    if (!homeData || !homeData.success) {
+      return {
+        categories: [],
+        homeContent: null,
+        popularBrands: []
+      };
+    }
+
+    let categoriesToSet = [];
+    let homeContentToSet = {};
+
+    // 1. Categories
+    if (homeData.categories && homeData.categories.length > 0) {
+      categoriesToSet = homeData.categories.map(cat => ({
+        id: cat.id,
+        title: cat.title,
+        slug: cat.slug,
+        icon: toAssetUrl(cat.icon),
+        hasSaleBadge: cat.hasSaleBadge,
+        badge: cat.badge
+      }));
+    } else if (homeData.quickServices && homeData.quickServices.length > 0) {
+      categoriesToSet = homeData.quickServices.map(qs => ({
+        id: qs._id,
+        title: qs.name,
+        slug: qs.slug,
+        icon: toAssetUrl(qs.image || qs.icon, 150),
+        hasSaleBadge: false,
+        badge: null
+      }));
+    }
+
+    // 2. Home Content Config
+    if (homeData.homeContent) {
+      homeContentToSet = { ...homeData.homeContent };
+    } else {
+      homeContentToSet = {
+        isCategoriesVisible: true,
+        isPromosVisible: true,
+        isBookedVisible: true,
+        isHowItWorksVisible: true
+      };
+    }
+
+    const dbOffers = homeData.offers || [];
+    homeContentToSet.offerBanners = dbOffers.map((offer, idx) => ({
+      id: offer._id,
+      imageUrl: toAssetUrl(offer.imageUrl || offer.mobileImageUrl, 1600),
+      route: offer.redirectValue || '/user/home',
+      order: offer.sortOrder || idx
+    }));
+
+    const dbPromos = homeData.promos || [];
+    homeContentToSet.promos = dbPromos.map((promo, idx) => ({
+      id: promo._id,
+      badge: promo.badge || 'PROMO',
+      title: promo.title,
+      subtitle: promo.subtitle,
+      description: promo.description,
+      imageUrl: promo.imageUrl ? toAssetUrl(promo.imageUrl, 1600) : null,
+      route: promo.redirectValue || '/user/home',
+      order: promo.sortOrder || idx
+    }));
+
+    if (homeData.mostBookedServices && homeData.mostBookedServices.length > 0) {
+      homeContentToSet.booked = homeData.mostBookedServices.map(service => ({
+        id: service._id,
+        title: service.name,
+        slug: service.slug,
+        image: toAssetUrl(service.image || service.imageUrl, 400),
+        rating: service.rating || "4.8",
+        reviews: service.totalReviews ? `${service.totalReviews}+` : "10k+",
+        price: service.startingPrice || 0,
+        originalPrice: service.startingPrice ? service.startingPrice + 50 : 0,
+        discount: "10% Off",
+        targetCategoryId: service._id
+      }));
+    }
+    
+    if (homeData.banners && homeData.banners.length > 0) {
+      homeContentToSet.heroBanners = homeData.banners;
+    }
+
+    if (homeData.carePlan) {
+      homeContentToSet.carePlan = homeData.carePlan;
+    }
+    if (homeData.whyChoose) {
+      homeContentToSet.whyChoose = homeData.whyChoose;
+    }
+    if (homeData.howItWorks) {
+      homeContentToSet.howItWorks = homeData.howItWorks;
+    }
+
+    let popularBrandsToSet = [];
+    if (homeData.popularBrands && homeData.popularBrands.length > 0) {
+      popularBrandsToSet = homeData.popularBrands.map(brand => ({
+        id: brand._id || brand.id,
+        title: brand.title,
+        slug: brand.slug,
+        iconUrl: toAssetUrl(brand.iconUrl || brand.logo || brand.imageUrl),
+        badge: brand.badge || ''
+      }));
+    }
+
+    return {
+      categories: categoriesToSet,
+      homeContent: homeContentToSet,
+      popularBrands: popularBrandsToSet
+    };
+  }, [homeData]);
+
+  const { categories, homeContent, popularBrands } = mappedData;
+  const loading = homeQueryLoading;
 
   // Handle scroll separately (only when needed)
   useEffect(() => {
@@ -282,147 +408,6 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-  // Fetch categories and home content on mount (and when city changes)
-  const fetchData = useCallback(async (showSkeleton = true) => {
-    try {
-      if (showSkeleton) setLoading(true);
-      const cityId = currentCity?._id || currentCity?.id;
-
-      // Use the newly consolidated highly optimized user API
-      const newResponse = await userHomeService.getHomeData(cityId).catch(() => ({}));
-
-      let categoriesToSet = [];
-      let homeContentToSet = {};
-
-      if (newResponse && newResponse.success) {
-        // 1. Categories
-        if (newResponse.categories && newResponse.categories.length > 0) {
-          categoriesToSet = newResponse.categories.map(cat => ({
-            id: cat.id,
-            title: cat.title,
-            slug: cat.slug,
-            icon: toAssetUrl(cat.icon),
-            hasSaleBadge: cat.hasSaleBadge,
-            badge: cat.badge
-          }));
-        } else if (newResponse.quickServices && newResponse.quickServices.length > 0) {
-          categoriesToSet = newResponse.quickServices.map(qs => ({
-            id: qs._id,
-            title: qs.name,
-            slug: qs.slug,
-            icon: toAssetUrl(qs.image || qs.icon, 150),
-            hasSaleBadge: false,
-            badge: null
-          }));
-        }
-
-        // 2. Home Content Config
-        if (newResponse.homeContent) {
-          homeContentToSet = { ...newResponse.homeContent };
-        } else {
-          homeContentToSet = {
-            isCategoriesVisible: true,
-            isPromosVisible: true,
-            isBookedVisible: true,
-            isHowItWorksVisible: true
-          };
-        }
-
-        const dbOffers = newResponse.offers || [];
-
-        homeContentToSet.offerBanners = dbOffers.map((offer, idx) => ({
-          id: offer._id,
-          imageUrl: toAssetUrl(offer.imageUrl || offer.mobileImageUrl, 1600),
-          route: offer.redirectValue || '/user/home',
-          order: offer.sortOrder || idx
-        }));
-
-        const dbPromos = newResponse.promos || [];
-
-        homeContentToSet.promos = dbPromos.map((promo, idx) => ({
-          id: promo._id,
-          badge: promo.badge || 'PROMO',
-          title: promo.title,
-          subtitle: promo.subtitle,
-          description: promo.description,
-          imageUrl: promo.imageUrl ? toAssetUrl(promo.imageUrl, 1600) : null,
-          route: promo.redirectValue || '/user/home',
-          order: promo.sortOrder || idx
-        }));
-
-        if (newResponse.mostBookedServices && newResponse.mostBookedServices.length > 0) {
-          homeContentToSet.booked = newResponse.mostBookedServices.map(service => ({
-            id: service._id,
-            title: service.name,
-            slug: service.slug,
-            image: toAssetUrl(service.image || service.imageUrl, 400),
-            rating: service.rating || "4.8",
-            reviews: service.totalReviews ? `${service.totalReviews}+` : "10k+",
-            price: service.startingPrice || 0,
-            originalPrice: service.startingPrice ? service.startingPrice + 50 : 0,
-            discount: "10% Off",
-            targetCategoryId: service._id
-          }));
-        }
-        
-        if (newResponse.banners && newResponse.banners.length > 0) {
-            // Banners mapping could be used in PromoCarousel
-            homeContentToSet.heroBanners = newResponse.banners;
-        }
-
-        if (newResponse.carePlan) {
-          homeContentToSet.carePlan = newResponse.carePlan;
-        }
-        if (newResponse.whyChoose) {
-          homeContentToSet.whyChoose = newResponse.whyChoose;
-        }
-        if (newResponse.howItWorks) {
-          homeContentToSet.howItWorks = newResponse.howItWorks;
-        }
-        if (newResponse.popularBrands && newResponse.popularBrands.length > 0) {
-          setPopularBrands(newResponse.popularBrands.map(brand => ({
-            id: brand._id || brand.id,
-            title: brand.title,
-            slug: brand.slug,
-            iconUrl: toAssetUrl(brand.iconUrl || brand.logo || brand.imageUrl),
-            badge: brand.badge || ''
-          })));
-        }
-      }
-
-      setCategories(categoriesToSet);
-      setHomeContent(homeContentToSet);
-      if (showSkeleton) setLoading(false);
-    } catch (error) {
-      if (showSkeleton) setLoading(false);
-    }
-  }, [currentCity]);
-
-  // Initial fetch on mount and when city changes
-  useEffect(() => {
-    fetchData(true);
-  }, [fetchData]);
-
-  // Automatic silence update when window gets focus or mobile browser gets visible
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchData(false);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchData(false);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [fetchData]);
   // Open category modal from navigation state (e.g. from Cart 'Add Services')
   useEffect(() => {
     if (!loading && categories.length > 0 && (location.state?.openCategoryId || location.state?.openCategoryName)) {

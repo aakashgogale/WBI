@@ -19,6 +19,36 @@
   style="background-color: #ffffff; background: linear-gradient(to bottom, rgba(0, 166, 166, 0.03) 0%, rgba(41, 173, 129, 0.02) 10%, #ffffff 20%); margin: 0; padding: 0;">
   <div id="root"
     style="background-color: #ffffff; background: linear-gradient(to bottom, rgba(0, 166, 166, 0.03) 0%, rgba(41, 173, 129, 0.02) 10%, #ffffff 20%); min-height: 100dvh;">
+    <!-- Inline Beautiful Splash Shell to fix NO_FCP and blank screen instantly -->
+    <div style="margin: 0 auto; max-width: 480px; width: 100%; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Poppins', -apple-system, sans-serif; box-sizing: border-box; padding: 20px;">
+      <div style="text-align: center;">
+        <div style="position: relative; display: inline-block; margin-bottom: 24px;">
+          <!-- Pulse background layer -->
+          <div style="position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px; background: radial-gradient(circle, rgba(0, 166, 166, 0.15) 0%, transparent 70%); border-radius: 28px; animation: wbiPulse 2s infinite ease-in-out;"></div>
+          <!-- Logo image placeholder / actual logo -->
+          <img src="/logo/WBILogo.jpg" style="width: 88px; height: 88px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0, 166, 166, 0.15); border: 2px solid #ffffff; position: relative; z-index: 2;" alt="WBI Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <!-- Fallback initials if image fails or before it loads -->
+          <div style="width: 88px; height: 88px; border-radius: 24px; background: linear-gradient(135deg, #00a6a6, #29ad81); box-shadow: 0 10px 25px rgba(0, 166, 166, 0.15); display: none; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 28px; border: 2px solid #ffffff; position: relative; z-index: 2;">WBI</div>
+        </div>
+        <h1 style="color: #0b8f8f; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">WBI</h1>
+        <p style="color: #64748b; font-size: 13px; margin: 6px 0 24px 0; font-weight: 400;">Your Home Services, Simplified</p>
+        <!-- Modern progress bar -->
+        <div style="width: 140px; height: 4px; background-color: #e2e8f0; border-radius: 10px; margin: 0 auto; overflow: hidden; position: relative;">
+          <div style="position: absolute; top: 0; left: 0; height: 100%; width: 50%; background: linear-gradient(90deg, #00a6a6, #29ad81); border-radius: 10px; animation: wbiProgress 1.6s infinite cubic-bezier(0.4, 0, 0.2, 1);"></div>
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes wbiPulse {
+        0%, 100% { transform: scale(0.95); opacity: 0.5; }
+        50% { transform: scale(1.08); opacity: 1; }
+      }
+      @keyframes wbiProgress {
+        0% { left: -50%; width: 30%; }
+        50% { width: 40%; }
+        100% { left: 100%; width: 30%; }
+      }
+    </style>
   </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
