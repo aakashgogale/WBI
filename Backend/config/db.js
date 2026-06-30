@@ -5,6 +5,10 @@ const mongoose = require('mongoose');
  */
 const connectDB = async () => {
   const primaryUri = process.env.MONGODB_URI;
+  
+  // Disable query buffering globally to avoid memory exhaustion during database timeouts/retries
+  mongoose.set('bufferCommands', false);
+
   const connectWithRetry = async () => {
     try {
       console.log('Attempting to connect to MongoDB Atlas...');

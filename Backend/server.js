@@ -50,6 +50,7 @@ const allowedOrigins = [
   'https://WBI.in',
   'https://api.WBI.in',
   'https://app.wbinfs.com',
+  'https://www.app.wbinfs.com',
   'https://www.wbinfs.com',
   'https://wbinfs.com',
   'https://api.wbinfs.com'

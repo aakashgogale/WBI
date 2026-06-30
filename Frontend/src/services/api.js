@@ -3,7 +3,11 @@ import { apiCache } from '../utils/apiCache';
 
 // API Base URL
 // Fallback dynamically to production URL if not explicitly provided in .env
-const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com/api';
+let rawBaseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://app.wbinfs.com/api';
+if (rawBaseUrl && !rawBaseUrl.endsWith('/api') && !rawBaseUrl.endsWith('/api/')) {
+  rawBaseUrl = rawBaseUrl.replace(/\/$/, '') + '/api';
+}
+const API_BASE_URL = rawBaseUrl;
 
 // Create axios instance
 const api = axios.create({

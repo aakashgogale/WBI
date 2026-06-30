@@ -107,50 +107,52 @@ const OurServicesSection = () => {
       {/* Service Cards */}
       <div className="flex overflow-x-auto gap-3 pb-4 px-4 scrollbar-hide snap-x pt-2">
         <AnimatePresence mode="wait">
-          {activeServices.length > 0 ? (
-            activeServices.map((service, index) => {
-              return (
-              <motion.div
-                key={service.serviceId}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-                onClick={() => handleServiceClick(service)}
-                className="bg-white rounded-xl p-2.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center min-w-[92px] max-w-[92px] snap-center flex-shrink-0 cursor-pointer active:scale-[0.98] transition-transform"
-              >
-                <div className="w-12 h-12 mb-1.5 relative flex items-center justify-center shrink-0 rounded-full overflow-hidden shadow-sm border border-gray-50">
-                  <ServiceIconRenderer categoryName={service.name} className="w-full h-full object-cover drop-shadow-sm" />
-                </div>
-                <h3 className="text-[10px] font-bold text-[#0F172A] text-center leading-tight mb-1 line-clamp-2 min-h-[26px] flex items-center">
-                  {service.name}
-                </h3>
-                <div className="flex items-center gap-1 text-[9px] font-medium text-gray-400">
-                  <span className="text-[#F59E0B] flex items-center gap-0.5">⭐ {service.rating || '4.8'}</span>
-                  <span>({service.reviewCount || '230'})</span>
-                </div>
-              </motion.div>
-            )})
-          ) : (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="w-full py-6 flex items-center justify-center text-xs text-gray-400 font-medium"
-            >
-              No services available right now.
-            </motion.div>
-          )}
-          {activeServices.length > 0 && (
-            <motion.div
-              onClick={() => navigate('/user/services')}
-              className="bg-gray-50 rounded-xl p-2.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center min-w-[92px] max-w-[92px] snap-center flex-shrink-0 cursor-pointer active:scale-[0.98] transition-transform"
-            >
-              <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 text-[#10AFA5]">
-                <FiChevronRight className="w-4 h-4" />
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex gap-3 w-full"
+          >
+            {activeServices.length > 0 ? (
+              activeServices.map((service, index) => {
+                return (
+                  <div
+                    key={service.serviceId}
+                    onClick={() => handleServiceClick(service)}
+                    className="bg-white rounded-xl p-2.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center min-w-[92px] max-w-[92px] snap-center flex-shrink-0 cursor-pointer active:scale-[0.98] transition-transform"
+                  >
+                    <div className="w-12 h-12 mb-1.5 relative flex items-center justify-center shrink-0 rounded-full overflow-hidden shadow-sm border border-gray-50">
+                      <ServiceIconRenderer categoryName={service.name} className="w-full h-full object-cover drop-shadow-sm" />
+                    </div>
+                    <h3 className="text-[10px] font-bold text-[#0F172A] text-center leading-tight mb-1 line-clamp-2 min-h-[26px] flex items-center">
+                      {service.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-[9px] font-medium text-gray-400">
+                      <span className="text-[#F59E0B] flex items-center gap-0.5">⭐ {service.rating || '4.8'}</span>
+                      <span>({service.reviewCount || '230'})</span>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="w-full py-6 flex items-center justify-center text-xs text-gray-400 font-medium">
+                No services available right now.
               </div>
-              <span className="text-[10px] font-bold text-[#10AFA5] text-center">View All<br/>Services</span>
-            </motion.div>
-          )}
+            )}
+            {activeServices.length > 0 && (
+              <div
+                onClick={() => navigate('/user/services')}
+                className="bg-gray-50 rounded-xl p-2.5 shadow-sm border border-gray-100 flex flex-col items-center justify-center min-w-[92px] max-w-[92px] snap-center flex-shrink-0 cursor-pointer active:scale-[0.98] transition-transform"
+              >
+                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center mb-2 text-[#10AFA5]">
+                  <FiChevronRight className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-bold text-[#10AFA5] text-center">View All<br/>Services</span>
+              </div>
+            )}
+          </motion.div>
         </AnimatePresence>
       </div>
     </section>

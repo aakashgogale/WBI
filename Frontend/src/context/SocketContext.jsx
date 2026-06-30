@@ -66,12 +66,16 @@ const SwipeableNotification = ({ t, data, onClick }) => {
 
 const SocketContext = createContext(null);
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const activeTokenRef = React.useRef(null);
+  const activeUserTypeRef = React.useRef(null);
+  const activeSocketRef = React.useRef(null);
 
   // Determine user type based on path
   const getUserType = (path) => {
@@ -87,10 +91,13 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (!userType) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
+      if (activeSocketRef.current) {
+        activeSocketRef.current.disconnect();
+        activeSocketRef.current = null;
       }
+      setSocket(null);
+      activeTokenRef.current = null;
+      activeUserTypeRef.current = null;
       return;
     }
 
@@ -117,43 +124,47 @@ export const SocketProvider = ({ children }) => {
     const token = localStorage.getItem(tokenKey);
     // If no token, we don't connect
     if (!token) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
+      if (activeSocketRef.current) {
+        activeSocketRef.current.disconnect();
+        activeSocketRef.current = null;
       }
+      setSocket(null);
+      activeTokenRef.current = null;
+      activeUserTypeRef.current = null;
       return;
     }
 
-    // Reuse existing socket if userType hasn't changed (effectively) is handled by React deps
-    // But basic useEffect will re-run if dependencies change.
-    // userType changes -> re-run.
-
-    // Disconnect previous if any
-    if (socket) {
-      // Optimization: if we are already connected with same token/auth, maybe don't reconnect?
-      // But determining that is hard. Simpler to reconnect.
-      socket.disconnect();
+    // Reuse existing socket if connection, token, and userType are already active and matching
+    if (activeSocketRef.current && activeSocketRef.current.connected && activeTokenRef.current === token && activeUserTypeRef.current === userType) {
+      return;
     }
 
-    // Use HTTP URL for socket.io client - it handles WS upgrade automatically
-    const socketBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'https://app.wbinfs.com';
+    // Disconnect previous if any
+    if (activeSocketRef.current) {
+      activeSocketRef.current.disconnect();
+      activeSocketRef.current = null;
+    }
 
-    const newSocket = io(socketBaseUrl, {
+    activeTokenRef.current = token;
+    activeUserTypeRef.current = userType;
+
+    const newSocket = io(SOCKET_URL, {
       auth: {
         token: token
       },
-      transports: ['polling', 'websocket'], // Try polling first for reliability
-      path: '/socket.io/',
-      secure: true,
+      transports: ['polling', 'websocket'], // Try polling first for reliability, then upgrade
+      withCredentials: true,
+      secure: SOCKET_URL.startsWith('https'),
       rejectUnauthorized: false,
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
       autoConnect: true
     });
 
+    activeSocketRef.current = newSocket;
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -447,7 +458,7 @@ export const SocketProvider = ({ children }) => {
     return () => {
       newSocket.disconnect();
     };
-  }, [userType]); // Only re-run if userType changes. Navigate is stable.
+  }, [userType, location.pathname]); // Re-evaluate on path transitions to check for token/auth changes (excluding socket to prevent loop)
 
   return (
     <SocketContext.Provider value={socket}>

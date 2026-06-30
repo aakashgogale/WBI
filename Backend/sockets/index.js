@@ -5,13 +5,34 @@ const { authenticateSocket } = require('../middleware/authMiddleware');
 let io = null;
 
 const initializeSocket = (server) => {
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'https://app.wbinfs.com',
+    'https://www.app.wbinfs.com',
+    'https://wbinfs.com',
+    'https://api.wbinfs.com'
+  ].filter(Boolean);
+
   io = new Server(server, {
     pingTimeout: 60000,
     pingInterval: 25000,
     cors: {
-      origin: [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'].filter(Boolean),
+      origin: function (origin, callback) {
+        // Allow requests with no origin
+        if (!origin) return callback(null, true);
+        // Allow if in allowed list or is a subdomain of wbinfs.com or vercel
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('wbinfs.com') || origin.includes('.vercel.app')) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
-      methods: ["GET", "POST"]
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     transports: ['polling', 'websocket']
   });
