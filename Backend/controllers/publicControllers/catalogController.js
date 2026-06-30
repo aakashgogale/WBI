@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Category = require('../../models/Category');
 const Brand = require('../../models/Brand');
 const Service = require('../../models/UserService');
@@ -15,12 +16,15 @@ const { getCache, setCache } = require('../../services/redisService');
  */
 const getPublicCategories = async (req, res) => {
   try {
-    const { cityId } = req.query;
+    let { cityId } = req.query;
+    if (!cityId || cityId === 'undefined' || cityId === 'null' || !mongoose.Types.ObjectId.isValid(cityId)) {
+      cityId = null;
+    }
 
     // Build query
     const query = { status: 'active' };
     if (cityId) {
-      query.cityIds = cityId;
+      query.cityIds = { $in: [cityId, new mongoose.Types.ObjectId(cityId)] };
     }
 
     const categories = await Category.find(query)
@@ -58,12 +62,15 @@ const getPublicCategories = async (req, res) => {
  */
 const getPublicBrands = async (req, res) => {
   try {
-    const { categoryId, categorySlug, search, cityId } = req.query;
+    let { categoryId, categorySlug, search, cityId } = req.query;
+    if (!cityId || cityId === 'undefined' || cityId === 'null' || !mongoose.Types.ObjectId.isValid(cityId)) {
+      cityId = null;
+    }
 
     // Build query
     const query = { status: 'active' };
     if (categoryId) query.categoryIds = categoryId;
-    if (cityId) query.cityIds = cityId;
+    if (cityId) query.cityIds = { $in: [cityId, new mongoose.Types.ObjectId(cityId)] };
 
     if (search) {
       const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -79,7 +86,7 @@ const getPublicBrands = async (req, res) => {
     if (categorySlug) {
       const catQuery = { slug: categorySlug, status: 'active' };
       if (cityId) {
-        catQuery.cityIds = cityId;
+        catQuery.cityIds = { $in: [cityId, new mongoose.Types.ObjectId(cityId)] };
       }
 
       let category = await Category.findOne(catQuery).lean();
@@ -285,7 +292,10 @@ const getPublicServices = async (req, res) => {
  */
 const getPublicHomeContent = async (req, res) => {
   try {
-    const { cityId } = req.query;
+    let { cityId } = req.query;
+    if (!cityId || cityId === 'undefined' || cityId === 'null' || !mongoose.Types.ObjectId.isValid(cityId)) {
+      cityId = null;
+    }
     const homeContent = await HomeContent.getHomeContent(cityId);
 
     if (!homeContent) {
@@ -391,8 +401,16 @@ const getPublicHomeContent = async (req, res) => {
  */
 const getPublicHomeData = async (req, res) => {
   try {
-    const { cityId } = req.query;
+    let { cityId } = req.query;
+    if (!cityId || cityId === 'undefined' || cityId === 'null' || !mongoose.Types.ObjectId.isValid(cityId)) {
+      cityId = null;
+    }
     
+    // Set headers to disable browser caching on frontend clients
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     // Check cache first
     const cacheKey = `home_data:${cityId || 'default'}`;
     const cachedData = await getCache(cacheKey);
@@ -403,7 +421,10 @@ const getPublicHomeData = async (req, res) => {
 
     // Fetch all in parallel
     const [categoriesRes, homeContent, popularBrandsRes] = await Promise.all([
-      Category.find({ status: 'active', cityIds: cityId ? cityId : { $exists: true } })
+      Category.find({ 
+        status: 'active', 
+        ...(cityId ? { cityIds: { $in: [cityId, new mongoose.Types.ObjectId(cityId)] } } : { cityIds: { $exists: true } }) 
+      })
         .select('title slug homeIconUrl homeBadge hasSaleBadge')
         .sort({ homeOrder: 1 })
         .lean(),
@@ -411,7 +432,7 @@ const getPublicHomeData = async (req, res) => {
       Brand.find({ 
         status: 'active', 
         $or: [{ isPopular: true }, { isFeatured: true }],
-        cityIds: cityId ? cityId : { $exists: true } 
+        ...(cityId ? { cityIds: { $in: [cityId, new mongoose.Types.ObjectId(cityId)] } } : { cityIds: { $exists: true } }) 
       })
         .select('title slug iconUrl badge')
         .sort({ rating: -1, totalBookings: -1, createdAt: -1 })
@@ -533,12 +554,15 @@ const getPublicHomeData = async (req, res) => {
  */
 const getPopularBrands = async (req, res) => {
   try {
-    const { cityId } = req.query;
+    let { cityId } = req.query;
+    if (!cityId || cityId === 'undefined' || cityId === 'null' || !mongoose.Types.ObjectId.isValid(cityId)) {
+      cityId = null;
+    }
 
     const popularBrandsRes = await Brand.find({ 
       status: 'active', 
       $or: [{ isPopular: true }, { isFeatured: true }],
-      ...(cityId ? { cityIds: cityId } : {}) 
+      ...(cityId ? { cityIds: { $in: [cityId, new mongoose.Types.ObjectId(cityId)] } } : {}) 
     })
       .select('title slug iconUrl badge')
       .sort({ rating: -1, totalBookings: -1, createdAt: -1 })

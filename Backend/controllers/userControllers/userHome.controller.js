@@ -1,9 +1,11 @@
+const mongoose = require('mongoose');
 const OneTimeService = require('../../models/OneTimeService');
 const Banner = require('../../models/Banner');
 const Notification = require('../../models/Notification');
 const ServiceCategory = require('../../models/ServiceCategory');
 const SubService = require('../../models/SubService');
 const HomeSection = require('../../models/HomeSection');
+const HomeContent = require('../../models/HomeContent');
 const Brand = require('../../models/Brand');
 // Import Cart logic if it's stored in DB, otherwise cart count might be handled purely frontend or different logic.
 // Based on typical implementation, we might not fetch cart from DB if it's local storage, but assuming DB here if auth'd.
@@ -13,12 +15,15 @@ const Brand = require('../../models/Brand');
 // @access  Public/Private
 const getHomeData = async (req, res) => {
   try {
-    const { cityId } = req.query; // If needed for location-based filtering later
+    let { cityId } = req.query; // If needed for location-based filtering later
+    if (!cityId || cityId === 'undefined' || cityId === 'null' || !mongoose.Types.ObjectId.isValid(cityId)) {
+      cityId = null;
+    }
     
     console.log('[USER_HOME_FETCH_START] Fetching user home data for cityId: ' + cityId);
 
     // Set headers to disable browser caching
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
 
@@ -41,71 +46,97 @@ const getHomeData = async (req, res) => {
       ]
     };
 
-    // 2. Fetch Banners (home_banner)
-    const banners = await Banner.find({ 
-      isActive: true, 
-      isDeleted: { $ne: true },
-      bannerType: 'home_banner',
-      ...activeDateFilter
-    })
-    .sort({ sortOrder: 1, createdAt: -1 })
-    .lean();
+    // Run all independent queries concurrently
+    const [
+      quickServices,
+      banners,
+      offers,
+      promos,
+      mostBookedServices,
+      popularBrands,
+      sections,
+      homeContentRes,
+      categoriesRes,
+      unreadNotifications
+    ] = await Promise.all([
+      // 1. Fetch active Quick Services
+      OneTimeService.find({ isActive: true, categoryType: 'one_time' })
+        .select('name slug image rating totalReviews startingPrice')
+        .sort({ sortOrder: 1, createdAt: -1 })
+        .limit(12)
+        .lean(),
+        
+      // 2. Fetch Banners
+      Banner.find({ isActive: true, isDeleted: { $ne: true }, bannerType: 'home_banner', ...activeDateFilter })
+        .sort({ sortOrder: 1, createdAt: -1 }).lean(),
+        
+      // 3. Fetch Offers
+      Banner.find({ isActive: true, isDeleted: { $ne: true }, bannerType: 'offer_banner', ...activeDateFilter })
+        .sort({ sortOrder: 1, createdAt: -1 }).lean(),
+        
+      // 4. Fetch Promos
+      Banner.find({ isActive: true, isDeleted: { $ne: true }, bannerType: 'promo_banner', ...activeDateFilter })
+        .sort({ sortOrder: 1, createdAt: -1 }).lean(),
+        
+      // 5. Fetch Most Booked
+      OneTimeService.find({ isActive: true, categoryType: 'one_time' })
+        .select('name slug image rating totalReviews startingPrice')
+        .sort({ rating: -1, totalReviews: -1 })
+        .limit(10)
+        .lean(),
+        
+      // 6. Fetch Popular Brands
+      Brand.find({ 
+        status: 'active', 
+        $or: [{ isPopular: true }, { isFeatured: true }],
+        ...(cityId ? { cityIds: { $in: [cityId, new mongoose.Types.ObjectId(cityId)] } } : { cityIds: { $exists: true } })
+      })
+      .select('title slug iconUrl logo imageUrl badge')
+      .sort({ rating: -1, totalBookings: -1, createdAt: -1 })
+      .limit(30)
+      .lean(),
+      
+      // 7. Fetch Home Sections
+      HomeSection.find({ isActive: true }).lean(),
+      
+      // 7b. Fetch Global Home Content config
+      HomeContent.findOne({ isActive: true }).lean(),
+      
+      // 8. Fetch Categories (merged from catalogController)
+      ServiceCategory.find({ isActive: true, showOnApp: true })
+        .select('name slug icon saleBadgeText')
+        .sort({ displayOrder: 1 })
+        .lean(),
 
-    // 3. Fetch Offers (offer_banner)
-    const offers = await Banner.find({ 
-      isActive: true, 
-      isDeleted: { $ne: true },
-      bannerType: 'offer_banner',
-      ...activeDateFilter
-    })
-    .sort({ sortOrder: 1, createdAt: -1 })
-    .lean();
+      // 9. Unread Notifications
+      req.user ? Notification.countDocuments({ user: req.user._id, isRead: false }) : Promise.resolve(0)
+    ]);
 
-    // 4. Fetch Promos (promo_banner)
-    const promos = await Banner.find({ 
-      isActive: true, 
-      isDeleted: { $ne: true },
-      bannerType: 'promo_banner',
-      ...activeDateFilter
-    })
-    .sort({ sortOrder: 1, createdAt: -1 })
-    .lean();
-
-    // 5. Fetch Most Booked Services (Using OneTimeService ordered by rating/bookings if available)
-    const mostBookedServices = await OneTimeService.find({ 
-      isActive: true, 
-      categoryType: 'one_time' 
-    })
-    .select('name slug image rating totalReviews startingPrice')
-    .sort({ rating: -1, totalReviews: -1 }) // Sort by highest rating/reviews to simulate most booked
-    .limit(10)
-    .lean();
-
-    // 6. Fetch Popular Brands dynamically
-    const popularBrands = await Brand.find({ 
-      status: 'active', 
-      $or: [{ isPopular: true }, { isFeatured: true }],
-      ...(cityId ? { cityIds: cityId } : {})
-    })
-    .select('title slug iconUrl logo imageUrl badge')
-    .sort({ rating: -1, totalBookings: -1, createdAt: -1 })
-    .limit(30)
-    .lean();
-
-    // 7. Notifications Count (If user is authenticated)
-    let unreadNotifications = 0;
-    if (req.user) {
-      unreadNotifications = await Notification.countDocuments({ 
-        user: req.user._id, 
-        isRead: false 
-      });
-    }
-
-    // 8. Fetch dynamic Home Sections (Care Plan, Why Choose, How It Works)
-    const sections = await HomeSection.find({ isActive: true }).lean();
     const carePlan = sections.find(s => s.sectionKey === 'care_plan') || null;
     const whyChoose = sections.find(s => s.sectionKey === 'why_choose') || null;
     const howItWorks = sections.find(s => s.sectionKey === 'how_it_works') || null;
+
+    // Formatting homeContent based on what catalogController did
+    const formattedContent = homeContentRes ? {
+      isBannersVisible: homeContentRes.isBannersVisible ?? true,
+      isOfferBannersVisible: homeContentRes.isOfferBannersVisible ?? true,
+      isPromosVisible: homeContentRes.isPromosVisible ?? true,
+      isCuratedVisible: homeContentRes.isCuratedVisible ?? true,
+      isNoteworthyVisible: homeContentRes.isNoteworthyVisible ?? true,
+      isBookedVisible: homeContentRes.isBookedVisible ?? true,
+      isCategorySectionsVisible: homeContentRes.isCategorySectionsVisible ?? true,
+      isCategoriesVisible: homeContentRes.isCategoriesVisible ?? true,
+      isHowItWorksVisible: homeContentRes.isHowItWorksVisible ?? true
+    } : {};
+
+    const categories = categoriesRes.map(cat => ({
+      id: cat._id.toString(),
+      title: cat.name,
+      slug: cat.slug,
+      icon: cat.icon || '',
+      hasSaleBadge: !!cat.saleBadgeText,
+      badge: cat.saleBadgeText || null
+    }));
 
     console.log('[USER_HOME_BANNERS_COUNT] Banners count: ' + banners.length);
     console.log('[USER_HOME_SERVICES_COUNT] Services count: ' + quickServices.length);
@@ -118,6 +149,8 @@ const getHomeData = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      categories,
+      homeContent: formattedContent,
       quickServices,
       banners,
       offers,

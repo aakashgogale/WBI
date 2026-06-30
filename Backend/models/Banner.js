@@ -74,4 +74,7 @@ const bannerSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Indexes for faster public querying
+bannerSchema.index({ isActive: 1, isDeleted: 1, bannerType: 1, sortOrder: 1 });
+
 module.exports = mongoose.model('Banner', bannerSchema);

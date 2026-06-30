@@ -288,19 +288,16 @@ const Home = () => {
       if (showSkeleton) setLoading(true);
       const cityId = currentCity?._id || currentCity?.id;
 
-      // Optionally fetch old catalog data if needed for fallback, but here we prioritize dynamic data
-        const [oldResponse, newResponse] = await Promise.all([
-          publicCatalogService.getHomeData(cityId).catch(() => ({})),
-          userHomeService.getHomeData(cityId).catch(() => ({}))
-        ]);
+      // Use the newly consolidated highly optimized user API
+      const newResponse = await userHomeService.getHomeData(cityId).catch(() => ({}));
 
       let categoriesToSet = [];
       let homeContentToSet = {};
 
-      // Merge old structure with new structure for backwards compatibility
-      if (oldResponse && oldResponse.success) {
-        if (oldResponse.categories) {
-          categoriesToSet = oldResponse.categories.map(cat => ({
+      if (newResponse && newResponse.success) {
+        // 1. Categories
+        if (newResponse.categories && newResponse.categories.length > 0) {
+          categoriesToSet = newResponse.categories.map(cat => ({
             id: cat.id,
             title: cat.title,
             slug: cat.slug,
@@ -308,18 +305,7 @@ const Home = () => {
             hasSaleBadge: cat.hasSaleBadge,
             badge: cat.badge
           }));
-        }
-        if (oldResponse.homeContent) {
-          homeContentToSet = oldResponse.homeContent;
-        }
-        if (oldResponse.popularBrands) {
-          setPopularBrands(oldResponse.popularBrands);
-        }
-      }
-
-      // OVERRIDE with Dynamic Data from DB
-      if (newResponse && newResponse.success) {
-        if (newResponse.quickServices && newResponse.quickServices.length > 0) {
+        } else if (newResponse.quickServices && newResponse.quickServices.length > 0) {
           categoriesToSet = newResponse.quickServices.map(qs => ({
             id: qs._id,
             title: qs.name,
@@ -330,13 +316,17 @@ const Home = () => {
           }));
         }
 
-        homeContentToSet = {
-          ...homeContentToSet,
-          isCategoriesVisible: true,
-          isPromosVisible: true,
-          isBookedVisible: true,
-          isHowItWorksVisible: true
-        };
+        // 2. Home Content Config
+        if (newResponse.homeContent) {
+          homeContentToSet = { ...newResponse.homeContent };
+        } else {
+          homeContentToSet = {
+            isCategoriesVisible: true,
+            isPromosVisible: true,
+            isBookedVisible: true,
+            isHowItWorksVisible: true
+          };
+        }
 
         const dbOffers = newResponse.offers || [];
 
@@ -584,45 +574,46 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FCFC] pt-4 px-4 space-y-6 max-w-lg lg:max-w-2xl mx-auto pb-20">
-        {/* Header Skeleton */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <SkeletonCircle size="2.5rem" />
-            <div className="space-y-2">
-              <SkeletonLine width="60px" height="12px" />
-              <SkeletonLine width="120px" height="16px" />
+      <div className="min-h-screen pb-20 relative bg-[#F8FCFC]">
+        <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-[#ebfae6]/20 to-transparent pointer-events-none z-0"></div>
+        <div className="relative z-10">
+          <div className="sticky top-0 z-50">
+            <div className="absolute inset-0 bg-[#F8FCFC] bg-opacity-95 backdrop-blur-md border-b flex-none border-transparent z-0 pointer-events-none shadow-sm"></div>
+            <div className="relative max-w-lg lg:max-w-2xl mx-auto w-full z-10">
+              <Header
+                location={address}
+                onLocationClick={handleLocationClick}
+              />
+              <div className="pb-2 pt-0">
+                <SearchBar onInputClick={() => setIsSearchOpen(true)} />
+              </div>
             </div>
           </div>
-          <SkeletonCircle size="2.5rem" />
-        </div>
-        
-        {/* Search Bar Skeleton */}
-        <SkeletonLine width="100%" height="3.5rem" className="rounded-xl" />
-
-        {/* Categories Skeleton */}
-        <div className="grid grid-cols-4 gap-4 mt-6">
-          {[1,2,3,4,5,6,7,8].map(i => (
-            <div key={i} className="flex flex-col items-center gap-2">
-              <SkeletonCircle size="4rem" />
-              <SkeletonLine width="60px" height="10px" />
+          
+          <main className="pt-2 space-y-6 pb-24 max-w-screen-xl mx-auto w-full px-4">
+            {/* Categories Skeleton */}
+            <div className="grid grid-cols-4 gap-4 mt-2">
+              {[1,2,3,4,5,6,7,8].map(i => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <SkeletonCircle size="4.5rem" />
+                  <SkeletonLine width="60px" height="12px" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Banner Skeleton */}
-        <SkeletonLine width="100%" height="160px" className="rounded-2xl mt-6" />
+            {/* Banner Skeleton */}
+            <SkeletonLine width="100%" height="160px" className="rounded-2xl mt-4" />
 
-        {/* Horizontal Cards Skeleton */}
-        <div className="mt-8 space-y-4">
-          <SkeletonLine width="180px" height="24px" className="mb-2" />
-          <div className="flex gap-4 overflow-hidden">
-             <SkeletonCard className="w-64 h-40 flex-shrink-0" />
-             <SkeletonCard className="w-64 h-40 flex-shrink-0" />
-          </div>
+            {/* Horizontal Cards Skeleton */}
+            <div className="mt-8 space-y-4">
+              <SkeletonLine width="180px" height="24px" className="mb-2" />
+              <div className="flex gap-4 overflow-hidden">
+                 <SkeletonCard className="w-64 h-40 flex-shrink-0" />
+                 <SkeletonCard className="w-64 h-40 flex-shrink-0" />
+              </div>
+            </div>
+          </main>
         </div>
-        
-        {/* Bottom Nav Skeleton space */}
       </div>
     );
   }

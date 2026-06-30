@@ -74,4 +74,8 @@ oneTimeServiceSchema.pre('validate', function(next) {
   next();
 });
 
+// Indexes for faster public querying
+oneTimeServiceSchema.index({ isActive: 1, categoryType: 1, sortOrder: 1 });
+oneTimeServiceSchema.index({ isActive: 1, categoryType: 1, rating: -1, totalReviews: -1 });
+
 module.exports = mongoose.model('OneTimeService', oneTimeServiceSchema);

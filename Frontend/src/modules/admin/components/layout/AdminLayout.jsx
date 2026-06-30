@@ -1,9 +1,21 @@
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 import AdminBottomNav from './AdminBottomNav';
 import useAdminHeaderHeight from '../../hooks/useAdminHeaderHeight';
+
+const AdminPageSkeleton = () => (
+  <div className="w-full h-full p-4 animate-pulse">
+    <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="h-32 bg-gray-200 rounded-xl"></div>
+      <div className="h-32 bg-gray-200 rounded-xl"></div>
+      <div className="h-32 bg-gray-200 rounded-xl"></div>
+    </div>
+    <div className="h-64 bg-gray-200 rounded-xl"></div>
+  </div>
+);
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,8 +48,10 @@ const AdminLayout = () => {
             paddingBottom: `calc(${Math.max(bottomPadding, 80)}px + env(safe-area-inset-bottom, 0px))`,
           }}
         >
-          <div className="w-full max-w-full overflow-x-hidden min-w-0">
-            <Outlet />
+          <div className="w-full max-w-full overflow-x-hidden min-w-0 h-full">
+            <Suspense fallback={<AdminPageSkeleton />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>

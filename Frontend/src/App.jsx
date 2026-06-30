@@ -15,9 +15,10 @@ import NavigationProgress from './components/common/NavigationProgress';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // Data remains fresh for 1 minute
-      gcTime: 5 * 60 * 1000, // Keep in memory for 5 minutes
+      staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes (increased for instant navigation)
+      gcTime: 30 * 60 * 1000, // Keep in memory for 30 minutes (was cacheTime)
       refetchOnWindowFocus: false, // Prevent unnecessary refetches when switching tabs
+      refetchOnMount: false, // Prevent refetching on component remount if data is fresh
       retry: 1, // Only retry once to avoid blocking UI on hard failures
     },
   },

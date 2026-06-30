@@ -3,14 +3,30 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import LogoLoader from '../components/common/LogoLoader';
 import PageSkeleton from '../components/common/PageSkeleton';
 
-// Lazy loaded module routes
-const UserRoutes = React.lazy(() => import('../modules/user/routes'));
+import UserRoutes from '../modules/user/routes';
+import AdminRoutes from '../modules/admin/routes';
+import LandingPage from '../modules/landing/pages/LandingPage';
+
+// Lazy loaded routes for bundle optimization
 const VendorRoutes = React.lazy(() => import('../modules/vendor/routes'));
 const WorkerRoutes = React.lazy(() => import('../modules/worker/routes'));
 const EngineerRoutes = React.lazy(() => import('../modules/engineer/routes'));
-const AdminRoutes = React.lazy(() => import('../modules/admin/routes'));
 const B2BRoutes = React.lazy(() => import('../modules/b2b/routes'));
-const LandingPage = React.lazy(() => import('../modules/landing/pages/LandingPage'));
+
+// Preload function for background fetching (Phase 13)
+const preloadRoutes = () => {
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(() => {
+      import('../modules/admin/routes');
+      import('../modules/engineer/routes');
+    });
+  } else {
+    setTimeout(() => {
+      import('../modules/admin/routes');
+      import('../modules/engineer/routes');
+    }, 2000);
+  }
+};
 
 const AppRoutes = () => {
   const location = useLocation();
@@ -24,54 +40,23 @@ const AppRoutes = () => {
     };
 
     window.addEventListener('auth:redirect', handleAuthRedirect);
+    
+    // Background prefetching for engineer/admin routes
+    preloadRoutes();
+    
     return () => window.removeEventListener('auth:redirect', handleAuthRedirect);
   }, [navigate]);
 
   return (
     <Routes location={location}>
-      <Route path="/Home" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <LandingPage />
-        </Suspense>
-      } />
-
+      <Route path="/Home" element={<LandingPage />} />
       <Route path="/" element={<Navigate to="/user" replace />} />
-
-      <Route path="/user/*" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <UserRoutes />
-        </Suspense>
-      } />
-
-      <Route path="/vendor/*" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <VendorRoutes />
-        </Suspense>
-      } />
-
-      <Route path="/worker/*" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <WorkerRoutes />
-        </Suspense>
-      } />
-      
-      <Route path="/engineer/*" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <EngineerRoutes />
-        </Suspense>
-      } />
-
-      <Route path="/admin/*" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <AdminRoutes />
-        </Suspense>
-      } />
-
-      <Route path="/b2b/*" element={
-        <Suspense fallback={<PageSkeleton />}>
-          <B2BRoutes />
-        </Suspense>
-      } />
+      <Route path="/user/*" element={<UserRoutes />} />
+      <Route path="/vendor/*" element={<Suspense fallback={<PageSkeleton />}><VendorRoutes /></Suspense>} />
+      <Route path="/worker/*" element={<Suspense fallback={<PageSkeleton />}><WorkerRoutes /></Suspense>} />
+      <Route path="/engineer/*" element={<Suspense fallback={<PageSkeleton />}><EngineerRoutes /></Suspense>} />
+      <Route path="/admin/*" element={<AdminRoutes />} />
+      <Route path="/b2b/*" element={<Suspense fallback={<PageSkeleton />}><B2BRoutes /></Suspense>} />
 
       {/* Typo catchers */}
       <Route path="/engineers/*" element={<Navigate to="/engineer" replace />} />

@@ -86,9 +86,8 @@ const AdminRoutes = () => {
   // useAppNotifications('admin');
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <AnimatePresence mode="wait">
-            <Routes location={location || undefined}>
+    <AnimatePresence mode="wait">
+      <Routes location={location || undefined}>
         {/* Login route - outside of layout (public) */}
         <Route path="/login" element={<AnimatedPage><PublicRoute userType="admin"><Login /></PublicRoute></AnimatedPage>} />
 
@@ -163,8 +162,7 @@ const AdminRoutes = () => {
           <Route path="settings/*" element={<AnimatedPage><Settings /></AnimatedPage>} />
         </Route>
       </Routes>
-            </AnimatePresence>
-    </Suspense>
+    </AnimatePresence>
   );
 };
 
